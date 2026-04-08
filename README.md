@@ -1,6 +1,6 @@
 # Sapa HSE
 
-**Sapa HSE** adalah aplikasi berbasis Flutter yang dirancang untuk mendukung penerapan *Health, Safety, and Environment* (HSE) di berbagai organisasi.  
+**Sapa HSE** adalah aplikasi berbasis Flutter yang dirancang untuk mendukung penerapan *Health, Safety, and Environment* (HSE) di PT. Bukit Baiduri Energi
 Aplikasi ini membantu pengguna menyapa, mencatat, dan mengelola aspek kesehatan, keselamatan kerja, serta lingkungan dengan cara yang lebih praktis dan terintegrasi.
 
 ---
