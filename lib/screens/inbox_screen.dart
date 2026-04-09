@@ -275,18 +275,21 @@ class _InboxScreenState extends State<InboxScreen> {
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
             child: Row(
               children: [
-                _SubFilterChip(
-                  label: 'All',
-                  isActive: _activeFilter == _SubFilter.all,
-                  onTap: () => setState(() => _activeFilter = _SubFilter.all),
+                Expanded(
+                  child: _SubFilterChip(
+                    label: 'All',
+                    isActive: _activeFilter == _SubFilter.all,
+                    onTap: () => setState(() => _activeFilter = _SubFilter.all),
+                  ),
                 ),
                 const SizedBox(width: 8),
-                _SubFilterChip(
-                  label: 'Unread',
-                  isActive: _activeFilter == _SubFilter.unread,
-                  badge: _activeUnreadCount > 0 ? _activeUnreadCount : null,
-                  onTap: () =>
-                      setState(() => _activeFilter = _SubFilter.unread),
+                Expanded(
+                  child: _SubFilterChip(
+                    label: 'Unread',
+                    isActive: _activeFilter == _SubFilter.unread,
+                    badge: _activeUnreadCount > 0 ? _activeUnreadCount : null,
+                    onTap: () => setState(() => _activeFilter = _SubFilter.unread),
+                  ),
                 ),
               ],
             ),
@@ -568,7 +571,7 @@ class _SubFilterChip extends StatelessWidget {
           ),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               label,
@@ -626,22 +629,24 @@ class _InboxCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: isRead
-            ? null
-            : Border.all(color: const Color(0xFF1A56C4).withOpacity(0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return GestureDetector(
+      onTap: onDetail,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: isRead ? const Color(0xFFFAFAFA) : const Color(0xFFF0F8FF),
+          borderRadius: BorderRadius.circular(14),
+          border: isRead
+              ? null
+              : Border.all(color: const Color(0xFF1A56C4).withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
       child: Column(
         children: [
           // ── Unread indicator bar ────────────────────────────────────
@@ -715,30 +720,12 @@ class _InboxCard extends StatelessWidget {
                     value: levelResiko(report.severity)),
 
                 const SizedBox(height: 14),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: onDetail,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A56C4),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: const Text('Lihat Detail Laporan',
-                        style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w600)),
-                  ),
-                ),
               ],
             ),
           ),
         ],
       ),
-    );
+    ));
   }
 }
 
@@ -763,7 +750,7 @@ class _AnnouncementCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isRead ? const Color(0xFFFAFAFA) : const Color(0xFFF0F8FF),
           borderRadius: BorderRadius.circular(14),
           border: isRead
               ? null

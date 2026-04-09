@@ -15,14 +15,22 @@ class _NewsScreenState extends State<NewsScreen> {
   final PageController _carouselController = PageController();
   int _currentCarouselPage = 0;
   Timer? _carouselTimer;
+
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
   String _selectedCategory = 'All News';
 
   List<NewsArticle> get _featuredArticles =>
       dummyNews.where((a) => a.isFeatured).toList();
 
   List<NewsArticle> get _allFilteredArticles {
-    if (_selectedCategory == 'All News') return dummyNews;
-    return dummyNews.where((a) => a.category == _selectedCategory).toList();
+    return dummyNews.where((a) {
+      final matchCat = _selectedCategory == 'All News' || a.category == _selectedCategory;
+      final matchSearch = _searchQuery.isEmpty || a.title.toLowerCase().contains(_searchQuery.toLowerCase());
+      return matchCat && matchSearch;
+    }).toList();
   }
 
   @override
@@ -34,6 +42,7 @@ class _NewsScreenState extends State<NewsScreen> {
   void _startCarousel() {
     _carouselTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!mounted) return;
+      if (!_carouselController.hasClients) return;
       final next = (_currentCarouselPage + 1) % _featuredArticles.length;
       _carouselController.animateToPage(
         next,
@@ -47,6 +56,7 @@ class _NewsScreenState extends State<NewsScreen> {
   void dispose() {
     _carouselTimer?.cancel();
     _carouselController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -80,24 +90,53 @@ class _NewsScreenState extends State<NewsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
-                  Container(
-                    width: 36, height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A56C4),
-                      borderRadius: BorderRadius.circular(8),
+                  if (!_isSearching) ...[
+                    Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A56C4),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset('assets/logo.png', fit: BoxFit.contain),
+                      ),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.asset('assets/logo.png', fit: BoxFit.contain),
+                    const SizedBox(width: 10),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('SapaHse', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1A56C4))),
+                        Text('PT. Bukit Baiduri Energi', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('SapaHse', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1A56C4))),
-                      Text('PT. Bukit Baiduri Energi', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                    ],
+                    const Spacer(),
+                  ] else ...[
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          hintText: 'Cari berita...',
+                          border: InputBorder.none,
+                          hintStyle: TextStyle(color: Colors.grey),
+                        ),
+                        style: const TextStyle(fontSize: 16),
+                        onChanged: (v) => setState(() => _searchQuery = v),
+                      ),
+                    ),
+                  ],
+                  IconButton(
+                    icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.grey),
+                    onPressed: () {
+                      setState(() {
+                        _isSearching = !_isSearching;
+                        if (!_isSearching) {
+                          _searchController.clear();
+                          _searchQuery = '';
+                        }
+                      });
+                    },
                   ),
                 ],
               ),

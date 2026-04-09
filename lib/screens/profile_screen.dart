@@ -203,76 +203,80 @@ class _ProfileTabState extends State<_ProfileTab> {
             width: double.infinity,
             color: const Color(0xFFF0F0F0),
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
-            child: Column(
+            child: Stack(
+              alignment: Alignment.center,
               children: [
-                GestureDetector(
-                  onTap: widget.onPickImage,
-                  child: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 56,
-                        backgroundColor: const Color(0xFFD0D0D0),
-                        backgroundImage: widget.avatarFile != null
-                            ? FileImage(widget.avatarFile!)
-                            : null,
-                        child: widget.avatarFile == null
-                            ? const Icon(Icons.person, size: 60, color: Colors.white)
-                            : null,
-                      ),
-                      Positioned(
-                        bottom: 2,
-                        right: 2,
-                        child: Container(
-                          width: 26,
-                          height: 26,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF1565C0),
-                            shape: BoxShape.circle,
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: IconButton(
+                    onPressed: _showEditProfileDialog,
+                    icon: const Icon(Icons.edit_outlined, color: Color(0xFF1565C0)),
+                    tooltip: 'Edit Profil',
+                  ),
+                ),
+                Column(
+                  children: [
+                    GestureDetector(
+                      onTap: widget.onPickImage,
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 56,
+                            backgroundColor: const Color(0xFFD0D0D0),
+                            backgroundImage: widget.avatarFile != null
+                                ? FileImage(widget.avatarFile!)
+                                : null,
+                            child: widget.avatarFile == null
+                                ? const Icon(Icons.person, size: 60, color: Colors.white)
+                                : null,
                           ),
-                          child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
-                        ),
+                          Positioned(
+                            bottom: 2,
+                            right: 2,
+                            child: Container(
+                              width: 26,
+                              height: 26,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF1565C0),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      _name,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _position,
+                      style: const TextStyle(fontSize: 13, color: Colors.black54),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _department,
+                      style: const TextStyle(fontSize: 13, color: Colors.black54),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _company,
+                      style: const TextStyle(fontSize: 13, color: Colors.black54),
+                    ),
                 const SizedBox(height: 14),
-                Text(
-                  _name,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$_position, $_department',
-                  style: const TextStyle(fontSize: 13, color: Colors.black54),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _company,
-                  style: const TextStyle(fontSize: 13, color: Colors.black54),
-                ),
-                const SizedBox(height: 14),
-                // ── Edit button ─────────────────────────────────────
-                OutlinedButton.icon(
-                  onPressed: _showEditProfileDialog,
-                  icon: const Icon(Icons.edit_outlined, size: 16),
-                  label: const Text('Edit Profil'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF1565C0),
-                    side: const BorderSide(color: Color(0xFF1565C0), width: 1.5),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20)),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 8),
-                    textStyle: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w600),
-                  ),
-                ),
               ],
             ),
-          ),
+          ],
+        ),
+      ),
 
           // ── Sub-tab icon buttons ───────────────────────────────────
           Container(
@@ -460,127 +464,249 @@ class _BiodataContentState extends State<_BiodataContent> {
 }
 
 // ── LICENSE ───────────────────────────────────────────────────────────────────
-class _LicenseContent extends StatelessWidget {
+class _LicenseContent extends StatefulWidget {
   const _LicenseContent();
 
   @override
-  Widget build(BuildContext context) {
-    final licenses = [
-      {'name': 'SIM A', 'no': 'SIM-2024-001234', 'exp': '15 Maret 2027', 'status': 'Aktif'},
-      {'name': 'SIO Operator Alat Berat', 'no': 'SIO-2023-005678', 'exp': '20 Juni 2026', 'status': 'Aktif'},
-      {'name': 'SIMPER', 'no': 'SP-2022-009012', 'exp': '10 Januari 2025', 'status': 'Kadaluarsa'},
-    ];
+  State<_LicenseContent> createState() => _LicenseContentState();
+}
 
+class _LicenseContentState extends State<_LicenseContent> {
+  final List<Map<String, String>> _licenses = [
+    {'name': 'SIM A', 'no': 'SIM-2024-001234', 'exp': '15 Maret 2027', 'status': 'Aktif'},
+    {'name': 'SIO Operator Alat Berat', 'no': 'SIO-2023-005678', 'exp': '20 Juni 2026', 'status': 'Aktif'},
+    {'name': 'SIMPER', 'no': 'SP-2022-009012', 'exp': '10 Januari 2025', 'status': 'Kadaluarsa'},
+  ];
+
+  void _showAddLicenseDialog() {
+    final nameCtrl = TextEditingController();
+    final noCtrl = TextEditingController();
+    final expCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Tambah License', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nama License')),
+            TextField(controller: noCtrl, decoration: const InputDecoration(labelText: 'Nomor License')),
+            TextField(controller: expCtrl, decoration: const InputDecoration(labelText: 'Tanggal Berlaku (Exp)')),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1565C0), foregroundColor: Colors.white),
+            onPressed: () {
+              if (nameCtrl.text.isNotEmpty) {
+                setState(() {
+                  _licenses.insert(0, {
+                    'name': nameCtrl.text,
+                    'no': noCtrl.text,
+                    'exp': expCtrl.text.isEmpty ? '-' : expCtrl.text,
+                    'status': 'Aktif',
+                  });
+                });
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
-        children: licenses.map((l) {
-          final isActive = l['status'] == 'Aktif';
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: _showAddLicenseDialog,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Add License'),
+              style: TextButton.styleFrom(foregroundColor: const Color(0xFF1565C0)),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44, height: 44,
-                  decoration: BoxDecoration(
-                    color: isActive ? const Color(0xFFE3F2FD) : const Color(0xFFFFEBEE),
-                    borderRadius: BorderRadius.circular(10),
+          ),
+          ..._licenses.map((l) {
+            final isActive = l['status'] == 'Aktif';
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44, height: 44,
+                    decoration: BoxDecoration(
+                      color: isActive ? const Color(0xFFE3F2FD) : const Color(0xFFFFEBEE),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(Icons.credit_card, color: isActive ? const Color(0xFF1565C0) : Colors.red, size: 24),
                   ),
-                  child: Icon(Icons.credit_card, color: isActive ? const Color(0xFF1565C0) : Colors.red, size: 24),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      const SizedBox(height: 2),
-                      Text('No: ${l['no']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                      Text('Exp: ${l['exp']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                    ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const SizedBox(height: 2),
+                        Text('No: ${l['no']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text('Exp: ${l['exp']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isActive ? const Color(0xFF4CAF50) : Colors.red,
-                    borderRadius: BorderRadius.circular(20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isActive ? const Color(0xFF4CAF50) : Colors.red,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(l['status']!, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
                   ),
-                  child: Text(l['status']!, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
 }
 
 // ── CERTIFICATION ─────────────────────────────────────────────────────────────
-class _CertificationContent extends StatelessWidget {
+class _CertificationContent extends StatefulWidget {
   const _CertificationContent();
 
   @override
-  Widget build(BuildContext context) {
-    final certs = [
-      {'name': 'K3 Umum', 'issuer': 'Kemnaker RI', 'year': '2023', 'status': 'Aktif'},
-      {'name': 'Basic First Aid', 'issuer': 'PMI Indonesia', 'year': '2022', 'status': 'Aktif'},
-      {'name': 'ISO 45001 Internal Auditor', 'issuer': 'BSN', 'year': '2021', 'status': 'Aktif'},
-    ];
+  State<_CertificationContent> createState() => _CertificationContentState();
+}
 
+class _CertificationContentState extends State<_CertificationContent> {
+  final List<Map<String, String>> _certs = [
+    {'name': 'K3 Umum', 'issuer': 'Kemnaker RI', 'year': '2023', 'status': 'Aktif'},
+    {'name': 'Basic First Aid', 'issuer': 'PMI Indonesia', 'year': '2022', 'status': 'Aktif'},
+    {'name': 'ISO 45001 Internal Auditor', 'issuer': 'BSN', 'year': '2021', 'status': 'Aktif'},
+  ];
+
+  void _showAddCertificationDialog() {
+    final nameCtrl = TextEditingController();
+    final issuerCtrl = TextEditingController();
+    final yearCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Tambah Certification', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nama Sertifikasi')),
+            TextField(controller: issuerCtrl, decoration: const InputDecoration(labelText: 'Penerbit')),
+            TextField(controller: yearCtrl, decoration: const InputDecoration(labelText: 'Tahun'), keyboardType: TextInputType.number),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1565C0), foregroundColor: Colors.white),
+            onPressed: () {
+              if (nameCtrl.text.isNotEmpty) {
+                setState(() {
+                  _certs.insert(0, {
+                    'name': nameCtrl.text,
+                    'issuer': issuerCtrl.text.isEmpty ? '-' : issuerCtrl.text,
+                    'year': yearCtrl.text.isEmpty ? '-' : yearCtrl.text,
+                    'status': 'Aktif',
+                  });
+                });
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
-        children: certs.map((c) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: _showAddCertificationDialog,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Add Certification'),
+              style: TextButton.styleFrom(foregroundColor: const Color(0xFF1565C0)),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44, height: 44,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3E5F5),
-                    borderRadius: BorderRadius.circular(10),
+          ),
+          ..._certs.map((c) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44, height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3E5F5),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.workspace_premium, color: Color(0xFF6A1B9A), size: 24),
                   ),
-                  child: const Icon(Icons.workspace_premium, color: Color(0xFF6A1B9A), size: 24),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(c['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      const SizedBox(height: 2),
-                      Text('Penerbit: ${c['issuer']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                      Text('Tahun: ${c['year']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                    ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(c['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const SizedBox(height: 2),
+                        Text('Penerbit: ${c['issuer']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text('Tahun: ${c['year']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50),
-                    borderRadius: BorderRadius.circular(20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4CAF50),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(c['status']!, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
                   ),
-                  child: Text(c['status']!, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
@@ -610,7 +736,9 @@ class _MedicalContent extends StatelessWidget {
         title: 'Medical Check-Up Tahunan 2026',
         date: '10 Januari 2026',
         doctor: 'dr. Andi Wijaya, Sp.OK',
+        doctorContact: '0812-3333-4444',
         facility: 'Klinik Pratama BBE',
+        clinicContact: '0541-123456',
         mcuStatus: McuStatus.fitToWork,
         notes: 'Semua parameter dalam batas normal. Tekanan darah 120/80 mmHg, '
             'gula darah puasa 92 mg/dL, kolesterol total 180 mg/dL. '
@@ -632,7 +760,9 @@ class _MedicalContent extends StatelessWidget {
         title: 'Medical Check-Up Tahunan 2025',
         date: '8 Januari 2025',
         doctor: 'dr. Andi Wijaya, Sp.OK',
+        doctorContact: '0812-3333-4444',
         facility: 'Klinik Pratama BBE',
+        clinicContact: '0541-123456',
         mcuStatus: McuStatus.fitWithLimitation,
         notes: 'Hasil pemeriksaan secara keseluruhan baik. Terdapat sedikit '
             'peningkatan kolesterol LDL (145 mg/dL), disarankan mengurangi '
@@ -655,7 +785,9 @@ class _MedicalContent extends StatelessWidget {
         title: 'Pemeriksaan Pasca Insiden K3',
         date: '15 Juli 2024',
         doctor: 'dr. Sari Dewi',
+        doctorContact: '0811-2222-1111',
         facility: 'RS Umum Balikpapan',
+        clinicContact: '0542-654321',
         mcuStatus: McuStatus.notFitToWork,
         notes: 'Pasien mengalami cedera ringan pada pergelangan tangan kiri '
             'akibat insiden kerja. Hasil rontgen tidak menunjukkan fraktur. '
@@ -675,7 +807,9 @@ class _MedicalContent extends StatelessWidget {
         title: 'Medical Check-Up Tahunan 2024',
         date: '5 Februari 2024',
         doctor: 'dr. Andi Wijaya, Sp.OK',
+        doctorContact: '0812-3333-4444',
         facility: 'Klinik Pratama BBE',
+        clinicContact: '0541-123456',
         mcuStatus: McuStatus.fitToWork,
         notes: 'Semua parameter dalam batas normal. Kondisi kesehatan umum baik.',
         items: [
@@ -805,7 +939,9 @@ class _MedicalHistory {
   final String title;
   final String date;
   final String doctor;
+  final String doctorContact;
   final String facility;
+  final String clinicContact;
   final McuStatus mcuStatus;
   final String notes;
   final List<_CheckItem> items;
@@ -816,7 +952,9 @@ class _MedicalHistory {
     required this.title,
     required this.date,
     required this.doctor,
+    required this.doctorContact,
     required this.facility,
+    required this.clinicContact,
     required this.mcuStatus,
     required this.notes,
     required this.items,
@@ -981,7 +1119,11 @@ class _MedicalDetailScreen extends StatelessWidget {
                   const SizedBox(height: 6),
                   _HeaderRow(Icons.medical_information_outlined, 'Dokter',  history.doctor),
                   const SizedBox(height: 6),
+                  _HeaderRow(Icons.phone_outlined, 'Kontak Dokter', history.doctorContact),
+                  const SizedBox(height: 6),
                   _HeaderRow(Icons.local_hospital_outlined, 'Fasilitas', history.facility),
+                  const SizedBox(height: 6),
+                  _HeaderRow(Icons.phone_outlined, 'Kontak Klinik', history.clinicContact),
                   const SizedBox(height: 16),
                   // ── MCU Status ─────────────────────────────────────────
                   const Text('Status Kelaikan Kerja:',
@@ -1174,17 +1316,8 @@ class _McuStatusChip extends StatelessWidget {
 // ══════════════════════════════════════════════════════════════════════════════
 // APP TAB
 // ══════════════════════════════════════════════════════════════════════════════
-class _AppTab extends StatefulWidget {
+class _AppTab extends StatelessWidget {
   const _AppTab();
-
-  @override
-  State<_AppTab> createState() => _AppTabState();
-}
-
-class _AppTabState extends State<_AppTab> {
-  bool _notifPush = true;
-  String _language = 'Indonesia';
-  bool _darkTheme = false;
 
   @override
   Widget build(BuildContext context) {
@@ -1193,30 +1326,8 @@ class _AppTabState extends State<_AppTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionHeader(title: 'Notifikasi'),
+          _SectionHeader(title: 'Aplikasi'),
           _SettingCard(children: [
-            _SwitchRow(
-              icon: Icons.notifications_outlined,
-              iconColor: const Color(0xFF1565C0),
-              label: 'Notifikasi Push',
-              subtitle: 'Terima notifikasi laporan & pengumuman',
-              value: _notifPush,
-              onChanged: (v) => setState(() => _notifPush = v),
-            ),
-          ]),
-
-          const SizedBox(height: 16),
-          _SectionHeader(title: 'Tampilan'),
-          _SettingCard(children: [
-            _SwitchRow(
-              icon: Icons.dark_mode_outlined,
-              iconColor: const Color(0xFF37474F),
-              label: 'Tema Gelap',
-              subtitle: 'Aktifkan mode dark theme',
-              value: _darkTheme,
-              onChanged: (v) => setState(() => _darkTheme = v),
-            ),
-            Divider(height: 1, color: Colors.grey.shade100),
             _MenuRow(
               icon: Icons.dashboard_outlined,
               iconColor: const Color(0xFF1A56C4),
@@ -1226,19 +1337,14 @@ class _AppTabState extends State<_AppTab> {
                 MaterialPageRoute(builder: (_) => const DashboardScreen()),
               ),
             ),
-          ]),
-
-          const SizedBox(height: 16),
-          _SectionHeader(title: 'Bahasa'),
-          _SettingCard(children: [
-            _DropdownRow(
-              icon: Icons.language,
-              iconColor: const Color(0xFF1A56C4),
-              label: 'Bahasa Aplikasi',
-              subtitle: 'Pilih bahasa tampilan',
-              value: _language,
-              items: const ['Indonesia', 'English'],
-              onChanged: (v) { if (v != null) setState(() => _language = v); },
+            Divider(height: 1, color: Colors.grey.shade100),
+            _MenuRow(
+              icon: Icons.health_and_safety_outlined,
+              iconColor: const Color(0xFF4CAF50),
+              label: 'Modul Safety',
+              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Modul Safety akan segera hadir')),
+              ),
             ),
           ]),
         ],
@@ -1250,8 +1356,17 @@ class _AppTabState extends State<_AppTab> {
 // ══════════════════════════════════════════════════════════════════════════════
 // SETTINGS TAB
 // ══════════════════════════════════════════════════════════════════════════════
-class _SettingsTab extends StatelessWidget {
+class _SettingsTab extends StatefulWidget {
   const _SettingsTab();
+
+  @override
+  State<_SettingsTab> createState() => _SettingsTabState();
+}
+
+class _SettingsTabState extends State<_SettingsTab> {
+  bool _notifPush = true;
+  String _language = 'Indonesia';
+  bool _darkTheme = false;
 
   @override
   Widget build(BuildContext context) {
@@ -1260,6 +1375,38 @@ class _SettingsTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _SectionHeader(title: 'Aplikasi'),
+          _SettingCard(children: [
+            _SwitchRow(
+              icon: Icons.notifications_outlined,
+              iconColor: const Color(0xFF1565C0),
+              label: 'Notifikasi Push',
+              subtitle: 'Terima notifikasi laporan & pengumuman',
+              value: _notifPush,
+              onChanged: (v) => setState(() => _notifPush = v),
+            ),
+            Divider(height: 1, color: Colors.grey.shade100),
+            _SwitchRow(
+              icon: Icons.dark_mode_outlined,
+              iconColor: const Color(0xFF37474F),
+              label: 'Tema Gelap',
+              subtitle: 'Aktifkan mode dark theme',
+              value: _darkTheme,
+              onChanged: (v) => setState(() => _darkTheme = v),
+            ),
+            Divider(height: 1, color: Colors.grey.shade100),
+            _DropdownRow(
+              icon: Icons.language,
+              iconColor: const Color(0xFF1A56C4),
+              label: 'Bahasa Aplikasi',
+              subtitle: 'Pilih bahasa tampilan',
+              value: _language,
+              items: const ['Indonesia', 'English'],
+              onChanged: (v) { if (v != null) setState(() => _language = v); },
+            ),
+          ]),
+
+          const SizedBox(height: 16),
           _SectionHeader(title: 'Akun'),
           _SettingCard(children: [
             _MenuRow(

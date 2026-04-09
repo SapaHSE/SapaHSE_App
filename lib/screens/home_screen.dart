@@ -17,6 +17,10 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentPage = 0;
   Timer? _carouselTimer;
 
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
   String _selectedType = 'All Types';
   bool _showOpenInProgress = false;
 
@@ -55,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _startCarousel() {
     _carouselTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (!mounted) return;
+      if (!_pageController.hasClients) return;
       final next = (_currentPage + 1) % _carouselItems.length;
       _pageController.animateToPage(
         next,
@@ -68,6 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _carouselTimer?.cancel();
     _pageController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -77,7 +83,10 @@ class _HomeScreenState extends State<HomeScreen> {
           _selectedType == 'All Types' || r.type.label == _selectedType;
       final matchStatus = !_showOpenInProgress ||
           r.status == ReportStatus.closed;
-      return matchType && matchStatus;
+      final matchSearch = _searchQuery.isEmpty ||
+          r.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          r.description.toLowerCase().contains(_searchQuery.toLowerCase());
+      return matchType && matchStatus && matchSearch;
     }).toList();
   }
 
@@ -89,41 +98,69 @@ class _HomeScreenState extends State<HomeScreen> {
         child: CustomScrollView(
           slivers: [
             // ── AppBar ─────────────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Container(
-                color: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1A56C4),
-                        borderRadius: BorderRadius.circular(8),
+            SliverAppBar(
+              backgroundColor: Colors.white,
+              pinned: true,
+              elevation: 0,
+              titleSpacing: 16,
+              shadowColor: Colors.black.withOpacity(0.1),
+              forceElevated: true,
+              title: _isSearching
+                  ? TextField(
+                      controller: _searchController,
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        hintText: 'Cari laporan...',
+                        border: InputBorder.none,
+                        hintStyle: TextStyle(color: Colors.grey),
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.asset('assets/logo.png', fit: BoxFit.contain),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      style: const TextStyle(fontSize: 16),
+                      onChanged: (v) => setState(() => _searchQuery = v),
+                    )
+                  : Row(
                       children: [
-                        Text('SapaHse',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: Color(0xFF1A56C4))),
-                        Text('PT. Bukit Baiduri Energi',
-                            style: TextStyle(fontSize: 10, color: Colors.grey)),
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1A56C4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.asset('assets/logo.png', fit: BoxFit.contain),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('SapaHse',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: Color(0xFF1A56C4))),
+                            Text('PT. Bukit Baiduri Energi',
+                                style: TextStyle(fontSize: 10, color: Colors.grey)),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
+              actions: [
+                IconButton(
+                  icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.grey),
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = !_isSearching;
+                      if (!_isSearching) {
+                        _searchController.clear();
+                        _searchQuery = '';
+                      }
+                    });
+                  },
                 ),
-              ),
+                const SizedBox(width: 8),
+              ],
             ),
 
             // ── Carousel ───────────────────────────────────────────────────
