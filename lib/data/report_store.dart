@@ -9,6 +9,7 @@ class TimelineEvent {
   final DateTime timestamp;
   final String actor;
   final String? note;
+  final String? photoPath;
 
   const TimelineEvent({
     required this.status,
@@ -16,6 +17,7 @@ class TimelineEvent {
     required this.timestamp,
     required this.actor,
     this.note,
+    this.photoPath,
   });
 }
 
@@ -161,6 +163,7 @@ class ReportStore {
     ReportSubStatus? newSubStatus,
     String actor = 'User',
     String? note,
+    String? photoPath,
   }) {
     final list = List<Report>.from(reports.value);
     final idx = list.indexWhere((r) => r.id == id);
@@ -192,6 +195,7 @@ class ReportStore {
       timestamp: DateTime.now(),
       actor:     actor,
       note:      note ?? _defaultNote(newStatus, newSubStatus),
+      photoPath: photoPath,
     ));
 
     return updated;

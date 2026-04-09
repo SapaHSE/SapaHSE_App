@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/report.dart';
 import '../data/report_store.dart';
 
@@ -84,6 +86,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     ReportStatus? selectedStatus = _report.status;
     ReportSubStatus? selectedSub = _report.subStatus;
     final noteCtrl = TextEditingController();
+    File? attachedPhoto;
 
     showDialog(
       context: context,
@@ -171,8 +174,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       final isSubSelected = selectedSub == sub;
                       return GestureDetector(
                         onTap: () => setDs(() => selectedSub = sub),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
+                        child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 7),
                           decoration: BoxDecoration(
@@ -231,6 +233,57 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         borderSide: const BorderSide(color: _blue)),
                   ),
                 ),
+                const SizedBox(height: 14),
+                const Divider(height: 1),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Lampirkan Foto',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
+                    if (selectedSub == ReportSubStatus.reviewing)
+                      const Text('* Wajib', style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold)),
+                    if (selectedSub != ReportSubStatus.reviewing)
+                      const Text('(opsional)', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: () async {
+                    final picker = ImagePicker();
+                    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+                    if (picked != null) {
+                      setDs(() => attachedPhoto = File(picked.path));
+                    }
+                  },
+                  child: Container(
+                    height: 100,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F8F8),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: attachedPhoto != null
+                        ? Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              image: DecorationImage(
+                                image: FileImage(attachedPhoto!),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(Icons.add_a_photo_outlined, color: Colors.grey, size: 24),
+                              SizedBox(height: 8),
+                              Text('Tap untuk unggah foto', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                            ],
+                          ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -242,6 +295,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             ElevatedButton(
               onPressed: () {
                 if (selectedStatus == null) return;
+                
+                if (selectedSub == ReportSubStatus.reviewing && attachedPhoto == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: const Text('Foto bukti wajib dilampirkan untuk tahap Reviewing!'),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ));
+                  return;
+                }
+
                 final note = noteCtrl.text.trim().isEmpty
                     ? null
                     : noteCtrl.text.trim();
@@ -251,6 +315,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   newSubStatus: selectedSub,
                   actor: 'Noor Lintang Bhaskara',
                   note: note,
+                  photoPath: attachedPhoto?.path,
                 );
                 setState(() => _report = updated);
                 Navigator.pop(ctx);
@@ -857,6 +922,21 @@ class _TimelineItem extends StatelessWidget {
                               fontSize: 12,
                               color: Colors.black54,
                               height: 1.4)),
+                    ),
+                  ],
+                  // Photo
+                  if (event.photoPath != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 140,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        image: DecorationImage(
+                          image: FileImage(File(event.photoPath!)),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
                   ],
                 ],
