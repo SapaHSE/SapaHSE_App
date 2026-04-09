@@ -16,10 +16,11 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _nikCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _teleponCtrl = TextEditingController();
+  final _jabatanCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmPassCtrl = TextEditingController();
 
-  String _selectedDivisi = 'Departemen HSE';
+  String _selectedDepartemen = 'Departemen HSE';
   bool _obscurePass = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
@@ -58,6 +59,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     _nikCtrl.dispose();
     _emailCtrl.dispose();
     _teleponCtrl.dispose();
+    _jabatanCtrl.dispose();
     _passCtrl.dispose();
     _confirmPassCtrl.dispose();
     _animCtrl.dispose();
@@ -68,7 +70,8 @@ class _RegisterScreenState extends State<RegisterScreen>
     // Validate step 0 fields
     if (_currentStep == 0) {
       if (_namaCtrl.text.isEmpty || _nikCtrl.text.isEmpty ||
-          _emailCtrl.text.isEmpty || _teleponCtrl.text.isEmpty) {
+          _emailCtrl.text.isEmpty || _teleponCtrl.text.isEmpty ||
+          _jabatanCtrl.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Harap lengkapi semua field'),
@@ -421,8 +424,20 @@ class _RegisterScreenState extends State<RegisterScreen>
 
         const SizedBox(height: 16),
 
-        // Jabatan/Divisi
-        _label('Jabatan / Divisi *'),
+        // Jabatan
+        _label('Jabatan *'),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: _jabatanCtrl,
+          textCapitalization: TextCapitalization.words,
+          decoration: _deco(hint: 'Masukkan jabatan', icon: Icons.work_outline),
+          validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
+        ),
+
+        const SizedBox(height: 16),
+
+        // Departemen
+        _label('Departemen *'),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -433,7 +448,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: _selectedDivisi,
+              value: _selectedDepartemen,
               isExpanded: true,
               icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
               style: const TextStyle(fontSize: 14, color: Colors.black87),
@@ -441,7 +456,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   .map((d) => DropdownMenuItem(value: d, child: Text(d)))
                   .toList(),
               onChanged: (v) {
-                if (v != null) setState(() => _selectedDivisi = v);
+                if (v != null) setState(() => _selectedDepartemen = v);
               },
             ),
           ),
@@ -475,7 +490,8 @@ class _RegisterScreenState extends State<RegisterScreen>
               _SummaryRow(label: 'Nama', value: _namaCtrl.text),
               _SummaryRow(label: 'NIK', value: _nikCtrl.text),
               _SummaryRow(label: 'Email', value: _emailCtrl.text),
-              _SummaryRow(label: 'Divisi', value: _selectedDivisi),
+              _SummaryRow(label: 'Jabatan', value: _jabatanCtrl.text),
+              _SummaryRow(label: 'Dept', value: _selectedDepartemen),
             ],
           ),
         ),

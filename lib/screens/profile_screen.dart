@@ -57,6 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           unselectedLabelColor: Colors.black54,
           indicatorColor: const Color(0xFF1565C0),
           indicatorWeight: 2.5,
+          indicatorSize: TabBarIndicatorSize.tab,
           labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
           tabs: const [
@@ -320,7 +321,23 @@ class _ProfileTabState extends State<_ProfileTab> {
           const SizedBox(height: 4),
 
           // ── Sub-tab content ────────────────────────────────────────
-          _buildSubTabContent(),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0.02, 0),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              ),
+            ),
+            child: SizedBox(
+              key: ValueKey(_selectedSubTab),
+              child: _buildSubTabContent(),
+            ),
+          ),
 
           const SizedBox(height: 80),
         ],
@@ -1341,9 +1358,9 @@ class _AppTab extends StatelessWidget {
             _MenuRow(
               icon: Icons.health_and_safety_outlined,
               iconColor: const Color(0xFF4CAF50),
-              label: 'Modul Safety',
+              label: 'Module Plugin',
               onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Modul Safety akan segera hadir')),
+                const SnackBar(content: Text('Module Plugin akan segera hadir')),
               ),
             ),
           ]),

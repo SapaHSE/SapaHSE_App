@@ -3,7 +3,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
 import '../models/report.dart';
 import '../data/dummy_data.dart';
+import '../data/news_data.dart';
 import 'report_detail_screen.dart';
+import 'news_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,31 +23,16 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
-  String _selectedType = 'All Types';
+  String _selectedType = 'All Report';
   bool _showOpenInProgress = false;
 
-  // ── Carousel items with real image URLs ──────────────────────────────────
-  final List<Map<String, dynamic>> _carouselItems = [
-    {
-      'imageUrl':
-          'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80',
-      'label': 'Area Tambang Sektor A',
-    },
-    {
-      'imageUrl':
-          'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=800&q=80',
-      'label': 'Fasilitas Produksi BBE',
-    },
-    {
-      'imageUrl':
-          'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80',
-      'label': 'Area Operasional BBE',
-    },
-  ];
+  // ── Featured News Carousel ────────────────────────────────────────────────
+  List<NewsArticle> get _carouselItems =>
+      dummyNews.where((a) => a.isFeatured).toList();
 
   // ── Only Hazard & Inspection ──────────────────────────────────────────────
   final List<String> _reportTypes = [
-    'All Types',
+    'All Report',
     'Hazard',
     'Inspection',
   ];
@@ -80,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Report> get _filteredReports {
     return dummyReports.where((r) {
       final matchType =
-          _selectedType == 'All Types' || r.type.label == _selectedType;
+          _selectedType == 'All Report' || r.type.label == _selectedType;
       final matchStatus = !_showOpenInProgress ||
           r.status == ReportStatus.closed;
       final matchSearch = _searchQuery.isEmpty ||
@@ -95,73 +82,75 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            // ── AppBar ─────────────────────────────────────────────────────
-            SliverAppBar(
-              backgroundColor: Colors.white,
-              pinned: true,
-              elevation: 0,
-              titleSpacing: 16,
-              shadowColor: Colors.black.withOpacity(0.1),
-              forceElevated: true,
-              title: _isSearching
-                  ? TextField(
-                      controller: _searchController,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        hintText: 'Cari laporan...',
-                        border: InputBorder.none,
-                        hintStyle: TextStyle(color: Colors.grey),
+        child: Column(
+          children: [
+            // ── Static Header (matching News) ───────────────────────────────
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  if (!_isSearching) ...[
+                    Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A56C4),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      style: const TextStyle(fontSize: 16),
-                      onChanged: (v) => setState(() => _searchQuery = v),
-                    )
-                  : Row(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset('assets/logo.png', fit: BoxFit.contain),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1A56C4),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.asset('assets/logo.png', fit: BoxFit.contain),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('SapaHse',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    color: Color(0xFF1A56C4))),
-                            Text('PT. Bukit Baiduri Energi',
-                                style: TextStyle(fontSize: 10, color: Colors.grey)),
-                          ],
-                        ),
+                        Text('SapaHse',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Color(0xFF1A56C4))),
+                        Text('PT. Bukit Baiduri Energi',
+                            style: TextStyle(fontSize: 10, color: Colors.grey)),
                       ],
                     ),
-              actions: [
-                IconButton(
-                  icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.grey),
-                  onPressed: () {
-                    setState(() {
-                      _isSearching = !_isSearching;
-                      if (!_isSearching) {
-                        _searchController.clear();
-                        _searchQuery = '';
-                      }
-                    });
-                  },
-                ),
-                const SizedBox(width: 8),
-              ],
+                    const Spacer(),
+                  ] else ...[
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          hintText: 'Cari laporan...',
+                          border: InputBorder.none,
+                          hintStyle: TextStyle(color: Colors.grey),
+                        ),
+                        style: const TextStyle(fontSize: 16),
+                        onChanged: (v) => setState(() => _searchQuery = v),
+                      ),
+                    ),
+                  ],
+                  IconButton(
+                    icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.grey),
+                    onPressed: () {
+                      setState(() {
+                        _isSearching = !_isSearching;
+                        if (!_isSearching) {
+                          _searchController.clear();
+                          _searchQuery = '';
+                        }
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
+            
+            // ── Scrollable Body ─────────────────────────────────────────────
+            Expanded(
+              child: CustomScrollView(
+                slivers: [
 
             // ── Carousel ───────────────────────────────────────────────────
             SliverToBoxAdapter(child: _buildCarousel()),
@@ -175,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: Row(
                   children: [
-                    const Text('Recent Report',
+                    const Text('Report List',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 16)),
                     const Spacer(),
@@ -223,8 +212,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       childCount: _filteredReports.length,
                     ),
                   ),
-
             const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          ],
+        ),
+      ),
           ],
         ),
       ),
@@ -234,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ── CAROUSEL ──────────────────────────────────────────────────────────────
   Widget _buildCarousel() {
     return SizedBox(
-      height: 210,
+      height: 240,
       child: Stack(
         children: [
           PageView.builder(
@@ -243,11 +234,20 @@ class _HomeScreenState extends State<HomeScreen> {
             itemCount: _carouselItems.length,
             itemBuilder: (_, index) {
               final item = _carouselItems[index];
-              return Stack(
-                fit: StackFit.expand,
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => NewsDetailScreen(article: item),
+                    ),
+                  );
+                },
+                child: Stack(
+                  fit: StackFit.expand,
                 children: [
                   CachedNetworkImage(
-                    imageUrl: item['imageUrl'] as String,
+                    imageUrl: item.imageUrl,
                     fit: BoxFit.cover,
                     placeholder: (_, __) => Container(
                       color: const Color(0xFF37474F),
@@ -262,43 +262,35 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: Colors.white24, size: 60),
                     ),
                   ),
-                  // bottom gradient
-                  Positioned(
-                    left: 0, right: 0, bottom: 0,
-                    child: Container(
-                      height: 80,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.65),
-                            Colors.transparent,
-                          ],
-                        ),
+                  // Gradient overlay
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.transparent, Colors.black.withOpacity(0.88)],
+                        stops: const [0.3, 1.0],
                       ),
                     ),
                   ),
-                  // label
+                  // Title
                   Positioned(
-                    bottom: 28, left: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black38,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        item['label'] as String,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500),
+                    left: 16, right: 52, bottom: 38,
+                    child: Text(
+                      item.title,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        height: 1.35,
+                        shadows: [Shadow(color: Colors.black54, blurRadius: 6)],
                       ),
                     ),
                   ),
                 ],
+              ),
               );
             },
           ),
@@ -317,11 +309,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       curve: Curves.easeInOut);
                 },
                 child: Container(
-                  width: 30, height: 30,
+                  width: 32, height: 32,
                   decoration: const BoxDecoration(
                       color: Colors.black38, shape: BoxShape.circle),
                   child: const Icon(Icons.chevron_left,
-                      color: Colors.white, size: 20),
+                      color: Colors.white, size: 22),
                 ),
               ),
             ),
@@ -339,35 +331,38 @@ class _HomeScreenState extends State<HomeScreen> {
                       curve: Curves.easeInOut);
                 },
                 child: Container(
-                  width: 30, height: 30,
+                  width: 32, height: 32,
                   decoration: const BoxDecoration(
                       color: Colors.black38, shape: BoxShape.circle),
                   child: const Icon(Icons.chevron_right,
-                      color: Colors.white, size: 20),
+                      color: Colors.white, size: 22),
                 ),
               ),
             ),
           ),
 
-          // Dots
+          // Dots + Indicator (News Style)
           Positioned(
-            bottom: 8, left: 0, right: 0,
+            left: 16, right: 16, bottom: 12,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                _carouselItems.length,
-                (i) => AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  width: i == _currentPage ? 18 : 6,
-                  height: 6,
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  decoration: BoxDecoration(
-                    color:
-                        i == _currentPage ? Colors.white : Colors.white54,
-                    borderRadius: BorderRadius.circular(4),
+              children: [
+                Row(
+                  children: List.generate(
+                    _carouselItems.length,
+                    (i) => AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: i == _currentPage ? 20 : 7,
+                      height: 7,
+                      margin: const EdgeInsets.only(right: 6),
+                      decoration: BoxDecoration(
+                        color:
+                            i == _currentPage ? const Color(0xFF1A56C4) : Colors.white54,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ],
@@ -517,7 +512,7 @@ class _ReportCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -530,7 +525,7 @@ class _ReportCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // ── Thumbnail image ──────────────────────────────────────
+            // ── Thumbnail Image ───────────────────────────────────────────
             ClipRRect(
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
@@ -561,7 +556,7 @@ class _ReportCard extends StatelessWidget {
             // ── Content ──────────────────────────────────────────────
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -593,7 +588,7 @@ class _ReportCard extends StatelessWidget {
                         const Spacer(),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 3),
+                              horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: _severityColor,
                             borderRadius: BorderRadius.circular(10),
@@ -602,27 +597,25 @@ class _ReportCard extends StatelessWidget {
                             report.severity.label,
                             style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 11,
+                                fontSize: 9,
                                 fontWeight: FontWeight.w600),
                           ),
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
 
                     // Title
                     Text(
                       report.title,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: Colors.black87),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87),
                     ),
-
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 4),
 
                     // Description
                     Text(
@@ -630,51 +623,29 @@ class _ReportCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          fontSize: 12, color: Colors.grey, height: 1.4),
+                          fontSize: 11, color: Colors.grey, height: 1.4),
                     ),
+                    const SizedBox(height: 8),
 
-                    const SizedBox(height: 6),
-
-                    // Bottom row: status badge + sub-status
+                    // Status badge
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
+                          width: 8,
+                          height: 8,
                           decoration: BoxDecoration(
+                            shape: BoxShape.circle,
                             color: _statusColor,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            report.status.label,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700),
                           ),
                         ),
-                        if (report.subStatus != null) ...[
-                          const SizedBox(width: 5),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: _statusColor.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: _statusColor.withOpacity(0.4),
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              report.subStatus!.label,
-                              style: TextStyle(
-                                  color: _statusColor,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ],
+                        const SizedBox(width: 6),
+                        Text(
+                          report.status.label,
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: _statusColor),
+                        ),
                         const Spacer(),
                         Icon(Icons.chevron_right,
                             color: Colors.grey.shade400, size: 16),
