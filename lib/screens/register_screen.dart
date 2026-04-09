@@ -14,17 +14,24 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _formKey = GlobalKey<FormState>();
   final _namaCtrl = TextEditingController();
   final _nikCtrl = TextEditingController();
-  final _emailCtrl = TextEditingController();
+  final _emailPribadiCtrl = TextEditingController();
+  final _emailKantorCtrl = TextEditingController();
   final _teleponCtrl = TextEditingController();
   final _jabatanCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmPassCtrl = TextEditingController();
 
   String _selectedDepartemen = 'Departemen HSE';
+  String _selectedPerusahaan = 'PT Bukit Baiduri Energi';
   bool _obscurePass = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
   bool _agreeTerms = false;
+
+  final List<String> _perusahaanList = [
+    'PT Bukit Baiduri Energi',
+    'PT. Khotai Makmur Insan Abadi',
+  ];
 
   // Step: 0 = data diri, 1 = akun
   int _currentStep = 0;
@@ -57,7 +64,8 @@ class _RegisterScreenState extends State<RegisterScreen>
   void dispose() {
     _namaCtrl.dispose();
     _nikCtrl.dispose();
-    _emailCtrl.dispose();
+    _emailPribadiCtrl.dispose();
+    _emailKantorCtrl.dispose();
     _teleponCtrl.dispose();
     _jabatanCtrl.dispose();
     _passCtrl.dispose();
@@ -70,8 +78,8 @@ class _RegisterScreenState extends State<RegisterScreen>
     // Validate step 0 fields
     if (_currentStep == 0) {
       if (_namaCtrl.text.isEmpty || _nikCtrl.text.isEmpty ||
-          _emailCtrl.text.isEmpty || _teleponCtrl.text.isEmpty ||
-          _jabatanCtrl.text.isEmpty) {
+          _emailPribadiCtrl.text.isEmpty ||
+          _teleponCtrl.text.isEmpty || _jabatanCtrl.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Harap lengkapi semua field'),
@@ -391,18 +399,63 @@ class _RegisterScreenState extends State<RegisterScreen>
 
         const SizedBox(height: 16),
 
-        // Email
-        _label('Email *'),
+        // Email Pribadi
+        _label('Email Pribadi *'),
         const SizedBox(height: 6),
         TextFormField(
-          controller: _emailCtrl,
+          controller: _emailPribadiCtrl,
           keyboardType: TextInputType.emailAddress,
-          decoration: _deco(hint: 'Masukkan email', icon: Icons.email_outlined),
+          decoration: _deco(hint: 'Masukkan email pribadi', icon: Icons.email_outlined),
           validator: (v) {
             if (v!.isEmpty) return 'Wajib diisi';
             if (!v.contains('@') || !v.contains('.')) return 'Format email tidak valid';
             return null;
           },
+        ),
+
+        const SizedBox(height: 16),
+
+        // Email Kantor
+        _label('Email Kantor (Opsional)'),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: _emailKantorCtrl,
+          keyboardType: TextInputType.emailAddress,
+          decoration: _deco(hint: 'Masukkan email kantor', icon: Icons.alternate_email),
+          validator: (v) {
+            if (v != null && v.isNotEmpty) {
+              if (!v.contains('@') || !v.contains('.')) return 'Format email tidak valid';
+            }
+            return null;
+          },
+        ),
+
+        const SizedBox(height: 16),
+
+        // Perusahaan
+        _label('Perusahaan (PT) *'),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F8F8),
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _selectedPerusahaan,
+              isExpanded: true,
+              icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
+              items: _perusahaanList
+                  .map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 14))))
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) setState(() => _selectedPerusahaan = v);
+              },
+            ),
+          ),
         ),
 
         const SizedBox(height: 16),
@@ -489,7 +542,10 @@ class _RegisterScreenState extends State<RegisterScreen>
             children: [
               _SummaryRow(label: 'Nama', value: _namaCtrl.text),
               _SummaryRow(label: 'NIK', value: _nikCtrl.text),
-              _SummaryRow(label: 'Email', value: _emailCtrl.text),
+              _SummaryRow(label: 'Email', value: _emailPribadiCtrl.text),
+              if (_emailKantorCtrl.text.isNotEmpty)
+                _SummaryRow(label: 'Kantor', value: _emailKantorCtrl.text),
+              _SummaryRow(label: 'PT', value: _selectedPerusahaan),
               _SummaryRow(label: 'Jabatan', value: _jabatanCtrl.text),
               _SummaryRow(label: 'Dept', value: _selectedDepartemen),
             ],
