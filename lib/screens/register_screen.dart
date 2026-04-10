@@ -146,7 +146,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             Container(
               width: 70, height: 70,
               decoration: const BoxDecoration(
-                  color: const Color(0xFFEFF4FF), shape: BoxShape.circle),
+                  color: Color(0xFFEFF4FF), shape: BoxShape.circle),
               child: const Icon(Icons.check_circle,
                   color: Color(0xFF1A56C4), size: 42),
             ),
@@ -208,7 +208,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                         child: Container(
                           width: 36, height: 36,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(Icons.arrow_back,
@@ -265,7 +265,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                  color: Colors.black.withOpacity(0.06),
+                                  color: Colors.black.withValues(alpha: 0.06),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4)),
                             ],
@@ -289,7 +289,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                               backgroundColor: const Color(0xFF1A56C4),
                               foregroundColor: Colors.white,
                               disabledBackgroundColor:
-                                  const Color(0xFF1A56C4).withOpacity(0.6),
+                                  const Color(0xFF1A56C4).withValues(alpha: 0.6),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12)),
                               elevation: 0,
@@ -536,7 +536,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           decoration: BoxDecoration(
             color: const Color(0xFFEFF4FF),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFF1A56C4).withOpacity(0.2)),
+            border: Border.all(color: const Color(0xFF1A56C4).withValues(alpha: 0.2)),
           ),
           child: Column(
             children: [

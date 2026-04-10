@@ -121,7 +121,7 @@ class _ProfileTabState extends State<_ProfileTab> {
           Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFF1565C0).withOpacity(0.1),
+              color: const Color(0xFF1565C0).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.edit_outlined,
@@ -442,7 +442,7 @@ class _BiodataContentState extends State<_BiodataContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _FormField(
+          const _FormField(
             label: 'NIK',
             child: _ReadOnlyField(value: '1234567890123456'),
           ),
@@ -563,7 +563,7 @@ class _LicenseContentState extends State<_LicenseContent> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))],
               ),
               child: Row(
                 children: [
@@ -687,7 +687,7 @@ class _CertificationContentState extends State<_CertificationContent> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))],
               ),
               child: Row(
                 children: [
@@ -747,7 +747,7 @@ class _MedicalContent extends StatelessWidget {
     ];
 
     final history = [
-      _MedicalHistory(
+      const _MedicalHistory(
         id: 'mh1',
         patientName: 'Noor Lintang Bhaskara',
         title: 'Medical Check-Up Tahunan 2026',
@@ -771,7 +771,7 @@ class _MedicalContent extends StatelessWidget {
           _CheckItem('Tes Audiometri',             true),
         ],
       ),
-      _MedicalHistory(
+      const _MedicalHistory(
         id: 'mh2',
         patientName: 'Noor Lintang Bhaskara',
         title: 'Medical Check-Up Tahunan 2025',
@@ -796,7 +796,7 @@ class _MedicalContent extends StatelessWidget {
           _CheckItem('Tes Audiometri',             false),
         ],
       ),
-      _MedicalHistory(
+      const _MedicalHistory(
         id: 'mh3',
         patientName: 'Noor Lintang Bhaskara',
         title: 'Pemeriksaan Pasca Insiden K3',
@@ -818,7 +818,7 @@ class _MedicalContent extends StatelessWidget {
           _CheckItem('Konsultasi Orthopedi',     false),
         ],
       ),
-      _MedicalHistory(
+      const _MedicalHistory(
         id: 'mh4',
         patientName: 'Noor Lintang Bhaskara',
         title: 'Medical Check-Up Tahunan 2024',
@@ -853,7 +853,7 @@ class _MedicalContent extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [BoxShadow(
-                  color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+                  color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))],
             ),
             child: Column(
               children: List.generate(records.length, (i) {
@@ -889,7 +889,7 @@ class _MedicalContent extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A56C4).withOpacity(0.1),
+                color: const Color(0xFF1A56C4).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text('${history.length} riwayat',
@@ -998,7 +998,7 @@ class _MedicalHistoryCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [BoxShadow(
-              color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+              color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))],
         ),
         child: Row(
           children: [
@@ -1006,7 +1006,7 @@ class _MedicalHistoryCard extends StatelessWidget {
             Container(
               width: 44, height: 44,
               decoration: BoxDecoration(
-                color: status.color.withOpacity(0.1),
+                color: status.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(status.icon, color: status.color, size: 22),
@@ -1076,7 +1076,7 @@ class _MedicalHistoryCard extends StatelessWidget {
 // ── Medical Detail Screen ─────────────────────────────────────────────────────
 class _MedicalDetailScreen extends StatelessWidget {
   final _MedicalHistory history;
-  const _MedicalDetailScreen({super.key, required this.history});
+  const _MedicalDetailScreen({required this.history});
 
   @override
   Widget build(BuildContext context) {
@@ -1116,7 +1116,7 @@ class _MedicalDetailScreen extends StatelessWidget {
                     Container(
                       width: 40, height: 40,
                       decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(10)),
                       child: const Icon(Icons.medical_services_outlined,
                           color: Colors.white, size: 22),
@@ -1279,7 +1279,7 @@ class _SectionCard extends StatelessWidget {
       color: Colors.white,
       borderRadius: BorderRadius.circular(12),
       boxShadow: [BoxShadow(
-          color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+          color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))],
     ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
@@ -1303,7 +1303,7 @@ class _McuStatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: isSelected ? status.color.withOpacity(0.2) : Colors.transparent,
+        color: isSelected ? status.color.withValues(alpha: 0.2) : Colors.transparent,
         border: Border.all(
           color: isSelected ? status.color : Colors.white24,
           width: 1,
@@ -1343,7 +1343,7 @@ class _AppTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionHeader(title: 'Aplikasi'),
+          const _SectionHeader(title: 'Aplikasi'),
           _SettingCard(children: [
             _MenuRow(
               icon: Icons.dashboard_outlined,
@@ -1392,7 +1392,7 @@ class _SettingsTabState extends State<_SettingsTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionHeader(title: 'Aplikasi'),
+          const _SectionHeader(title: 'Aplikasi'),
           _SettingCard(children: [
             _SwitchRow(
               icon: Icons.notifications_outlined,
@@ -1424,7 +1424,7 @@ class _SettingsTabState extends State<_SettingsTab> {
           ]),
 
           const SizedBox(height: 16),
-          _SectionHeader(title: 'Akun'),
+          const _SectionHeader(title: 'Akun'),
           _SettingCard(children: [
             _MenuRow(
               icon: Icons.lock_outline,
@@ -1444,7 +1444,7 @@ class _SettingsTabState extends State<_SettingsTab> {
           ]),
 
           const SizedBox(height: 16),
-          _SectionHeader(title: 'Sesi'),
+          const _SectionHeader(title: 'Sesi'),
           _SettingCard(children: [
             _MenuRow(
               icon: Icons.logout,
@@ -1582,7 +1582,7 @@ class _SettingCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))],
         ),
         child: Column(children: children),
       );
@@ -1608,7 +1608,7 @@ class _SwitchRow extends StatelessWidget {
           children: [
             Container(
               width: 36, height: 36,
-              decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
               child: Icon(icon, color: iconColor, size: 20),
             ),
             const SizedBox(width: 12),
@@ -1624,7 +1624,7 @@ class _SwitchRow extends StatelessWidget {
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: const Color(0xFF1565C0),
+              activeThumbColor: const Color(0xFF1565C0),
             ),
           ],
         ),
@@ -1653,7 +1653,7 @@ class _DropdownRow extends StatelessWidget {
           children: [
             Container(
               width: 36, height: 36,
-              decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
               child: Icon(icon, color: iconColor, size: 20),
             ),
             const SizedBox(width: 12),
@@ -1702,7 +1702,7 @@ class _MenuRow extends StatelessWidget {
             children: [
               Container(
                 width: 36, height: 36,
-                decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                 child: Icon(icon, color: iconColor, size: 20),
               ),
               const SizedBox(width: 12),

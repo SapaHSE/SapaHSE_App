@@ -31,7 +31,7 @@ const List<String> newsCategories = [
 ];
 
 final List<NewsArticle> dummyNews = [
-  NewsArticle(
+  const NewsArticle(
     id: '1',
     title:
         'Target Produksi Dipangkas, Komisi XII DPR RI Usulkan Porsi DMO Batu Bara Naik Menjadi 30%',
@@ -46,7 +46,7 @@ final List<NewsArticle> dummyNews = [
         'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=800&q=80',
     isFeatured: true,
   ),
-  NewsArticle(
+  const NewsArticle(
     id: '2',
     title:
         'Dunia Siaga Energi, Harga Batu Bara Menguat Imbas Perang Timur Tengah',
@@ -61,7 +61,7 @@ final List<NewsArticle> dummyNews = [
         'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80',
     isFeatured: true,
   ),
-  NewsArticle(
+  const NewsArticle(
     id: '3',
     title: 'BBE Raih Zero Accident Selama 365 Hari Berturut-turut',
     excerpt:
@@ -75,7 +75,7 @@ final List<NewsArticle> dummyNews = [
         'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80',
     isFeatured: true,
   ),
-  NewsArticle(
+  const NewsArticle(
     id: '4',
     title: 'Pelatihan APAR Wajib Untuk Seluruh Karyawan BBE Periode Q1 2026',
     excerpt:
@@ -89,7 +89,7 @@ final List<NewsArticle> dummyNews = [
         'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
     isFeatured: false,
   ),
-  NewsArticle(
+  const NewsArticle(
     id: '5',
     title: 'Update SOP Pengelolaan Limbah B3 Sesuai Regulasi Terbaru KLHK',
     excerpt:
@@ -103,7 +103,7 @@ final List<NewsArticle> dummyNews = [
         'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800&q=80',
     isFeatured: false,
   ),
-  NewsArticle(
+  const NewsArticle(
     id: '6',
     title: 'Jadwal Inspeksi Rutin Area Tambang Maret 2026',
     excerpt:
@@ -117,7 +117,7 @@ final List<NewsArticle> dummyNews = [
         'https://images.unsplash.com/photo-1567789884554-0b844b597180?w=800&q=80',
     isFeatured: false,
   ),
-  NewsArticle(
+  const NewsArticle(
     id: '7',
     title: 'BBE Terima Penghargaan Proper Emas dari KLHK 2026',
     excerpt:
@@ -131,7 +131,7 @@ final List<NewsArticle> dummyNews = [
         'https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?w=800&q=80',
     isFeatured: false,
   ),
-  NewsArticle(
+  const NewsArticle(
     id: '8',
     title: 'Sosialisasi Prosedur Evakuasi Darurat Seluruh Area Operasional',
     excerpt:

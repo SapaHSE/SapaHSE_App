@@ -6,6 +6,7 @@ import '../data/dummy_data.dart';
 import '../data/news_data.dart';
 import 'report_detail_screen.dart';
 import 'news_detail_screen.dart';
+import '../data/report_store.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,6 +27,10 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedType = 'All Report';
   bool _showOpenInProgress = false;
 
+  int _displayedCount = 5;
+  bool _isLoadingMore = false;
+  final ScrollController _scrollController = ScrollController();
+
   // ── Featured News Carousel ────────────────────────────────────────────────
   List<NewsArticle> get _carouselItems =>
       dummyNews.where((a) => a.isFeatured).toList();
@@ -41,6 +46,27 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _startCarousel();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final filteredCount = _getFilteredReports(ReportStore.instance.reports.value).length;
+      if (!_isLoadingMore && _displayedCount < filteredCount) {
+        setState(() {
+          _isLoadingMore = true;
+        });
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          if (mounted) {
+            setState(() {
+              _displayedCount += 5;
+              _isLoadingMore = false;
+            });
+          }
+        });
+      }
+    }
   }
 
   void _startCarousel() {
@@ -61,15 +87,16 @@ class _HomeScreenState extends State<HomeScreen> {
     _carouselTimer?.cancel();
     _pageController.dispose();
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  List<Report> get _filteredReports {
-    return dummyReports.where((r) {
+  List<Report> _getFilteredReports(List<Report> allReports) {
+    return allReports.where((r) {
       final matchType =
           _selectedType == 'All Report' || r.type.label == _selectedType;
-      final matchStatus = !_showOpenInProgress ||
-          r.status == ReportStatus.closed;
+      final matchStatus =
+          !_showOpenInProgress || r.status == ReportStatus.closed;
       final matchSearch = _searchQuery.isEmpty ||
           r.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           r.description.toLowerCase().contains(_searchQuery.toLowerCase());
@@ -92,14 +119,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   if (!_isSearching) ...[
                     Container(
-                      width: 36, height: 36,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
                         color: const Color(0xFF1A56C4),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.asset('assets/logo.png', fit: BoxFit.contain),
+                        child:
+                            Image.asset('assets/logo.png', fit: BoxFit.contain),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -127,18 +156,23 @@ class _HomeScreenState extends State<HomeScreen> {
                           hintStyle: TextStyle(color: Colors.grey),
                         ),
                         style: const TextStyle(fontSize: 16),
-                        onChanged: (v) => setState(() => _searchQuery = v),
+                        onChanged: (v) => setState(() {
+                            _searchQuery = v;
+                            _displayedCount = 5;
+                        }),
                       ),
                     ),
                   ],
                   IconButton(
-                    icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.grey),
+                    icon: Icon(_isSearching ? Icons.close : Icons.search,
+                        color: Colors.grey),
                     onPressed: () {
                       setState(() {
                         _isSearching = !_isSearching;
                         if (!_isSearching) {
                           _searchController.clear();
                           _searchQuery = '';
+                          _displayedCount = 5;
                         }
                       });
                     },
@@ -146,76 +180,103 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            
+
             // ── Scrollable Body ─────────────────────────────────────────────
             Expanded(
               child: CustomScrollView(
+                controller: _scrollController,
                 slivers: [
+                  // ── Carousel ───────────────────────────────────────────────────
+                  SliverToBoxAdapter(child: _buildCarousel()),
 
-            // ── Carousel ───────────────────────────────────────────────────
-            SliverToBoxAdapter(child: _buildCarousel()),
+                  // ── Filters ────────────────────────────────────────────────────
+                  SliverToBoxAdapter(child: _buildFilters()),
 
-            // ── Filters ────────────────────────────────────────────────────
-            SliverToBoxAdapter(child: _buildFilters()),
-
-            // ── Recent Report header ───────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Row(
-                  children: [
-                    const Text('Report List',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
-                    const Spacer(),
-                    Text(
-                      '${_filteredReports.length} laporan',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Report list ────────────────────────────────────────────────
-            _filteredReports.isEmpty
-                ? const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Padding(
-                      padding: EdgeInsets.all(40),
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.inbox_outlined,
-                                size: 48, color: Colors.grey),
-                            SizedBox(height: 8),
-                            Text('Tidak ada laporan ditemukan',
-                                style: TextStyle(color: Colors.grey)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  )
-                : SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _ReportCard(
-                        report: _filteredReports[index],
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ReportDetailScreen(
-                                report: _filteredReports[index]),
+                  // ── Report list section with state sync ─────────────────────────────
+                  ValueListenableBuilder<List<Report>>(
+                    valueListenable: ReportStore.instance.reports,
+                    builder: (context, allReports, _) {
+                      final filtered = _getFilteredReports(allReports);
+                      return SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                          child: Row(
+                            children: [
+                              const Text('Report List',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold, fontSize: 16)),
+                              const Spacer(),
+                              Text(
+                                '${filtered.length} laporan',
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.grey),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      childCount: _filteredReports.length,
-                    ),
+                      );
+                    },
                   ),
-            const SliverToBoxAdapter(child: SizedBox(height: 80)),
-          ],
-        ),
-      ),
+
+                  ValueListenableBuilder<List<Report>>(
+                    valueListenable: ReportStore.instance.reports,
+                    builder: (context, allReports, _) {
+                      final filtered = _getFilteredReports(allReports);
+                      final displayList = filtered.take(_displayedCount).toList();
+
+                      if (filtered.isEmpty) {
+                        return const SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: Padding(
+                            padding: EdgeInsets.all(40),
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.inbox_outlined,
+                                      size: 48, color: Colors.grey),
+                                  SizedBox(height: 8),
+                                  Text('Tidak ada laporan ditemukan',
+                                      style: TextStyle(color: Colors.grey)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+
+                      return SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            if (index == displayList.length) {
+                              return const Padding(
+                                padding: EdgeInsets.all(20),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                      color: Color(0xFF1A56C4)),
+                                ),
+                              );
+                            }
+                            return _ReportCard(
+                              report: displayList[index],
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ReportDetailScreen(
+                                      report: displayList[index]),
+                                ),
+                              ),
+                            );
+                          },
+                          childCount: displayList.length + (_isLoadingMore ? 1 : 0),
+                        ),
+                      );
+                    },
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -245,59 +306,68 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
                 child: Stack(
                   fit: StackFit.expand,
-                children: [
-                  CachedNetworkImage(
-                    imageUrl: item.imageUrl,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(
-                      color: const Color(0xFF37474F),
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                            color: Colors.white38, strokeWidth: 2),
+                  children: [
+                    CachedNetworkImage(
+                      imageUrl: item.imageUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(
+                        color: const Color(0xFF37474F),
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                              color: Colors.white38, strokeWidth: 2),
+                        ),
+                      ),
+                      errorWidget: (_, __, ___) => Container(
+                        color: const Color(0xFF37474F),
+                        child: const Icon(Icons.image,
+                            color: Colors.white24, size: 60),
                       ),
                     ),
-                    errorWidget: (_, __, ___) => Container(
-                      color: const Color(0xFF37474F),
-                      child: const Icon(Icons.image,
-                          color: Colors.white24, size: 60),
-                    ),
-                  ),
-                  // Gradient overlay
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black.withOpacity(0.88)],
-                        stops: const [0.3, 1.0],
+                    // Gradient overlay
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.88)
+                          ],
+                          stops: const [0.3, 1.0],
+                        ),
                       ),
                     ),
-                  ),
-                  // Title
-                  Positioned(
-                    left: 16, right: 52, bottom: 38,
-                    child: Text(
-                      item.title,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        height: 1.35,
-                        shadows: [Shadow(color: Colors.black54, blurRadius: 6)],
+                    // Title
+                    Positioned(
+                      left: 16,
+                      right: 52,
+                      bottom: 38,
+                      child: Text(
+                        item.title,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          height: 1.35,
+                          shadows: [
+                            Shadow(color: Colors.black54, blurRadius: 6)
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
               );
             },
           ),
 
           // Left arrow
           Positioned(
-            left: 8, top: 0, bottom: 0,
+            left: 8,
+            top: 0,
+            bottom: 0,
             child: Center(
               child: GestureDetector(
                 onTap: () {
@@ -309,7 +379,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       curve: Curves.easeInOut);
                 },
                 child: Container(
-                  width: 32, height: 32,
+                  width: 32,
+                  height: 32,
                   decoration: const BoxDecoration(
                       color: Colors.black38, shape: BoxShape.circle),
                   child: const Icon(Icons.chevron_left,
@@ -321,7 +392,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // Right arrow
           Positioned(
-            right: 8, top: 0, bottom: 0,
+            right: 8,
+            top: 0,
+            bottom: 0,
             child: Center(
               child: GestureDetector(
                 onTap: () {
@@ -331,7 +404,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       curve: Curves.easeInOut);
                 },
                 child: Container(
-                  width: 32, height: 32,
+                  width: 32,
+                  height: 32,
                   decoration: const BoxDecoration(
                       color: Colors.black38, shape: BoxShape.circle),
                   child: const Icon(Icons.chevron_right,
@@ -343,7 +417,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // Dots + Indicator (News Style)
           Positioned(
-            left: 16, right: 16, bottom: 12,
+            left: 16,
+            right: 16,
+            bottom: 12,
             child: Row(
               children: [
                 Row(
@@ -355,8 +431,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 7,
                       margin: const EdgeInsets.only(right: 6),
                       decoration: BoxDecoration(
-                        color:
-                            i == _currentPage ? const Color(0xFF1A56C4) : Colors.white54,
+                        color: i == _currentPage
+                            ? const Color(0xFF1A56C4)
+                            : Colors.white54,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -388,7 +465,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 letterSpacing: 0.6),
           ),
           const SizedBox(height: 8),
-
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
@@ -404,17 +480,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     .map((t) => DropdownMenuItem(value: t, child: Text(t)))
                     .toList(),
                 onChanged: (val) {
-                  if (val != null) setState(() => _selectedType = val);
+                  if (val != null) {
+                    setState(() {
+                      _selectedType = val;
+                      _displayedCount = 5;
+                    });
+                  }
                 },
               ),
             ),
           ),
-
           const SizedBox(height: 12),
-
           GestureDetector(
             onTap: () =>
-                setState(() => _showOpenInProgress = !_showOpenInProgress),
+                setState(() {
+                  _showOpenInProgress = !_showOpenInProgress;
+                  _displayedCount = 5;
+                }),
             behavior: HitTestBehavior.opaque,
             child: Row(
               children: [
@@ -445,21 +527,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 if (_showOpenInProgress) ...[
                   const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A56C4).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
+                    ValueListenableBuilder<List<Report>>(
+                      valueListenable: ReportStore.instance.reports,
+                      builder: (context, reports, _) {
+                        final count = _getFilteredReports(reports).length;
+                        return Container(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1A56C4).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$count',
+                            style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF1A56C4),
+                                fontWeight: FontWeight.bold),
+                          ),
+                        );
+                      },
                     ),
-                    child: Text(
-                      '${_filteredReports.length}',
-                      style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF1A56C4),
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
                 ],
               ],
             ),
@@ -479,31 +567,41 @@ class _ReportCard extends StatelessWidget {
 
   Color get _severityColor {
     switch (report.severity) {
-      case ReportSeverity.low:    return const Color(0xFF4CAF50);
-      case ReportSeverity.medium: return const Color(0xFFFF9800);
-      case ReportSeverity.high:   return const Color(0xFFF44336);
+      case ReportSeverity.low:
+        return const Color(0xFF4CAF50);
+      case ReportSeverity.medium:
+        return const Color(0xFFFF9800);
+      case ReportSeverity.high:
+        return const Color(0xFFF44336);
     }
   }
 
   Color get _statusColor {
     switch (report.status) {
-      case ReportStatus.open:       return const Color(0xFF2196F3); // Biru
-      case ReportStatus.inProgress: return const Color(0xFF9C27B0); // Ungu
-      case ReportStatus.closed:     return const Color(0xFF757575); // Abu
+      case ReportStatus.open:
+        return const Color(0xFF2196F3); // Biru
+      case ReportStatus.inProgress:
+        return const Color(0xFF9C27B0); // Ungu
+      case ReportStatus.closed:
+        return const Color(0xFF757575); // Abu
     }
   }
 
   Color get _typeColor {
     switch (report.type) {
-      case ReportType.hazard:     return const Color(0xFFF44336);
-      case ReportType.inspection: return const Color(0xFF1565C0);
+      case ReportType.hazard:
+        return const Color(0xFFF44336);
+      case ReportType.inspection:
+        return const Color(0xFF1565C0);
     }
   }
 
   IconData get _typeIcon {
     switch (report.type) {
-      case ReportType.hazard:     return Icons.warning_amber_rounded;
-      case ReportType.inspection: return Icons.search;
+      case ReportType.hazard:
+        return Icons.warning_amber_rounded;
+      case ReportType.inspection:
+        return Icons.search;
     }
   }
 
@@ -518,7 +616,7 @@ class _ReportCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 6,
                 offset: const Offset(0, 2)),
           ],
@@ -567,7 +665,7 @@ class _ReportCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: _typeColor.withOpacity(0.1),
+                            color: _typeColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -661,3 +759,4 @@ class _ReportCard extends StatelessWidget {
     );
   }
 }
+

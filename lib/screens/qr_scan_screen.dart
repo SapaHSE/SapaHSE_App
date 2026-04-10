@@ -132,12 +132,12 @@ class _QrScanScreenState extends State<QrScanScreen>
 
           // ── Scan instruction ───────────────────────────────────────────
           if (!_hasScanned)
-            Positioned(
+            const Positioned(
               bottom: 180,
               left: 0,
               right: 0,
               child: Column(
-                children: const [
+                children: [
                   Icon(Icons.qr_code_scanner, color: Colors.white54, size: 28),
                   SizedBox(height: 10),
                   Text(
@@ -304,7 +304,7 @@ class _ScanResultSheet extends StatelessWidget {
 class _ScannerOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.black.withOpacity(0.55);
+    final paint = Paint()..color = Colors.black.withValues(alpha: 0.55);
     const cutoutSize = 260.0;
     final cutoutLeft = (size.width - cutoutSize) / 2;
     final cutoutTop = (size.height - cutoutSize) / 2;

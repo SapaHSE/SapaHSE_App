@@ -142,7 +142,7 @@ class _CreateInspectionScreenState extends State<CreateInspectionScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border:
-                      Border.all(color: _blue.withOpacity(0.3), width: 1.5),
+                      Border.all(color: _blue.withValues(alpha: 0.3), width: 1.5),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -293,7 +293,7 @@ class _CreateInspectionScreenState extends State<CreateInspectionScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _blue,
                     foregroundColor: Colors.white,
-                    disabledBackgroundColor: _blue.withOpacity(0.5),
+                    disabledBackgroundColor: _blue.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
@@ -337,7 +337,7 @@ class _CreateInspectionScreenState extends State<CreateInspectionScreen> {
               margin: const EdgeInsets.only(right: 6),
               padding: const EdgeInsets.symmetric(vertical: 11),
               decoration: BoxDecoration(
-                color: isSelected ? color : color.withOpacity(0.08),
+                color: isSelected ? color : color.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: color, width: isSelected ? 2 : 1),
               ),
@@ -366,7 +366,7 @@ class _CreateInspectionScreenState extends State<CreateInspectionScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 4,
               offset: const Offset(0, 2))
         ],
@@ -452,3 +452,4 @@ class _CreateInspectionScreenState extends State<CreateInspectionScreen> {
     );
   }
 }
+

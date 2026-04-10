@@ -122,7 +122,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                           horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? color.withOpacity(0.08)
+                            ? color.withValues(alpha: 0.08)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
@@ -180,12 +180,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                           decoration: BoxDecoration(
                             color: isSubSelected
                                 ? color
-                                : color.withOpacity(0.07),
+                                : color.withValues(alpha: 0.07),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: isSubSelected
                                   ? color
-                                  : color.withOpacity(0.3),
+                                  : color.withValues(alpha: 0.3),
                               width: 1.5,
                             ),
                           ),
@@ -274,9 +274,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                               ),
                             ),
                           )
-                        : Column(
+                        : const Column(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
+                            children: [
                               Icon(Icons.add_a_photo_outlined, color: Colors.grey, size: 24),
                               SizedBox(height: 8),
                               Text('Tap untuk unggah foto', style: TextStyle(color: Colors.grey, fontSize: 11)),
@@ -447,7 +447,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          Colors.black.withOpacity(0.65),
+                          Colors.black.withValues(alpha: 0.65),
                           Colors.transparent
                         ],
                       ),
@@ -601,7 +601,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: isCurrentGroup ? statusColor : statusColor.withOpacity(0.1),
+                color: isCurrentGroup ? statusColor : statusColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -620,7 +620,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             Expanded(
                 child: Container(
                     height: 1,
-                    color: statusColor.withOpacity(0.2))),
+                    color: statusColor.withValues(alpha: 0.2))),
           ]),
         ),
       );
@@ -704,7 +704,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 boxShadow: isCur
                     ? [
                         BoxShadow(
-                            color: color.withOpacity(0.35),
+                            color: color.withValues(alpha: 0.35),
                             blurRadius: 8,
                             spreadRadius: 1)
                       ]
@@ -741,7 +741,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 6,
                 offset: const Offset(0, 2))
           ],
@@ -799,7 +799,7 @@ class _TimelineItem extends StatelessWidget {
                   height: 36,
                   decoration: BoxDecoration(
                     color:
-                        isCurrent ? statusColor : statusColor.withOpacity(0.12),
+                        isCurrent ? statusColor : statusColor.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: statusColor,
@@ -808,7 +808,7 @@ class _TimelineItem extends StatelessWidget {
                     boxShadow: isCurrent
                         ? [
                             BoxShadow(
-                                color: statusColor.withOpacity(0.3),
+                                color: statusColor.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 spreadRadius: 1)
                           ]
@@ -850,7 +850,7 @@ class _TimelineItem extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isCurrent
                             ? statusColor
-                            : statusColor.withOpacity(0.1),
+                            : statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -871,7 +871,7 @@ class _TimelineItem extends StatelessWidget {
                           color: const Color(0xFFEFF4FF),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color: const Color(0xFF1A56C4).withOpacity(0.3)),
+                              color: const Color(0xFF1A56C4).withValues(alpha: 0.3)),
                         ),
                         child: const Text('TERKINI',
                             style: TextStyle(
@@ -927,14 +927,42 @@ class _TimelineItem extends StatelessWidget {
                   // Photo
                   if (event.photoPath != null) ...[
                     const SizedBox(height: 8),
-                    Container(
-                      height: 140,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        image: DecorationImage(
-                          image: FileImage(File(event.photoPath!)),
-                          fit: BoxFit.cover,
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Scaffold(
+                              backgroundColor: Colors.black,
+                              appBar: AppBar(
+                                backgroundColor: Colors.transparent,
+                                iconTheme: const IconThemeData(color: Colors.white),
+                                elevation: 0,
+                              ),
+                              extendBodyBehindAppBar: true,
+                              body: Center(
+                                child: InteractiveViewer(
+                                  minScale: 1.0,
+                                  maxScale: 4.0,
+                                  child: Image.file(
+                                    File(event.photoPath!),
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        height: 140,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          image: DecorationImage(
+                            image: FileImage(File(event.photoPath!)),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
@@ -977,3 +1005,4 @@ class _DetailRow extends StatelessWidget {
         ],
       );
 }
+

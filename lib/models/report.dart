@@ -9,6 +9,9 @@ enum HazardCategory {
   nearMiss,
   propertyDamage,
   environmentalHazard,
+  spill,
+  slipTripFall,
+  fireSafety,
   // Inspection types
   routineInspection,
   electricalInspection,
@@ -78,6 +81,9 @@ extension HazardCategoryLabel on HazardCategory {
       case HazardCategory.nearMiss:              return 'Near Miss';
       case HazardCategory.propertyDamage:        return 'Property Damage';
       case HazardCategory.environmentalHazard:   return 'Environmental Hazard';
+      case HazardCategory.spill:                 return 'Spill';
+      case HazardCategory.slipTripFall:          return 'Slip, Trip, Fall';
+      case HazardCategory.fireSafety:            return 'Fire Safety';
       case HazardCategory.routineInspection:     return 'Routine Inspection';
       case HazardCategory.electricalInspection:  return 'Electrical Inspection';
       case HazardCategory.equipmentInspection:   return 'Equipment Inspection';

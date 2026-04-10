@@ -313,7 +313,7 @@ class _NewsScreenState extends State<NewsScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6, offset: const Offset(0, 2)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 6, offset: const Offset(0, 2)),
           ],
         ),
         child: ClipRRect(
@@ -376,7 +376,7 @@ class _NewsScreenState extends State<NewsScreen> {
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
                           colors: [
-                            Colors.black.withOpacity(0.88),
+                            Colors.black.withValues(alpha: 0.88),
                             Colors.transparent
                           ],
                         ),
@@ -480,7 +480,7 @@ class _CarouselItem extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black.withOpacity(0.88)],
+                colors: [Colors.transparent, Colors.black.withValues(alpha: 0.88)],
                 stops: const [0.3, 1.0],
               ),
             ),

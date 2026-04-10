@@ -99,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen>
                       borderRadius: BorderRadius.circular(32),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF1A56C4).withOpacity(0.15),
+                          color: const Color(0xFF1A56C4).withValues(alpha: 0.15),
                           blurRadius: 30,
                           offset: const Offset(0, 10),
                         ),
@@ -121,9 +121,9 @@ class _SplashScreenState extends State<SplashScreen>
               // ── App name ────────────────────────────────────────────
               FadeTransition(
                 opacity: _textFadeAnim,
-                child: Column(
+                child: const Column(
                   children: [
-                    const Text(
+                    Text(
                       'SapaHse',
                       style: TextStyle(
                         color: Color(0xFF1A56C4),
@@ -132,8 +132,8 @@ class _SplashScreenState extends State<SplashScreen>
                         letterSpacing: 2,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    const Text(
+                    SizedBox(height: 6),
+                    Text(
                       'PT. Bukit Baiduri Energi',
                       style: TextStyle(
                         color: Colors.grey,

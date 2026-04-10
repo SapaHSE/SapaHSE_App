@@ -408,7 +408,7 @@ class _InboxScreenState extends State<InboxScreen> {
                         Container(
                           width: 44, height: 44,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1A56C4).withOpacity(0.1),
+                            color: const Color(0xFF1A56C4).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(Icons.campaign,
@@ -572,7 +572,7 @@ class _SubFilterChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? blue.withOpacity(0.1) : Colors.grey.shade100,
+          color: isActive ? blue.withValues(alpha: 0.1) : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isActive ? blue : Colors.transparent,
@@ -647,10 +647,10 @@ class _InboxCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: isRead
               ? null
-              : Border.all(color: const Color(0xFF1A56C4).withOpacity(0.3)),
+              : Border.all(color: const Color(0xFF1A56C4).withValues(alpha: 0.3)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -765,10 +765,10 @@ class _AnnouncementCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: isRead
               ? null
-              : Border.all(color: const Color(0xFF1A56C4).withOpacity(0.3)),
+              : Border.all(color: const Color(0xFF1A56C4).withValues(alpha: 0.3)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -796,7 +796,7 @@ class _AnnouncementCard extends StatelessWidget {
                   Container(
                     width: 42, height: 42,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A56C4).withOpacity(0.1),
+                      color: const Color(0xFF1A56C4).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.campaign,
