@@ -6,6 +6,7 @@ class SapaHseHeader extends StatelessWidget {
   final String searchHint;
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback onSearchToggle;
+  final bool showSearch;
 
   const SapaHseHeader({
     super.key,
@@ -14,6 +15,7 @@ class SapaHseHeader extends StatelessWidget {
     this.searchHint = 'Cari...',
     this.onSearchChanged,
     required this.onSearchToggle,
+    this.showSearch = true,
   });
 
   @override
@@ -71,13 +73,14 @@ class SapaHseHeader extends StatelessWidget {
               ),
             ),
           ],
-          IconButton(
-            icon: Icon(
-              isSearching ? Icons.close : Icons.search,
-              color: Colors.grey,
+          if (showSearch)
+            IconButton(
+              icon: Icon(
+                isSearching ? Icons.close : Icons.search,
+                color: Colors.grey,
+              ),
+              onPressed: onSearchToggle,
             ),
-            onPressed: onSearchToggle,
-          ),
         ],
       ),
     );

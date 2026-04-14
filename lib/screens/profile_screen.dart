@@ -58,6 +58,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     isSearching: _isSearching,
                     searchController: _searchController,
                     searchHint: 'Cari di profil...',
+                    showSearch: false,
                     onSearchToggle: () {
                       setState(() {
                         _isSearching = !_isSearching;
