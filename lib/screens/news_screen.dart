@@ -79,14 +79,14 @@ class _NewsScreenState extends State<NewsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
-      body: SafeArea(
+    return Material(
+      color: const Color(0xFFF2F2F2),
+      child: SafeArea(
         child: Column(
           children: [
             // ── AppBar ──────────────────────────────────────────────────
             Container(
-              color: Colors.white,
+              color: const Color(0xFFF8F8F8),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [

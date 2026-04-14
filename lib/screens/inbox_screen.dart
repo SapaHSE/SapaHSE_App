@@ -53,8 +53,6 @@ final List<Announcement> dummyAnnouncements = [
   ),
 ];
 
-// ── Inbox tab enums ───────────────────────────────────────────────────────────
-enum _MainTab { personal, announcement }
 enum _SubFilter { all, unread }
 
 class InboxScreen extends StatefulWidget {
@@ -64,13 +62,26 @@ class InboxScreen extends StatefulWidget {
   State<InboxScreen> createState() => _InboxScreenState();
 }
 
-class _InboxScreenState extends State<InboxScreen> {
-  _MainTab _activeMain = _MainTab.personal;
+class _InboxScreenState extends State<InboxScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _mainTabController;
   _SubFilter _activeFilter = _SubFilter.all;
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  final PageController _pageController = PageController();
+
+  @override
+  void initState() {
+    super.initState();
+    _mainTabController = TabController(length: 2, vsync: this);
+    _mainTabController.addListener(() {
+      if (!_mainTabController.indexIsChanging) {
+        setState(() {
+          _activeFilter = _SubFilter.all; // Reset filter when switching tabs
+        });
+      }
+    });
+  }
 
   // Track read IDs (in-memory)
   final Set<String> _readReportIds = {};
@@ -121,14 +132,17 @@ class _InboxScreenState extends State<InboxScreen> {
   int get _unreadAnnouncementCount =>
       dummyAnnouncements.where((a) => !_readAnnouncementIds.contains(a.id)).length;
 
-  int get _activeUnreadCount => _activeMain == _MainTab.personal
-      ? _unreadReportCount
-      : _unreadAnnouncementCount;
+  int get _activeUnreadCount {
+    if (!mounted) return 0;
+    return _mainTabController.index == 0
+        ? _unreadReportCount
+        : _unreadAnnouncementCount;
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _pageController.dispose();
+    _mainTabController.dispose();
     super.dispose();
   }
 
@@ -183,131 +197,166 @@ class _InboxScreenState extends State<InboxScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF0F0F0),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () {},
-        ),
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Cari...',
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(color: Colors.grey),
-                ),
-                style: const TextStyle(fontSize: 16),
-                onChanged: (v) => setState(() => _searchQuery = v),
-              )
-            : const Text(
-                'Inbox',
-                style: TextStyle(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18),
+    return Material(
+      color: const Color(0xFFF5F5F5),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // ── Custom Header matching Profile design (Unified Container) ────
+            Container(
+              color: const Color(0xFFF8F8F8),
+              child: Column(
+                children: [
+                  Container(
+                    height: 56,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        if (!_isSearching) ...[
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1A56C4),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.asset('assets/logo.png', fit: BoxFit.contain),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('SapaHse',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Color(0xFF1A56C4))),
+                              Text('PT. Bukit Baiduri Energi',
+                                  style: TextStyle(fontSize: 10, color: Colors.grey)),
+                            ],
+                          ),
+                          const Spacer(),
+                        ] else ...[
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              autofocus: true,
+                              decoration: const InputDecoration(
+                                hintText: 'Cari...',
+                                border: InputBorder.none,
+                                hintStyle: TextStyle(color: Colors.grey),
+                              ),
+                              style: const TextStyle(fontSize: 16),
+                              onChanged: (v) =>
+                                  setState(() => _searchQuery = v),
+                            ),
+                          ),
+                        ],
+                        IconButton(
+                          icon: Icon(
+                            _isSearching ? Icons.close : Icons.search,
+                            color: Colors.black87,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isSearching = !_isSearching;
+                              if (!_isSearching) {
+                                _searchController.clear();
+                                _searchQuery = '';
+                              }
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  TabBar(
+                    controller: _mainTabController,
+                    labelColor: const Color(0xFF1565C0),
+                    unselectedLabelColor: Colors.black54,
+                    indicatorColor: const Color(0xFF1565C0),
+                    indicatorWeight: 2.5,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    labelStyle: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 14),
+                    unselectedLabelStyle: const TextStyle(
+                        fontWeight: FontWeight.normal, fontSize: 14),
+                    tabs: [
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Personal'),
+                            if (_unreadReportCount > 0) ...[
+                              const SizedBox(width: 6),
+                              _TabBadge(count: _unreadReportCount),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Announcement'),
+                            if (_unreadAnnouncementCount > 0) ...[
+                              const SizedBox(width: 6),
+                              _TabBadge(count: _unreadAnnouncementCount),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-        centerTitle: !_isSearching,
-        actions: [
-          IconButton(
-            icon: Icon(
-              _isSearching ? Icons.close : Icons.search,
-              color: Colors.black87,
             ),
-            onPressed: () {
-              setState(() {
-                _isSearching = !_isSearching;
-                if (!_isSearching) {
-                  _searchController.clear();
-                  _searchQuery = '';
-                }
-              });
-            },
-          ),
-        ],
-      ),
+            const Divider(height: 1),
 
-      body: Column(
-        children: [
-          // ── Main tab: Personal | Announcement ────────────────────────
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Row(
-              children: [
-                _MainTabItem(
-                  label: 'Personal',
-                  icon: Icons.person_outline,
-                  isActive: _activeMain == _MainTab.personal,
-                  badge: _unreadReportCount > 0 ? _unreadReportCount : null,
-                  onTap: () {
-                    _pageController.animateToPage(0, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-                  },
-                ),
-                const SizedBox(width: 4),
-                _MainTabItem(
-                  label: 'Announcement',
-                  icon: Icons.campaign_outlined,
-                  isActive: _activeMain == _MainTab.announcement,
-                  badge: _unreadAnnouncementCount > 0
-                      ? _unreadAnnouncementCount
-                      : null,
-                  onTap: () {
-                    _pageController.animateToPage(1, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          // ── Sub-filter: All | Unread ──────────────────────────────────
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _SubFilterChip(
-                    label: 'All',
-                    isActive: _activeFilter == _SubFilter.all,
-                    onTap: () => setState(() => _activeFilter = _SubFilter.all),
+            // ── Sub-filter: All | Unread (Keep UI consistent) ─────────────
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _SubFilterChip(
+                      label: 'All',
+                      isActive: _activeFilter == _SubFilter.all,
+                      onTap: () =>
+                          setState(() => _activeFilter = _SubFilter.all),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _SubFilterChip(
-                    label: 'Unread',
-                    isActive: _activeFilter == _SubFilter.unread,
-                    badge: _activeUnreadCount > 0 ? _activeUnreadCount : null,
-                    onTap: () => setState(() => _activeFilter = _SubFilter.unread),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _SubFilterChip(
+                      label: 'Unread',
+                      isActive: _activeFilter == _SubFilter.unread,
+                      badge: _activeUnreadCount > 0 ? _activeUnreadCount : null,
+                      onTap: () =>
+                          setState(() => _activeFilter = _SubFilter.unread),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-
-          // ── Content ──────────────────────────────────────────────────
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: (i) {
-                setState(() {
-                  _activeMain = i == 0 ? _MainTab.personal : _MainTab.announcement;
-                  _activeFilter = _SubFilter.all;
-                });
-              },
-              children: [
-                _buildListTab(false),
-                _buildListTab(true),
-              ],
+            // ── Content (TabBarView for smooth animations) ───────────────
+            Expanded(
+              child: TabBarView(
+                controller: _mainTabController,
+                children: [
+                  _buildListTab(false),
+                  _buildListTab(true),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -468,81 +517,25 @@ class _InboxScreenState extends State<InboxScreen> {
   }
 }
 
-// ── MAIN TAB ITEM (Personal | Announcement) ───────────────────────────────────
-class _MainTabItem extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isActive;
-  final int? badge;
-  final VoidCallback onTap;
-
-  const _MainTabItem({
-    required this.label,
-    required this.icon,
-    required this.isActive,
-    required this.onTap,
-    this.badge,
-  });
+// ── TAB BADGE Widget ─────────────────────────────────────────────────────────
+class _TabBadge extends StatelessWidget {
+  final int count;
+  const _TabBadge({required this.count});
 
   @override
   Widget build(BuildContext context) {
-    const blue = Color(0xFF1A56C4);
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon,
-                      size: 18,
-                      color: isActive ? blue : Colors.black38),
-                  const SizedBox(width: 6),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight:
-                          isActive ? FontWeight.bold : FontWeight.w400,
-                      color: isActive ? blue : Colors.black54,
-                    ),
-                  ),
-                  if (badge != null && badge! > 0) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: isActive ? blue : Colors.redAccent,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '$badge',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            // Active indicator
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              height: 2.5,
-              decoration: BoxDecoration(
-                color: isActive ? blue : Colors.transparent,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1565C0),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        '$count',
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
         ),
       ),
     );

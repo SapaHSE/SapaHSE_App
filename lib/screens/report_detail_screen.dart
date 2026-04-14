@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
@@ -81,275 +82,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return '${dt.day} ${m[dt.month - 1]} ${dt.year}';
   }
 
-  // ── Update status ──────────────────────────────────────────────────────────
-  void _showUpdateStatusDialog() {
-    ReportStatus? selectedStatus = _report.status;
-    ReportSubStatus? selectedSub = _report.subStatus;
-    final noteCtrl = TextEditingController();
-    File? attachedPhoto;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDs) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Update Status Laporan',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Pilih Status Utama ──────────────────────────────────
-                const Text('Status Utama',
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.grey)),
-                const SizedBox(height: 8),
-                ...ReportStatus.values.map((s) {
-                  final color = _statusColor(s);
-                  final isSelected = selectedStatus == s;
-                  return GestureDetector(
-                    onTap: () => setDs(() {
-                      selectedStatus = s;
-                      selectedSub = null; // reset sub saat status berubah
-                    }),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? color.withValues(alpha: 0.08)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isSelected ? color : Colors.grey.shade300,
-                          width: isSelected ? 2 : 1,
-                        ),
-                      ),
-                      child: Row(children: [
-                        Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                              color: color, shape: BoxShape.circle),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(s.label,
-                            style: TextStyle(
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              color: isSelected ? color : Colors.black87,
-                              fontSize: 14,
-                            )),
-                        const Spacer(),
-                        if (isSelected)
-                          Icon(Icons.check_circle, color: color, size: 18),
-                      ]),
-                    ),
-                  );
-                }),
-
-                // ── Pilih Sub-Status ───────────────────────────────────
-                if (selectedStatus != null) ...[
-                  const SizedBox(height: 12),
-                  const Divider(height: 1),
-                  const SizedBox(height: 12),
-                  Text('Sub-Status (${selectedStatus!.label})',
-                      style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.grey)),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: ReportSubStatusInfo.forStatus(selectedStatus!)
-                        .map((sub) {
-                      final color = _statusColor(selectedStatus!);
-                      final isSubSelected = selectedSub == sub;
-                      return GestureDetector(
-                        onTap: () => setDs(() => selectedSub = sub),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: isSubSelected
-                                ? color
-                                : color.withValues(alpha: 0.07),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isSubSelected
-                                  ? color
-                                  : color.withValues(alpha: 0.3),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Text(
-                            sub.label,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: isSubSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
-                              color: isSubSelected ? Colors.white : color,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-
-                const SizedBox(height: 14),
-                const Divider(height: 1),
-                const SizedBox(height: 12),
-                const Text('Catatan (opsional)',
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: noteCtrl,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    hintText: 'Tambahkan keterangan perubahan...',
-                    hintStyle:
-                        const TextStyle(fontSize: 12, color: Colors.grey),
-                    contentPadding: const EdgeInsets.all(10),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300)),
-                    enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300)),
-                    focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: _blue)),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                const Divider(height: 1),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Lampirkan Foto',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
-                    if (selectedSub == ReportSubStatus.reviewing)
-                      const Text('* Wajib', style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold)),
-                    if (selectedSub != ReportSubStatus.reviewing)
-                      const Text('(opsional)', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                GestureDetector(
-                  onTap: () async {
-                    final picker = ImagePicker();
-                    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-                    if (picked != null) {
-                      setDs(() => attachedPhoto = File(picked.path));
-                    }
-                  },
-                  child: Container(
-                    height: 100,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8F8F8),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: attachedPhoto != null
-                        ? Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              image: DecorationImage(
-                                image: FileImage(attachedPhoto!),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          )
-                        : const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_a_photo_outlined, color: Colors.grey, size: 24),
-                              SizedBox(height: 8),
-                              Text('Tap untuk unggah foto', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                            ],
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Batal',
-                    style: TextStyle(color: Colors.grey))),
-            ElevatedButton(
-              onPressed: () {
-                if (selectedStatus == null) return;
-                
-                if (selectedSub == ReportSubStatus.reviewing && attachedPhoto == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: const Text('Foto bukti wajib dilampirkan untuk tahap Reviewing!'),
-                    backgroundColor: Colors.red,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ));
-                  return;
-                }
-
-                final note = noteCtrl.text.trim().isEmpty
-                    ? null
-                    : noteCtrl.text.trim();
-                final updated = ReportStore.instance.updateStatus(
-                  _report.id,
-                  selectedStatus!,
-                  newSubStatus: selectedSub,
-                  actor: 'Noor Lintang Bhaskara',
-                  note: note,
-                  photoPath: attachedPhoto?.path,
-                );
-                setState(() => _report = updated);
-                Navigator.pop(ctx);
-                final label = selectedSub != null
-                    ? '${selectedStatus!.label} · ${selectedSub!.label}'
-                    : selectedStatus!.label;
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Row(children: [
-                    const Icon(Icons.check_circle,
-                        color: Colors.white, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                        child: Text('Status diubah ke "$label"')),
-                  ]),
-                  backgroundColor: _statusColor(selectedStatus!),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  margin: const EdgeInsets.all(16),
-                ));
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _blue,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              child: const Text('Simpan'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // ── Update Status logic replaced by UpdateStatusPage ───────────────────────
 
   // ── Image Preview ──────────────────────────────────────────────────────────
   void _showImagePreview(BuildContext context) {
@@ -556,7 +289,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _showUpdateStatusDialog,
+                  onPressed: () async {
+                    final result = await Navigator.push<Report>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => UpdateStatusPage(report: _report),
+                      ),
+                    );
+                    if (result != null) {
+                      setState(() => _report = result);
+                    }
+                  },
                   icon: const Icon(Icons.edit_outlined, size: 18),
                   label: const Text('Update Status'),
                   style: ElevatedButton.styleFrom(
@@ -944,10 +687,15 @@ class _TimelineItem extends StatelessWidget {
                                 child: InteractiveViewer(
                                   minScale: 1.0,
                                   maxScale: 4.0,
-                                  child: Image.file(
-                                    File(event.photoPath!),
-                                    fit: BoxFit.contain,
-                                  ),
+                                  child: kIsWeb
+                                      ? Image.network(
+                                          event.photoPath!,
+                                          fit: BoxFit.contain,
+                                        )
+                                      : Image.file(
+                                          File(event.photoPath!),
+                                          fit: BoxFit.contain,
+                                        ),
                                 ),
                               ),
                             ),
@@ -1006,3 +754,316 @@ class _DetailRow extends StatelessWidget {
       );
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UPDATE STATUS PAGE (FULLSCREEN)
+// ══════════════════════════════════════════════════════════════════════════════
+class UpdateStatusPage extends StatefulWidget {
+  final Report report;
+  const UpdateStatusPage({super.key, required this.report});
+
+  @override
+  State<UpdateStatusPage> createState() => _UpdateStatusPageState();
+}
+
+class _UpdateStatusPageState extends State<UpdateStatusPage> {
+  late ReportStatus _selectedStatus;
+  ReportSubStatus? _selectedSub;
+  final _noteCtrl = TextEditingController();
+  XFile? _attachedPhoto;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedStatus = widget.report.status;
+    _selectedSub = widget.report.subStatus;
+  }
+
+  @override
+  void dispose() {
+    _noteCtrl.dispose();
+    super.dispose();
+  }
+
+  // Sequential logic: Open -> InProgress -> Closed
+  List<ReportStatus> get _allowedStatuses {
+    switch (widget.report.status) {
+      case ReportStatus.open:
+        return [ReportStatus.open, ReportStatus.inProgress];
+      case ReportStatus.inProgress:
+        return [ReportStatus.inProgress, ReportStatus.closed];
+      case ReportStatus.closed:
+        return [ReportStatus.closed];
+    }
+  }
+
+  Color _statusColor(ReportStatus s) => switch (s) {
+        ReportStatus.open => const Color(0xFF2196F3),
+        ReportStatus.inProgress => const Color(0xFF9C27B0),
+        ReportStatus.closed => const Color(0xFF757575),
+      };
+
+  Future<void> _pickPhoto(ImageSource source) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, imageQuality: 70);
+    if (picked != null) {
+      setState(() => _attachedPhoto = picked);
+    }
+  }
+
+  void _showPhotoOptions() {
+    if (kIsWeb) {
+      _pickPhoto(ImageSource.gallery);
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Pilih Sumber Foto',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Color(0xFF1A56C4)),
+              title: const Text('Kamera'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickPhoto(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Color(0xFF1A56C4)),
+              title: const Text('Galeri'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickPhoto(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleSave() async {
+    if (_selectedSub == ReportSubStatus.reviewing && _attachedPhoto == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Foto bukti wajib dilampirkan untuk tahap Reviewing!'),
+        backgroundColor: Colors.red,
+      ));
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    // Simulate network
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    final updated = ReportStore.instance.updateStatus(
+      widget.report.id,
+      _selectedStatus,
+      newSubStatus: _selectedSub,
+      actor: 'Noor Lintang Bhaskara',
+      note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+      photoPath: _attachedPhoto?.path,
+    );
+
+    if (mounted) {
+      Navigator.pop(context, updated);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Status berhasil diperbarui ke ${_selectedStatus.label}'),
+        backgroundColor: _statusColor(_selectedStatus),
+      ));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text('Update Status Laporan',
+            style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16)),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Status Selection ──────────────────────────────────────────
+            const _Label('Status Utama (Berurutan)'),
+            const SizedBox(height: 8),
+            ..._allowedStatuses.map((s) {
+              final isSelected = _selectedStatus == s;
+              final color = _statusColor(s);
+              return GestureDetector(
+                onTap: () => setState(() {
+                  _selectedStatus = s;
+                  _selectedSub = null;
+                }),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: isSelected ? color : Colors.grey.shade300, width: isSelected ? 2 : 1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_off, color: color),
+                      const SizedBox(width: 12),
+                      Text(s.label, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 15)),
+                      const Spacer(),
+                      if (isSelected) Icon(Icons.check_circle, color: color, size: 20),
+                    ],
+                  ),
+                ),
+              );
+            }),
+
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+
+            // ── Sub Status List (Vertical) ───────────────────────────────
+            const _Label('Sub-Status'),
+            const SizedBox(height: 8),
+            Column(
+              children: ReportSubStatusInfo.forStatus(_selectedStatus).map((sub) {
+                final isSubSelected = _selectedSub == sub;
+                final color = _statusColor(_selectedStatus);
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedSub = sub),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isSubSelected ? color.withValues(alpha: 0.1) : Colors.white,
+                      border: Border.all(color: isSubSelected ? color : Colors.grey.shade200),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(sub.label, style: TextStyle(
+                          color: isSubSelected ? color : Colors.black87,
+                          fontWeight: isSubSelected ? FontWeight.bold : FontWeight.normal,
+                        )),
+                        const Spacer(),
+                        if (isSubSelected) Icon(Icons.check, color: color, size: 18),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+
+            // ── Note ─────────────────────────────────────────────────────
+            const _Label('Catatan Tambahan'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _noteCtrl,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Masukkan keterangan...',
+                fillColor: Colors.white,
+                filled: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── Photo ────────────────────────────────────────────────────
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const _Label('Bukti Foto'),
+                if (_selectedSub == ReportSubStatus.reviewing)
+                  const Text('* Wajib di tahap Reviewing', style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _showPhotoOptions,
+              child: Container(
+                height: 180,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                ),
+                child: _attachedPhoto != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: kIsWeb 
+                          ? Image.network(_attachedPhoto!.path, fit: BoxFit.cover)
+                          : Image.file(File(_attachedPhoto!.path), fit: BoxFit.cover),
+                      )
+                    : const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_a_photo, color: Colors.grey, size: 40),
+                          SizedBox(height: 8),
+                          Text('Klik untuk ambil foto (Kamera/Galeri)', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                        ],
+                      ),
+              ),
+            ),
+
+            const SizedBox(height: 40),
+            
+            // ── Save Button ──────────────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _handleSave,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A56C4),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: _isSaving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Simpan Perubahan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Label extends StatelessWidget {
+  final String text;
+  const _Label(this.text);
+  @override
+  Widget build(BuildContext context) {
+    return Text(text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54));
+  }
+}

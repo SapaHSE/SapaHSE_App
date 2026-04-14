@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
 import '../models/report.dart';
-import '../data/dummy_data.dart';
 import '../data/news_data.dart';
 import 'report_detail_screen.dart';
 import 'news_detail_screen.dart';
@@ -106,14 +105,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
-      body: SafeArea(
+    return Material(
+      color: const Color(0xFFF2F2F2),
+      child: SafeArea(
         child: Column(
           children: [
             // ── Static Header (matching News) ───────────────────────────────
             Container(
-              color: Colors.white,
+              color: const Color(0xFFF8F8F8),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
@@ -621,35 +620,37 @@ class _ReportCard extends StatelessWidget {
                 offset: const Offset(0, 2)),
           ],
         ),
-        child: Row(
-          children: [
-            // ── Thumbnail Image ───────────────────────────────────────────
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                bottomLeft: Radius.circular(12),
-              ),
-              child: SizedBox(
-                width: 90,
-                height: 90,
-                child: CachedNetworkImage(
-                  imageUrl: report.imageUrl,
-                  fit: BoxFit.cover,
-                  placeholder: (_, __) => Container(
-                    color: const Color(0xFF546E7A),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                          color: Colors.white38, strokeWidth: 2),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── Thumbnail Image ───────────────────────────────────────────
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
+                ),
+                child: SizedBox(
+                  width: 100,
+                  height: double.infinity,
+                  child: CachedNetworkImage(
+                    imageUrl: report.imageUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(
+                      color: const Color(0xFF546E7A),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                            color: Colors.white38, strokeWidth: 2),
+                      ),
                     ),
-                  ),
-                  errorWidget: (_, __, ___) => Container(
-                    color: const Color(0xFF546E7A),
-                    child: const Icon(Icons.image,
-                        color: Colors.white38, size: 32),
+                    errorWidget: (_, __, ___) => Container(
+                      color: const Color(0xFF546E7A),
+                      child: const Icon(Icons.image,
+                          color: Colors.white38, size: 32),
+                    ),
                   ),
                 ),
               ),
-            ),
 
             // ── Content ──────────────────────────────────────────────
             Expanded(
@@ -756,7 +757,8 @@ class _ReportCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 

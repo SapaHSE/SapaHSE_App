@@ -1,5 +1,6 @@
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../models/report.dart';
 
@@ -26,7 +27,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   bool _isSubmitting = false;
 
   // ── Photo ──────────────────────────────────────────────────────────────────
-  File? _photoFile;
+  XFile? _photoFile;
   final _picker = ImagePicker();
 
   @override
@@ -46,7 +47,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
         maxWidth: 1280,
       );
       if (picked != null) {
-        setState(() => _photoFile = File(picked.path));
+        setState(() => _photoFile = picked);
       }
     } catch (e) {
       if (mounted) {
@@ -373,7 +374,9 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           child: SizedBox(
             width: double.infinity,
             height: 200,
-            child: Image.file(_photoFile!, fit: BoxFit.cover),
+            child: kIsWeb
+                ? Image.network(_photoFile!.path, fit: BoxFit.cover)
+                : Image.file(File(_photoFile!.path), fit: BoxFit.cover),
           ),
         ),
         // Change photo button

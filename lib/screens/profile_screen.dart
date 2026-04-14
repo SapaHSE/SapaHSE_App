@@ -1,5 +1,6 @@
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard_screen.dart';
@@ -15,7 +16,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _topTabController;
-  File? _avatarFile;
+  XFile? _avatarFile;
 
   @override
   void initState() {
@@ -31,49 +32,91 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (picked != null) setState(() => _avatarFile = File(picked.path));
+    final picked =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (picked != null) setState(() => _avatarFile = picked);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF0F0F0),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () {},
-        ),
-        title: const Text(
-          'Profile',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        centerTitle: true,
-        bottom: TabBar(
-          controller: _topTabController,
-          labelColor: const Color(0xFF1565C0),
-          unselectedLabelColor: Colors.black54,
-          indicatorColor: const Color(0xFF1565C0),
-          indicatorWeight: 2.5,
-          indicatorSize: TabBarIndicatorSize.tab,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
-          tabs: const [
-            Tab(text: 'Profile'),
-            Tab(text: 'App'),
-            Tab(text: 'Settings'),
+    return Material(
+      color: const Color(0xFFF5F5F5),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // ── Custom Header with TabBar (Replacing AppBar) ────────────────
+            Container(
+              color: const Color(0xFFF8F8F8),
+              child: Column(
+                children: [
+                  Container(
+                    height: 56,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1A56C4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.asset('assets/logo.png', fit: BoxFit.contain),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('SapaHse',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Color(0xFF1A56C4))),
+                            Text('PT. Bukit Baiduri Energi',
+                                style: TextStyle(fontSize: 10, color: Colors.grey)),
+                          ],
+                        ),
+                        const Spacer(),
+                      ],
+                    ),
+                  ),
+                  TabBar(
+                    controller: _topTabController,
+                    labelColor: const Color(0xFF1565C0),
+                    unselectedLabelColor: Colors.black54,
+                    indicatorColor: const Color(0xFF1565C0),
+                    indicatorWeight: 2.5,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    labelStyle: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 14),
+                    unselectedLabelStyle: const TextStyle(
+                        fontWeight: FontWeight.normal, fontSize: 14),
+                    tabs: const [
+                      Tab(text: 'Profile'),
+                      Tab(text: 'App'),
+                      Tab(text: 'Settings'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: TabBarView(
+                controller: _topTabController,
+                children: [
+                  _ProfileTab(avatarFile: _avatarFile, onPickImage: _pickImage),
+                  const _AppTab(),
+                  const _SettingsTab(),
+                ],
+              ),
+            ),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _topTabController,
-        children: [
-          _ProfileTab(avatarFile: _avatarFile, onPickImage: _pickImage),
-          const _AppTab(),
-          const _SettingsTab(),
-        ],
       ),
     );
   }
@@ -83,7 +126,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 // PROFILE TAB
 // ══════════════════════════════════════════════════════════════════════════════
 class _ProfileTab extends StatefulWidget {
-  final File? avatarFile;
+  final XFile? avatarFile;
   final VoidCallback onPickImage;
   const _ProfileTab({required this.avatarFile, required this.onPickImage});
 
@@ -226,10 +269,15 @@ class _ProfileTabState extends State<_ProfileTab> {
                             radius: 56,
                             backgroundColor: const Color(0xFFD0D0D0),
                             backgroundImage: widget.avatarFile != null
-                                ? FileImage(widget.avatarFile!)
+                                ? (kIsWeb
+                                        ? NetworkImage(widget.avatarFile!.path)
+                                        : FileImage(
+                                            File(widget.avatarFile!.path)))
+                                    as ImageProvider
                                 : null,
                             child: widget.avatarFile == null
-                                ? const Icon(Icons.person, size: 60, color: Colors.white)
+                                ? const Icon(Icons.person,
+                                    size: 60, color: Colors.white)
                                 : null,
                           ),
                           Positioned(
