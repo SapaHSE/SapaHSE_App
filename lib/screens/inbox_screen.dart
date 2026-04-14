@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../data/dummy_data.dart';
 import '../models/report.dart';
 import 'report_detail_screen.dart';
+import '../widgets/sapa_hse_header.dart';
 
 
 
@@ -207,72 +208,20 @@ class _InboxScreenState extends State<InboxScreen>
               color: const Color(0xFFF8F8F8),
               child: Column(
                 children: [
-                  Container(
-                    height: 56,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      children: [
-                        if (!_isSearching) ...[
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1A56C4),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.asset('assets/logo.png', fit: BoxFit.contain),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('SapaHse',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Color(0xFF1A56C4))),
-                              Text('PT. Bukit Baiduri Energi',
-                                  style: TextStyle(fontSize: 10, color: Colors.grey)),
-                            ],
-                          ),
-                          const Spacer(),
-                        ] else ...[
-                          Expanded(
-                            child: TextField(
-                              controller: _searchController,
-                              autofocus: true,
-                              decoration: const InputDecoration(
-                                hintText: 'Cari...',
-                                border: InputBorder.none,
-                                hintStyle: TextStyle(color: Colors.grey),
-                              ),
-                              style: const TextStyle(fontSize: 16),
-                              onChanged: (v) =>
-                                  setState(() => _searchQuery = v),
-                            ),
-                          ),
-                        ],
-                        IconButton(
-                          icon: Icon(
-                            _isSearching ? Icons.close : Icons.search,
-                            color: Colors.black87,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _isSearching = !_isSearching;
-                              if (!_isSearching) {
-                                _searchController.clear();
-                                _searchQuery = '';
-                              }
-                            });
-                          },
-                        ),
-                      ],
-                    ),
+                  SapaHseHeader(
+                    isSearching: _isSearching,
+                    searchController: _searchController,
+                    searchHint: 'Cari...',
+                    onSearchChanged: (v) => setState(() => _searchQuery = v),
+                    onSearchToggle: () {
+                      setState(() {
+                        _isSearching = !_isSearching;
+                        if (!_isSearching) {
+                          _searchController.clear();
+                          _searchQuery = '';
+                        }
+                      });
+                    },
                   ),
                   TabBar(
                     controller: _mainTabController,

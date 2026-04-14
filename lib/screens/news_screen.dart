@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
 import '../data/news_data.dart';
 import 'news_detail_screen.dart';
+import '../widgets/sapa_hse_header.dart';
 
 class NewsScreen extends StatefulWidget {
   const NewsScreen({super.key});
@@ -84,62 +85,20 @@ class _NewsScreenState extends State<NewsScreen> {
       child: SafeArea(
         child: Column(
           children: [
-            // ── AppBar ──────────────────────────────────────────────────
-            Container(
-              color: const Color(0xFFF8F8F8),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  if (!_isSearching) ...[
-                    Container(
-                      width: 36, height: 36,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1A56C4),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.asset('assets/logo.png', fit: BoxFit.contain),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('SapaHse', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1A56C4))),
-                        Text('PT. Bukit Baiduri Energi', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                      ],
-                    ),
-                    const Spacer(),
-                  ] else ...[
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        autofocus: true,
-                        decoration: const InputDecoration(
-                          hintText: 'Cari berita...',
-                          border: InputBorder.none,
-                          hintStyle: TextStyle(color: Colors.grey),
-                        ),
-                        style: const TextStyle(fontSize: 16),
-                        onChanged: (v) => setState(() => _searchQuery = v),
-                      ),
-                    ),
-                  ],
-                  IconButton(
-                    icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.grey),
-                    onPressed: () {
-                      setState(() {
-                        _isSearching = !_isSearching;
-                        if (!_isSearching) {
-                          _searchController.clear();
-                          _searchQuery = '';
-                        }
-                      });
-                    },
-                  ),
-                ],
-              ),
+            SapaHseHeader(
+              isSearching: _isSearching,
+              searchController: _searchController,
+              searchHint: 'Cari berita...',
+              onSearchChanged: (v) => setState(() => _searchQuery = v),
+              onSearchToggle: () {
+                setState(() {
+                  _isSearching = !_isSearching;
+                  if (!_isSearching) {
+                    _searchController.clear();
+                    _searchQuery = '';
+                  }
+                });
+              },
             ),
 
             Expanded(

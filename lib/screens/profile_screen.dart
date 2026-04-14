@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard_screen.dart';
 import 'login_screen.dart';
+import '../widgets/sapa_hse_header.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,6 +19,9 @@ class _ProfileScreenState extends State<ProfileScreen>
   late TabController _topTabController;
   XFile? _avatarFile;
 
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -27,6 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void dispose() {
     _topTabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -49,40 +54,18 @@ class _ProfileScreenState extends State<ProfileScreen>
               color: const Color(0xFFF8F8F8),
               child: Column(
                 children: [
-                  Container(
-                    height: 56,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1A56C4),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.asset('assets/logo.png', fit: BoxFit.contain),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('SapaHse',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Color(0xFF1A56C4))),
-                            Text('PT. Bukit Baiduri Energi',
-                                style: TextStyle(fontSize: 10, color: Colors.grey)),
-                          ],
-                        ),
-                        const Spacer(),
-                      ],
-                    ),
+                  SapaHseHeader(
+                    isSearching: _isSearching,
+                    searchController: _searchController,
+                    searchHint: 'Cari di profil...',
+                    onSearchToggle: () {
+                      setState(() {
+                        _isSearching = !_isSearching;
+                        if (!_isSearching) {
+                          _searchController.clear();
+                        }
+                      });
+                    },
                   ),
                   TabBar(
                     controller: _topTabController,
