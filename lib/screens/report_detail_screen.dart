@@ -788,14 +788,7 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
 
   // Sequential logic: Open -> InProgress -> Closed
   List<ReportStatus> get _allowedStatuses {
-    switch (widget.report.status) {
-      case ReportStatus.open:
-        return [ReportStatus.open, ReportStatus.inProgress];
-      case ReportStatus.inProgress:
-        return [ReportStatus.inProgress, ReportStatus.closed];
-      case ReportStatus.closed:
-        return [ReportStatus.closed];
-    }
+    return ReportStatus.values;
   }
 
   Color _statusColor(ReportStatus s) => switch (s) {
