@@ -523,6 +523,8 @@ class _ReportCard extends StatelessWidget {
         return const Color(0xFFFF9800);
       case ReportSeverity.high:
         return const Color(0xFFF44336);
+      case ReportSeverity.critical:
+        return const Color(0xFF880E4F);
     }
   }
 

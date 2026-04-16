@@ -28,9 +28,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   // ── Colors ─────────────────────────────────────────────────────────────────
   Color _severityColor(ReportSeverity s) => switch (s) {
-        ReportSeverity.low => const Color(0xFF4CAF50),
-        ReportSeverity.medium => const Color(0xFFFF9800),
-        ReportSeverity.high => const Color(0xFFF44336),
+        ReportSeverity.low      => const Color(0xFF4CAF50),
+        ReportSeverity.medium   => const Color(0xFFFF9800),
+        ReportSeverity.high     => const Color(0xFFF44336),
+        ReportSeverity.critical => const Color(0xFF880E4F),
       };
 
   Color _statusColor(ReportStatus s) => switch (s) {
@@ -766,10 +767,23 @@ class UpdateStatusPage extends StatefulWidget {
   State<UpdateStatusPage> createState() => _UpdateStatusPageState();
 }
 
+// ── Data orang yang bisa di-tag ────────────────────────────────────────────
+const _allPeople = [
+  'Budi Santoso', 'Ahmad Fauzi', 'Riko Pratama', 'Hendra Wijaya',
+  'Siti Rahayu', 'Dian Permata', 'Eko Susilo', 'Novi Andriani',
+  'Wahyu Hidayat', 'Agus Setiawan', 'Bambang Purnomo',
+  'Lintang Bhaskara', 'Maya Putri', 'Reza Firmansyah',
+  'Dewi Kusuma', 'Rizki Fauzan', 'Rina Marlina',
+  'Kevin Alfarisi', 'Deni Setiawan', 'Putri Wulandari',
+  'Faisal Rahman', 'Guntur Prabowo', 'Yuli Astuti',
+];
+
 class _UpdateStatusPageState extends State<UpdateStatusPage> {
   late ReportStatus _selectedStatus;
   ReportSubStatus? _selectedSub;
   final _noteCtrl = TextEditingController();
+  final _deferredKeteranganCtrl = TextEditingController();
+  final Set<String> _taggedPeople = {};
   XFile? _attachedPhoto;
   bool _isSaving = false;
 
@@ -783,6 +797,7 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
   @override
   void dispose() {
     _noteCtrl.dispose();
+    _deferredKeteranganCtrl.dispose();
     super.dispose();
   }
 
@@ -842,6 +857,90 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showTagPeopleSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Container(
+          height: MediaQuery.of(context).size.height * 0.6,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('Pilih Orang',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Divider(),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _allPeople.length,
+                  itemBuilder: (_, i) {
+                    final person = _allPeople[i];
+                    final isTagged = _taggedPeople.contains(person);
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: const Color(0xFFEFF4FF),
+                        child: Text(
+                          person[0],
+                          style: const TextStyle(color: Color(0xFF1A56C4), fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      title: Text(person, style: const TextStyle(fontSize: 14)),
+                      trailing: isTagged
+                          ? const Icon(Icons.check_circle, color: Color(0xFF1A56C4))
+                          : const Icon(Icons.radio_button_unchecked, color: Colors.grey),
+                      onTap: () {
+                        setState(() {
+                          if (isTagged) {
+                            _taggedPeople.remove(person);
+                          } else {
+                            _taggedPeople.add(person);
+                          }
+                        });
+                        setSheetState(() {});
+                      },
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1A56C4),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      _taggedPeople.isEmpty ? 'Tutup' : 'Selesai (${_taggedPeople.length} dipilih)',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -986,6 +1085,76 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
             ),
 
             const SizedBox(height: 20),
+
+            // ── Deferred: Tag Orang & Keterangan ─────────────────────────
+            if (_selectedSub == ReportSubStatus.deferred) ...[
+              const _Label('Tag Orang'),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_taggedPeople.isNotEmpty) ...[
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: _taggedPeople.map((p) => Chip(
+                          label: Text(p, style: const TextStyle(fontSize: 12)),
+                          deleteIcon: const Icon(Icons.close, size: 14),
+                          onDeleted: () => setState(() => _taggedPeople.remove(p)),
+                          backgroundColor: const Color(0xFFEFF4FF),
+                          side: const BorderSide(color: Color(0xFF1A56C4)),
+                          labelStyle: const TextStyle(color: Color(0xFF1A56C4)),
+                          deleteIconColor: const Color(0xFF1A56C4),
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                        )).toList(),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    GestureDetector(
+                      onTap: () => _showTagPeopleSheet(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8F9FF),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.person_add_outlined, size: 18, color: Colors.grey),
+                            SizedBox(width: 8),
+                            Text('Tambah orang...', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const _Label('Keterangan Laporan'),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _deferredKeteranganCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Masukkan keterangan laporan yang ditangguhkan...',
+                  fillColor: Colors.white,
+                  filled: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
 
             // ── Photo ────────────────────────────────────────────────────
             Row(
