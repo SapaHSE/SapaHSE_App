@@ -506,9 +506,10 @@ class _SeverityBadge extends StatelessWidget {
   final ReportSeverity severity;
   const _SeverityBadge(this.severity);
   Color get _c => switch (severity) {
-    ReportSeverity.high   => const Color(0xFFF44336),
-    ReportSeverity.medium => const Color(0xFFFF9800),
-    ReportSeverity.low    => const Color(0xFF4CAF50),
+    ReportSeverity.high     => const Color(0xFFF44336),
+    ReportSeverity.medium   => const Color(0xFFFF9800),
+    ReportSeverity.low      => const Color(0xFF4CAF50),
+    ReportSeverity.critical => const Color(0xFF880E4F),
   };
   @override
   Widget build(BuildContext context) => Container(

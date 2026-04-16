@@ -174,9 +174,10 @@ class _InboxScreenState extends State<InboxScreen>
 
   String _levelResiko(ReportSeverity s) {
     switch (s) {
-      case ReportSeverity.low:    return 'P3 - Low';
-      case ReportSeverity.medium: return 'P2 - Medium';
-      case ReportSeverity.high:   return 'P1 - High';
+      case ReportSeverity.low:      return 'P3 - Low';
+      case ReportSeverity.medium:   return 'P2 - Medium';
+      case ReportSeverity.high:     return 'P1 - High';
+      case ReportSeverity.critical: return 'P0 - Critical';
     }
   }
 
