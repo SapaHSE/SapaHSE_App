@@ -21,6 +21,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleCtrl = TextEditingController();
   final _descriptionCtrl = TextEditingController();
+  final _kronologiCtrl = TextEditingController();
+  final _saranCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
 
   ReportSeverity _selectedSeverity = ReportSeverity.low;
@@ -34,6 +36,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   void dispose() {
     _titleCtrl.dispose();
     _descriptionCtrl.dispose();
+    _kronologiCtrl.dispose();
+    _saranCtrl.dispose();
     _locationCtrl.dispose();
     super.dispose();
   }
@@ -292,6 +296,26 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                   validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
                   decoration: _inputDeco(
                     hint: 'Jelaskan kondisi hazard secara detail...',
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _label('Deskripsi Kronologi *'),
+                TextFormField(
+                  controller: _kronologiCtrl,
+                  maxLines: 4,
+                  validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
+                  decoration: _inputDeco(
+                    hint: 'Jelaskan kronologi kejadian secara runtut...',
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _label('Deskripsi Saran *'),
+                TextFormField(
+                  controller: _saranCtrl,
+                  maxLines: 4,
+                  validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
+                  decoration: _inputDeco(
+                    hint: 'Berikan saran atau rekomendasi tindakan perbaikan...',
                   ),
                 ),
               ]),
