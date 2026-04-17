@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'app_globals.dart';
 import 'services/storage_service.dart';
 import 'screens/splash_screen.dart';
@@ -160,14 +162,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
 
   void _showAddCarouselSheet() {
-    final urlCtrl = TextEditingController();
+    XFile? pickedFile;
+    final ImagePicker picker = ImagePicker();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: Container(
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -190,22 +193,71 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               ),
               const Text('Tambah Gambar Carousel',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 16),
-              TextField(
-                controller: urlCtrl,
-                decoration: InputDecoration(
-                  labelText: 'URL Gambar',
-                  hintText: 'https://...',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              const SizedBox(height: 20),
+              
+              if (pickedFile != null)
+                Container(
+                  height: 180,
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    image: DecorationImage(
+                      image: FileImage(File(pickedFile!.path)),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        right: 8, top: 8,
+                        child: GestureDetector(
+                          onTap: () => setModalState(() => pickedFile = null),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                            child: const Icon(Icons.close, color: Colors.white, size: 20),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ImageSourceCard(
+                        icon: Icons.camera_alt_outlined,
+                        label: 'Kamera',
+                        color: const Color(0xFF1A56C4),
+                        onTap: () async {
+                          final file = await picker.pickImage(source: ImageSource.camera);
+                          if (file != null) setModalState(() => pickedFile = file);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _ImageSourceCard(
+                        icon: Icons.photo_library_outlined,
+                        label: 'Galeri',
+                        color: const Color(0xFF2E7D32),
+                        onTap: () async {
+                          final file = await picker.pickImage(source: ImageSource.gallery);
+                          if (file != null) setModalState(() => pickedFile = file);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 16),
+              
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
-                height: 46,
+                height: 48,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: pickedFile == null ? null : () {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                       content: Text('Gambar carousel berhasil ditambahkan'),
@@ -215,10 +267,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1565C0),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    disabledBackgroundColor: Colors.grey.shade300,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),
-                  child: const Text('Tambah'),
+                  child: const Text('Simpan Banner'),
                 ),
               ),
             ],
@@ -293,7 +346,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                         content: Text('Berita berhasil ditambahkan'),
                         behavior: SnackBarBehavior.floating,
-                      ));
+                    ));
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1565C0),
@@ -593,6 +646,42 @@ class _NavItem extends StatelessWidget {
                     isActive ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ImageSourceCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ImageSourceCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 32),
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
