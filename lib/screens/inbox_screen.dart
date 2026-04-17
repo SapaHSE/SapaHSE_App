@@ -187,6 +187,15 @@ class _InboxScreenState extends State<InboxScreen>
     }
   }
 
+  Color _severityColor(ReportSeverity s) {
+    switch (s) {
+      case ReportSeverity.low:      return const Color(0xFF4CAF50); // Green
+      case ReportSeverity.medium:   return const Color(0xFFFF9800); // Orange
+      case ReportSeverity.high:     return const Color(0xFFF44336); // Red
+      case ReportSeverity.critical: return const Color(0xFFB71C1C); // Dark Red
+    }
+  }
+
   String _statusLabel(ReportStatus s) {
     switch (s) {
       case ReportStatus.open:       return 'Open';
@@ -364,6 +373,7 @@ class _InboxScreenState extends State<InboxScreen>
             levelResiko: _levelResiko,
             statusColor: _statusColor,
             statusLabel: _statusLabel,
+            severityColor: _severityColor,
             onDetail: () {
               _markReportRead(r.id);
               Navigator.push(
@@ -574,6 +584,7 @@ class _InboxCard extends StatelessWidget {
   final String Function(ReportSeverity) levelResiko;
   final Color Function(ReportStatus) statusColor;
   final String Function(ReportStatus) statusLabel;
+  final Color Function(ReportSeverity) severityColor;
   final VoidCallback onDetail;
 
   const _InboxCard({
@@ -583,6 +594,7 @@ class _InboxCard extends StatelessWidget {
     required this.levelResiko,
     required this.statusColor,
     required this.statusLabel,
+    required this.severityColor,
     required this.onDetail,
   });
 
@@ -625,7 +637,14 @@ class _InboxCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Title + Status + unread dot ───────────────────────
+                // ── Date at top left ──────────────────────────────────
+                Text(
+                  formatDate(report.createdAt),
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+                const SizedBox(height: 6),
+
+                // ── Title + Priority Badge + unread dot ───────────────
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -652,16 +671,16 @@ class _InboxCard extends StatelessWidget {
                     const SizedBox(width: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 5),
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: statusColor(report.status),
+                        color: severityColor(report.severity),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        statusLabel(report.status),
+                        levelResiko(report.severity),
                         style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600),
                       ),
                     ),
@@ -674,11 +693,7 @@ class _InboxCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 _DetailRow(label: 'Lokasi', value: report.location),
                 const SizedBox(height: 4),
-                _DetailRow(label: 'Tanggal', value: formatDate(report.createdAt)),
-                const SizedBox(height: 4),
-                _DetailRow(
-                    label: 'Level Resiko',
-                    value: levelResiko(report.severity)),
+                _DetailRow(label: 'Status', value: statusLabel(report.status)),
 
                 // ── Perlu Ditindak banner ─────────────────────────────
                 if (report.status == ReportStatus.open) ...[
@@ -829,14 +844,17 @@ class _AnnouncementCard extends StatelessWidget {
                         const SizedBox(height: 6),
                         Row(
                           children: [
+                            const Icon(Icons.access_time,
+                                size: 12, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(formatDate(announcement.createdAt),
+                                style: const TextStyle(
+                                    fontSize: 11, color: Colors.grey)),
+                            const SizedBox(width: 12),
                             const Icon(Icons.person_outline,
                                 size: 12, color: Colors.grey),
                             const SizedBox(width: 4),
                             Text(announcement.from,
-                                style: const TextStyle(
-                                    fontSize: 11, color: Colors.grey)),
-                            const Spacer(),
-                            Text(formatDate(announcement.createdAt),
                                 style: const TextStyle(
                                     fontSize: 11, color: Colors.grey)),
                           ],

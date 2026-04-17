@@ -1,8 +1,10 @@
 import 'dart:io' show File;
+import 'dart:math' show Random;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/report.dart';
+import '../services/cloud_save_service.dart';
 
 // ── Data: Departemen & PJA ─────────────────────────────────────────────────
 const _departemenList = [
@@ -210,9 +212,59 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   Future<void> _submitReport() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
+
+    final online = await CloudSaveService.isOnline();
+
+    if (!online) {
+      // ── OFFLINE: simpan sebagai draft Cloud Save ───────────────────────
+      final draft = ReportDraft(
+        id: 'hazard_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(9999)}',
+        type: DraftType.hazard,
+        title: _titleCtrl.text.trim(),
+        data: {
+          'title': _titleCtrl.text.trim(),
+          'description': _descriptionCtrl.text.trim(),
+          'kronologi': _kronologiCtrl.text.trim(),
+          'saran': _saranCtrl.text.trim(),
+          'location': _locationCtrl.text.trim(),
+          'departemen': _selectedDepartemen,
+          'pja': _selectedPja,
+          'severity': _selectedSeverity?.name,
+          'kategori': _selectedKategori,
+          'subkategori': _selectedSubkategori,
+          'photoPath': _photoFile?.path,
+        },
+        createdAt: DateTime.now(),
+      );
+      await CloudSaveService.instance.saveDraft(draft);
+
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      _showResultDialog(
+        isOffline: true,
+        title: 'Tersimpan sebagai Draft',
+        message:
+            'Tidak ada koneksi internet. Laporan hazard disimpan secara lokal dan akan dikirim otomatis saat Anda kembali online.',
+      );
+    } else {
+      // ── ONLINE: kirim ke server ────────────────────────────────────────
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      _showResultDialog(
+        isOffline: false,
+        title: 'Laporan Terkirim!',
+        message:
+            'Laporan hazard Anda telah berhasil dikirim dan akan segera ditindaklanjuti.',
+      );
+    }
+  }
+
+  void _showResultDialog({
+    required bool isOffline,
+    required String title,
+    required String message,
+  }) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -222,33 +274,85 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 70, height: 70,
-              decoration: const BoxDecoration(color: _blueLight, shape: BoxShape.circle),
-              child: const Icon(Icons.check_circle, color: _blue, size: 42),
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                color: isOffline
+                    ? const Color(0xFFFFF3E0)
+                    : _blueLight,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isOffline
+                    ? Icons.cloud_off_outlined
+                    : Icons.cloud_done_outlined,
+                color: isOffline ? const Color(0xFFFF9800) : _blue,
+                size: 42,
+              ),
             ),
             const SizedBox(height: 16),
-            const Text('Laporan Terkirim!',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text(title,
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 8),
-            const Text(
-              'Laporan hazard Anda telah berhasil dikirim dan akan segera ditindaklanjuti.',
+            Text(
+              message,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.5),
+              style: const TextStyle(
+                  color: Colors.grey, fontSize: 13, height: 1.5),
             ),
+            if (isOffline) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3E0),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: const Color(0xFFFF9800)
+                          .withValues(alpha: 0.4)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.cloud_outlined,
+                        size: 14, color: Color(0xFFE65100)),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Cek ikon Cloud Save di header untuk melihat & mengirim draft.',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFFE65100),
+                            height: 1.4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
         actions: [
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () { Navigator.pop(context); Navigator.pop(context); },
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context);
+              },
               style: ElevatedButton.styleFrom(
-                backgroundColor: _blue,
+                backgroundColor: isOffline
+                    ? const Color(0xFFFF9800)
+                    : _blue,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text('OK',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],

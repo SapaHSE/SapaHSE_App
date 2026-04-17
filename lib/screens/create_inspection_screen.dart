@@ -1,4 +1,6 @@
+import 'dart:math' show Random;
 import 'package:flutter/material.dart';
+import '../services/cloud_save_service.dart';
 
 class CreateInspectionScreen extends StatefulWidget {
   const CreateInspectionScreen({super.key});
@@ -55,9 +57,57 @@ class _CreateInspectionScreenState extends State<CreateInspectionScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
+
+    final online = await CloudSaveService.isOnline();
+
+    if (!online) {
+      // ── OFFLINE: simpan draft ──────────────────────────────────────────
+      final draft = ReportDraft(
+        id: 'inspection_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(9999)}',
+        type: DraftType.inspection,
+        title: _titleController.text.trim(),
+        data: {
+          'title': _titleController.text.trim(),
+          'location': _locationController.text.trim(),
+          'inspector': _inspectorController.text.trim(),
+          'notes': _notesController.text.trim(),
+          'area': _selectedArea,
+          'result': _selectedResult,
+          'checklist': _checklistItems
+              .map((e) => {'label': e['label'], 'checked': e['checked']})
+              .toList(),
+        },
+        createdAt: DateTime.now(),
+      );
+      await CloudSaveService.instance.saveDraft(draft);
+
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      _showResultDialog(
+        isOffline: true,
+        title: 'Tersimpan sebagai Draft',
+        message:
+            'Tidak ada koneksi internet. Laporan inspeksi disimpan secara lokal dan akan dikirim saat Anda kembali online.',
+      );
+    } else {
+      // ── ONLINE: kirim ke server ───────────────────────────────────────
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      _showResultDialog(
+        isOffline: false,
+        title: 'Inspeksi Terkirim!',
+        message:
+            'Laporan inspeksi Anda telah berhasil dikirim dan akan segera diproses.',
+      );
+    }
+  }
+
+  void _showResultDialog({
+    required bool isOffline,
+    required String title,
+    required String message,
+  }) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -69,20 +119,62 @@ class _CreateInspectionScreenState extends State<CreateInspectionScreen> {
             Container(
               width: 70,
               height: 70,
-              decoration: const BoxDecoration(
-                  color: _blueLight, shape: BoxShape.circle),
-              child:
-                  const Icon(Icons.check_circle, color: _blue, size: 42),
+              decoration: BoxDecoration(
+                color: isOffline
+                    ? const Color(0xFFFFF3E0)
+                    : _blueLight,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isOffline
+                    ? Icons.cloud_off_outlined
+                    : Icons.cloud_done_outlined,
+                color: isOffline ? const Color(0xFFFF9800) : _blue,
+                size: 42,
+              ),
             ),
             const SizedBox(height: 16),
-            const Text('Inspeksi Terkirim!',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text(title,
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 8),
-            const Text(
-              'Laporan inspeksi Anda telah berhasil dikirim dan akan segera diproses.',
+            Text(
+              message,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.5),
+              style: const TextStyle(
+                  color: Colors.grey, fontSize: 13, height: 1.5),
             ),
+            if (isOffline) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3E0),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: const Color(0xFFFF9800)
+                          .withValues(alpha: 0.4)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.cloud_outlined,
+                        size: 14, color: Color(0xFFE65100)),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Cek ikon Cloud Save di header untuk melihat & mengirim draft.',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFFE65100),
+                            height: 1.4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -94,7 +186,8 @@ class _CreateInspectionScreenState extends State<CreateInspectionScreen> {
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: _blue,
+                backgroundColor:
+                    isOffline ? const Color(0xFFFF9800) : _blue,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
