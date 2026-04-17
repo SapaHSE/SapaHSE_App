@@ -26,9 +26,8 @@ class StorageService {
       // Sesi selamanya — tidak ada expiry di sisi client.
       await prefs.remove(_keyExpiry);
     } else {
-      final expiry = DateTime.now()
-          .add(const Duration(minutes: 15))
-          .toIso8601String();
+      final expiry =
+          DateTime.now().add(const Duration(minutes: 15)).toIso8601String();
       await prefs.setString(_keyExpiry, expiry);
     }
   }
