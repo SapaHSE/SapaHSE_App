@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'login_screen.dart';
+import '../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -131,56 +132,91 @@ class _RegisterScreenState extends State<RegisterScreen>
     }
 
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1500));
-    if (!mounted) return;
-    setState(() => _isLoading = false);
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 70, height: 70,
-              decoration: const BoxDecoration(
-                  color: Color(0xFFEFF4FF), shape: BoxShape.circle),
-              child: const Icon(Icons.check_circle,
-                  color: Color(0xFF1A56C4), size: 42),
-            ),
-            const SizedBox(height: 16),
-            const Text('Registrasi Berhasil!',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            const SizedBox(height: 8),
-            const Text(
-              'Akun Anda telah berhasil dibuat. Silakan login menggunakan NIK dan password yang telah didaftarkan.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.5),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A56C4),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+    try {
+      final response = await AuthService.register(
+        nik: _nikCtrl.text,
+        employeeId: _nikCtrl.text,
+        fullName: _namaCtrl.text,
+        personalEmail: _emailPribadiCtrl.text,
+        workEmail: _emailKantorCtrl.text,
+        password: _passCtrl.text,
+        phoneNumber: _teleponCtrl.text,
+        position: _jabatanCtrl.text,
+        department: _selectedDepartemen,
+        company: _selectedPerusahaan,
+      );
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (response.success) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 70, height: 70,
+                  decoration: const BoxDecoration(
+                      color: Color(0xFFEFF4FF), shape: BoxShape.circle),
+                  child: const Icon(Icons.check_circle,
+                      color: Color(0xFF1A56C4), size: 42),
                 ),
-                child: const Text('Login Sekarang'),
-              ),
+                const SizedBox(height: 16),
+                const Text('Registrasi Berhasil!',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 8),
+                const Text(
+                  'Akun Anda telah berhasil dibuat. Silakan cek email pribadi Anda untuk verifikasi.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.5),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1A56C4),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text('Login Sekarang'),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        );
+      } else {
+        _showErrorSnackBar(response.errorMessage ?? 'Registrasi gagal.');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _showErrorSnackBar('Terjadi kesalahan: ${e.toString()}');
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -466,7 +502,10 @@ class _RegisterScreenState extends State<RegisterScreen>
         TextFormField(
           controller: _teleponCtrl,
           keyboardType: TextInputType.phone,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(13)
+            ],
           decoration: _deco(hint: 'Contoh: 081234567890', icon: Icons.phone_outlined),
           validator: (v) {
             if (v!.isEmpty) return 'Wajib diisi';

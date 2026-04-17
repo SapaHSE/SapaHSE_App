@@ -60,7 +60,9 @@ class _MainScreenState extends State<MainScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (_) => _FabMenuSheet(
+        currentIndex: _currentIndex,
         onScanQr: () {
           Navigator.pop(context);
           Navigator.push(
@@ -80,6 +82,167 @@ class _MainScreenState extends State<MainScreen> {
               MaterialPageRoute(
                   builder: (_) => const CreateInspectionScreen()));
         },
+        onAddCarousel: () {
+          Navigator.pop(context);
+          _showAddCarouselSheet();
+        },
+        onAddNews: () {
+          Navigator.pop(context);
+          _showAddNewsSheet();
+        },
+      ),
+    );
+  }
+
+  void _showAddCarouselSheet() {
+    final urlCtrl = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const Text('Tambah Gambar Carousel',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: urlCtrl,
+                decoration: InputDecoration(
+                  labelText: 'URL Gambar',
+                  hintText: 'https://...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Gambar carousel berhasil ditambahkan'),
+                      behavior: SnackBarBehavior.floating,
+                    ));
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1565C0),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                  ),
+                  child: const Text('Tambah'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAddNewsSheet() {
+    final titleCtrl = TextEditingController();
+    final excerptCtrl = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModal) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const Text('Tambah Berita',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: titleCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Judul Berita',
+                    hintText: 'Masukkan judul berita',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: excerptCtrl,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: 'Ringkasan',
+                    hintText: 'Masukkan ringkasan berita',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('Berita berhasil ditambahkan'),
+                        behavior: SnackBarBehavior.floating,
+                      ));
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1565C0),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
+                    child: const Text('Tambah'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -126,14 +289,20 @@ class _MainScreenState extends State<MainScreen> {
 
 // ── FAB BOTTOM SHEET ──────────────────────────────────────────────────────────
 class _FabMenuSheet extends StatelessWidget {
+  final int currentIndex;
   final VoidCallback onScanQr;
   final VoidCallback onCreateHazard;
   final VoidCallback onCreateInspection;
+  final VoidCallback onAddCarousel;
+  final VoidCallback onAddNews;
 
   const _FabMenuSheet({
+    required this.currentIndex,
     required this.onScanQr,
     required this.onCreateHazard,
     required this.onCreateInspection,
+    required this.onAddCarousel,
+    required this.onAddNews,
   });
 
   @override
@@ -210,6 +379,32 @@ class _FabMenuSheet extends StatelessWidget {
             subtitle: 'Catat hasil inspeksi rutin area kerja',
             onTap: onCreateInspection,
           ),
+
+          // ── Tambah Gambar Carousel (Home tab) ─────────────────────
+          if (currentIndex == 0) ...[
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _MenuTile(
+              icon: Icons.add_photo_alternate_outlined,
+              iconBgColor: const Color(0xFFE8F5E9),
+              iconColor: const Color(0xFF2E7D32),
+              title: 'Tambah Gambar Carousel',
+              subtitle: 'Tambah banner gambar di halaman utama',
+              onTap: onAddCarousel,
+            ),
+          ],
+
+          // ── Tambah Berita (News tab) ───────────────────────────────
+          if (currentIndex == 1) ...[
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _MenuTile(
+              icon: Icons.article_outlined,
+              iconBgColor: const Color(0xFFFFF3E0),
+              iconColor: const Color(0xFFE65100),
+              title: 'Tambah Berita',
+              subtitle: 'Buat dan publikasikan berita baru',
+              onTap: onAddNews,
+            ),
+          ],
 
           const SizedBox(height: 8),
 

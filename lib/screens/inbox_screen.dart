@@ -54,7 +54,7 @@ final List<Announcement> dummyAnnouncements = [
   ),
 ];
 
-enum _SubFilter { all, unread }
+enum _SubFilter { unread, read }
 
 class InboxScreen extends StatefulWidget {
   const InboxScreen({super.key});
@@ -66,7 +66,7 @@ class InboxScreen extends StatefulWidget {
 class _InboxScreenState extends State<InboxScreen>
     with SingleTickerProviderStateMixin {
   late TabController _mainTabController;
-  _SubFilter _activeFilter = _SubFilter.all;
+  _SubFilter _activeFilter = _SubFilter.unread;
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -78,7 +78,7 @@ class _InboxScreenState extends State<InboxScreen>
     _mainTabController.addListener(() {
       if (!_mainTabController.indexIsChanging) {
         setState(() {
-          _activeFilter = _SubFilter.all; // Reset filter when switching tabs
+          _activeFilter = _SubFilter.unread; // Reset filter when switching tabs
         });
       }
     });
@@ -93,7 +93,7 @@ class _InboxScreenState extends State<InboxScreen>
     if (_activeFilter == _SubFilter.unread) {
       return dummyReports.where((r) => !_readReportIds.contains(r.id)).toList();
     }
-    return dummyReports;
+    return dummyReports.where((r) => _readReportIds.contains(r.id)).toList();
   }
 
   List<Report> get _activeReports {
@@ -113,7 +113,9 @@ class _InboxScreenState extends State<InboxScreen>
           .where((a) => !_readAnnouncementIds.contains(a.id))
           .toList();
     }
-    return dummyAnnouncements;
+    return dummyAnnouncements
+        .where((a) => _readAnnouncementIds.contains(a.id))
+        .toList();
   }
 
   List<Announcement> get _activeAnnouncements {
@@ -133,12 +135,8 @@ class _InboxScreenState extends State<InboxScreen>
   int get _unreadAnnouncementCount =>
       dummyAnnouncements.where((a) => !_readAnnouncementIds.contains(a.id)).length;
 
-  int get _activeUnreadCount {
-    if (!mounted) return 0;
-    return _mainTabController.index == 0
-        ? _unreadReportCount
-        : _unreadAnnouncementCount;
-  }
+  int get _readReportCount => _readReportIds.length;
+  int get _readAnnouncementCount => _readAnnouncementIds.length;
 
   @override
   void dispose() {
@@ -267,7 +265,7 @@ class _InboxScreenState extends State<InboxScreen>
             ),
             const Divider(height: 1),
 
-            // ── Sub-filter: All | Unread (Keep UI consistent) ─────────────
+            // ── Sub-filter: Unread | Read ──────────────────────────────
             Container(
               color: Colors.white,
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -275,20 +273,25 @@ class _InboxScreenState extends State<InboxScreen>
                 children: [
                   Expanded(
                     child: _SubFilterChip(
-                      label: 'All',
-                      isActive: _activeFilter == _SubFilter.all,
+                      label: 'Unread',
+                      isActive: _activeFilter == _SubFilter.unread,
+                      badge: _mainTabController.index == 0
+                          ? (_unreadReportCount > 0 ? _unreadReportCount : null)
+                          : (_unreadAnnouncementCount > 0 ? _unreadAnnouncementCount : null),
                       onTap: () =>
-                          setState(() => _activeFilter = _SubFilter.all),
+                          setState(() => _activeFilter = _SubFilter.unread),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: _SubFilterChip(
-                      label: 'Unread',
-                      isActive: _activeFilter == _SubFilter.unread,
-                      badge: _activeUnreadCount > 0 ? _activeUnreadCount : null,
+                      label: 'Read',
+                      isActive: _activeFilter == _SubFilter.read,
+                      badge: _mainTabController.index == 0
+                          ? (_readReportCount > 0 ? _readReportCount : null)
+                          : (_readAnnouncementCount > 0 ? _readAnnouncementCount : null),
                       onTap: () =>
-                          setState(() => _activeFilter = _SubFilter.unread),
+                          setState(() => _activeFilter = _SubFilter.read),
                     ),
                   ),
                 ],
@@ -319,13 +322,17 @@ class _InboxScreenState extends State<InboxScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              isAnnouncement ? Icons.campaign_outlined : _activeFilter == _SubFilter.unread ? Icons.mark_email_read_outlined : Icons.inbox_outlined,
+              _activeFilter == _SubFilter.unread
+                  ? Icons.mark_email_read_outlined
+                  : Icons.drafts_outlined,
               size: 52,
               color: Colors.grey.shade300,
             ),
             const SizedBox(height: 12),
             Text(
-              _activeFilter == _SubFilter.unread ? 'Semua sudah dibaca!' : 'Tidak ada item ditemukan',
+              _activeFilter == _SubFilter.unread
+                  ? 'Semua sudah dibaca!'
+                  : 'Belum ada yang dibaca.',
               style: const TextStyle(color: Colors.grey, fontSize: 14),
             ),
           ],
@@ -672,6 +679,39 @@ class _InboxCard extends StatelessWidget {
                 _DetailRow(
                     label: 'Level Resiko',
                     value: levelResiko(report.severity)),
+
+                // ── Perlu Ditindak banner ─────────────────────────────
+                if (report.status == ReportStatus.open) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3E0),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                          color: const Color(0xFFFF9800).withValues(alpha: 0.5)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.warning_amber_rounded,
+                            size: 16, color: Color(0xFFE65100)),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Laporan ini belum direspon dan perlu segera ditindak.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFFE65100),
+                              fontWeight: FontWeight.w500,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
 
               ],
             ),

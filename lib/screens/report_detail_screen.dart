@@ -28,16 +28,16 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   // ── Colors ─────────────────────────────────────────────────────────────────
   Color _severityColor(ReportSeverity s) => switch (s) {
-        ReportSeverity.low      => const Color(0xFF4CAF50),
-        ReportSeverity.medium   => const Color(0xFFFF9800),
-        ReportSeverity.high     => const Color(0xFFF44336),
+        ReportSeverity.low => const Color(0xFF4CAF50),
+        ReportSeverity.medium => const Color(0xFFFF9800),
+        ReportSeverity.high => const Color(0xFFF44336),
         ReportSeverity.critical => const Color(0xFF880E4F),
       };
 
   Color _statusColor(ReportStatus s) => switch (s) {
-        ReportStatus.open       => const Color(0xFF2196F3), // Biru
+        ReportStatus.open => const Color(0xFF2196F3), // Biru
         ReportStatus.inProgress => const Color(0xFF9C27B0), // Ungu
-        ReportStatus.closed     => const Color(0xFF757575), // Abu
+        ReportStatus.closed => const Color(0xFF757575), // Abu
       };
 
   IconData _statusIcon(ReportStatus s) => switch (s) {
@@ -109,8 +109,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   fit: BoxFit.contain,
                   placeholder: (_, __) =>
                       const CircularProgressIndicator(color: Colors.white),
-                  errorWidget: (_, __, ___) => const Icon(Icons.image,
-                      color: Colors.white54, size: 80),
+                  errorWidget: (_, __, ___) =>
+                      const Icon(Icons.image, color: Colors.white54, size: 80),
                 ),
               ),
             ),
@@ -328,7 +328,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     }
 
     final result = <Widget>[];
-    final statuses = [ReportStatus.open, ReportStatus.inProgress, ReportStatus.closed];
+    final statuses = [
+      ReportStatus.open,
+      ReportStatus.inProgress,
+      ReportStatus.closed
+    ];
 
     for (final status in statuses) {
       final events = groups[status];
@@ -345,7 +349,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: isCurrentGroup ? statusColor : statusColor.withValues(alpha: 0.1),
+                color: isCurrentGroup
+                    ? statusColor
+                    : statusColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -363,8 +369,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             const SizedBox(width: 8),
             Expanded(
                 child: Container(
-                    height: 1,
-                    color: statusColor.withValues(alpha: 0.2))),
+                    height: 1, color: statusColor.withValues(alpha: 0.2))),
           ]),
         ),
       );
@@ -373,8 +378,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       for (int i = 0; i < events.length; i++) {
         final event = events[i];
         final isLastInGroup = i == events.length - 1;
-        final isVeryLast =
-            status == (_report.status) && isLastInGroup;
+        final isVeryLast = status == (_report.status) && isLastInGroup;
 
         result.add(
           _TimelineItem(
@@ -542,8 +546,9 @@ class _TimelineItem extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color:
-                        isCurrent ? statusColor : statusColor.withValues(alpha: 0.12),
+                    color: isCurrent
+                        ? statusColor
+                        : statusColor.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: statusColor,
@@ -615,7 +620,8 @@ class _TimelineItem extends StatelessWidget {
                           color: const Color(0xFFEFF4FF),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color: const Color(0xFF1A56C4).withValues(alpha: 0.3)),
+                              color: const Color(0xFF1A56C4)
+                                  .withValues(alpha: 0.3)),
                         ),
                         child: const Text('TERKINI',
                             style: TextStyle(
@@ -680,7 +686,8 @@ class _TimelineItem extends StatelessWidget {
                               backgroundColor: Colors.black,
                               appBar: AppBar(
                                 backgroundColor: Colors.transparent,
-                                iconTheme: const IconThemeData(color: Colors.white),
+                                iconTheme:
+                                    const IconThemeData(color: Colors.white),
                                 elevation: 0,
                               ),
                               extendBodyBehindAppBar: true,
@@ -755,7 +762,6 @@ class _DetailRow extends StatelessWidget {
       );
 }
 
-
 // ══════════════════════════════════════════════════════════════════════════════
 // UPDATE STATUS PAGE (FULLSCREEN)
 // ══════════════════════════════════════════════════════════════════════════════
@@ -769,13 +775,29 @@ class UpdateStatusPage extends StatefulWidget {
 
 // ── Data orang yang bisa di-tag ────────────────────────────────────────────
 const _allPeople = [
-  'Budi Santoso', 'Ahmad Fauzi', 'Riko Pratama', 'Hendra Wijaya',
-  'Siti Rahayu', 'Dian Permata', 'Eko Susilo', 'Novi Andriani',
-  'Wahyu Hidayat', 'Agus Setiawan', 'Bambang Purnomo',
-  'Lintang Bhaskara', 'Maya Putri', 'Reza Firmansyah',
-  'Dewi Kusuma', 'Rizki Fauzan', 'Rina Marlina',
-  'Kevin Alfarisi', 'Deni Setiawan', 'Putri Wulandari',
-  'Faisal Rahman', 'Guntur Prabowo', 'Yuli Astuti',
+  'Budi Santoso',
+  'Ahmad Fauzi',
+  'Riko Pratama',
+  'Hendra Wijaya',
+  'Siti Rahayu',
+  'Dian Permata',
+  'Eko Susilo',
+  'Novi Andriani',
+  'Wahyu Hidayat',
+  'Agus Setiawan',
+  'Bambang Purnomo',
+  'Lintang Bhaskara',
+  'Maya Putri',
+  'Reza Firmansyah',
+  'Dewi Kusuma',
+  'Rizki Fauzan',
+  'Rina Marlina',
+  'Kevin Alfarisi',
+  'Deni Setiawan',
+  'Putri Wulandari',
+  'Faisal Rahman',
+  'Guntur Prabowo',
+  'Yuli Astuti',
 ];
 
 class _UpdateStatusPageState extends State<UpdateStatusPage> {
@@ -849,7 +871,8 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Color(0xFF1A56C4)),
+              leading:
+                  const Icon(Icons.photo_library, color: Color(0xFF1A56C4)),
               title: const Text('Galeri'),
               onTap: () {
                 Navigator.pop(ctx);
@@ -878,7 +901,8 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
             children: [
               const SizedBox(height: 12),
               Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
                   color: Colors.grey.shade300,
                   borderRadius: BorderRadius.circular(2),
@@ -899,13 +923,17 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                         backgroundColor: const Color(0xFFEFF4FF),
                         child: Text(
                           person[0],
-                          style: const TextStyle(color: Color(0xFF1A56C4), fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              color: Color(0xFF1A56C4),
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                       title: Text(person, style: const TextStyle(fontSize: 14)),
                       trailing: isTagged
-                          ? const Icon(Icons.check_circle, color: Color(0xFF1A56C4))
-                          : const Icon(Icons.radio_button_unchecked, color: Colors.grey),
+                          ? const Icon(Icons.check_circle,
+                              color: Color(0xFF1A56C4))
+                          : const Icon(Icons.radio_button_unchecked,
+                              color: Colors.grey),
                       onTap: () {
                         setState(() {
                           if (isTagged) {
@@ -929,11 +957,14 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1A56C4),
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
-                      _taggedPeople.isEmpty ? 'Tutup' : 'Selesai (${_taggedPeople.length} dipilih)',
+                      _taggedPeople.isEmpty
+                          ? 'Tutup'
+                          : 'Selesai (${_taggedPeople.length} dipilih)',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -958,7 +989,7 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
     setState(() => _isSaving = true);
     // Simulate network
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     final updated = ReportStore.instance.updateStatus(
       widget.report.id,
       _selectedStatus,
@@ -989,7 +1020,10 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text('Update Status Laporan',
-            style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16)),
+            style: TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+                fontSize: 16)),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -1013,16 +1047,28 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    border: Border.all(color: isSelected ? color : Colors.grey.shade300, width: isSelected ? 2 : 1),
+                    border: Border.all(
+                        color: isSelected ? color : Colors.grey.shade300,
+                        width: isSelected ? 2 : 1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_off, color: color),
+                      Icon(
+                          isSelected
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_off,
+                          color: color),
                       const SizedBox(width: 12),
-                      Text(s.label, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 15)),
+                      Text(s.label,
+                          style: TextStyle(
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              fontSize: 15)),
                       const Spacer(),
-                      if (isSelected) Icon(Icons.check_circle, color: color, size: 20),
+                      if (isSelected)
+                        Icon(Icons.check_circle, color: color, size: 20),
                     ],
                   ),
                 ),
@@ -1037,27 +1083,36 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
             const _Label('Sub-Status'),
             const SizedBox(height: 8),
             Column(
-              children: ReportSubStatusInfo.forStatus(_selectedStatus).map((sub) {
+              children:
+                  ReportSubStatusInfo.forStatus(_selectedStatus).map((sub) {
                 final isSubSelected = _selectedSub == sub;
                 final color = _statusColor(_selectedStatus);
                 return GestureDetector(
                   onTap: () => setState(() => _selectedSub = sub),
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: isSubSelected ? color.withValues(alpha: 0.1) : Colors.white,
-                      border: Border.all(color: isSubSelected ? color : Colors.grey.shade200),
+                      color: isSubSelected
+                          ? color.withValues(alpha: 0.1)
+                          : Colors.white,
+                      border: Border.all(
+                          color: isSubSelected ? color : Colors.grey.shade200),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Row(
                       children: [
-                        Text(sub.label, style: TextStyle(
-                          color: isSubSelected ? color : Colors.black87,
-                          fontWeight: isSubSelected ? FontWeight.bold : FontWeight.normal,
-                        )),
+                        Text(sub.label,
+                            style: TextStyle(
+                              color: isSubSelected ? color : Colors.black87,
+                              fontWeight: isSubSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            )),
                         const Spacer(),
-                        if (isSubSelected) Icon(Icons.check, color: color, size: 18),
+                        if (isSubSelected)
+                          Icon(Icons.check, color: color, size: 18),
                       ],
                     ),
                   ),
@@ -1070,7 +1125,7 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
             const SizedBox(height: 16),
 
             // ── Note ─────────────────────────────────────────────────────
-            const _Label('Catatan Tambahan'),
+            const _Label('Catatan Perubahan'),
             const SizedBox(height: 8),
             TextField(
               controller: _noteCtrl,
@@ -1079,8 +1134,12 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                 hintText: 'Masukkan keterangan...',
                 fillColor: Colors.white,
                 filled: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300)),
               ),
             ),
 
@@ -1104,24 +1163,33 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                       Wrap(
                         spacing: 8,
                         runSpacing: 6,
-                        children: _taggedPeople.map((p) => Chip(
-                          label: Text(p, style: const TextStyle(fontSize: 12)),
-                          deleteIcon: const Icon(Icons.close, size: 14),
-                          onDeleted: () => setState(() => _taggedPeople.remove(p)),
-                          backgroundColor: const Color(0xFFEFF4FF),
-                          side: const BorderSide(color: Color(0xFF1A56C4)),
-                          labelStyle: const TextStyle(color: Color(0xFF1A56C4)),
-                          deleteIconColor: const Color(0xFF1A56C4),
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                        )).toList(),
+                        children: _taggedPeople
+                            .map((p) => Chip(
+                                  label: Text(p,
+                                      style: const TextStyle(fontSize: 12)),
+                                  deleteIcon: const Icon(Icons.close, size: 14),
+                                  onDeleted: () =>
+                                      setState(() => _taggedPeople.remove(p)),
+                                  backgroundColor: const Color(0xFFEFF4FF),
+                                  side: const BorderSide(
+                                      color: Color(0xFF1A56C4)),
+                                  labelStyle:
+                                      const TextStyle(color: Color(0xFF1A56C4)),
+                                  deleteIconColor: const Color(0xFF1A56C4),
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 4),
+                                ))
+                            .toList(),
                       ),
                       const SizedBox(height: 8),
                     ],
                     GestureDetector(
                       onTap: () => _showTagPeopleSheet(),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF8F9FF),
                           borderRadius: BorderRadius.circular(8),
@@ -1129,9 +1197,12 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.person_add_outlined, size: 18, color: Colors.grey),
+                            Icon(Icons.person_add_outlined,
+                                size: 18, color: Colors.grey),
                             SizedBox(width: 8),
-                            Text('Tambah orang...', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                            Text('Tambah orang...',
+                                style: TextStyle(
+                                    color: Colors.grey, fontSize: 13)),
                           ],
                         ),
                       ),
@@ -1149,8 +1220,12 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                   hintText: 'Masukkan keterangan laporan yang ditangguhkan...',
                   fillColor: Colors.white,
                   filled: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300)),
                 ),
               ),
               const SizedBox(height: 20),
@@ -1162,7 +1237,11 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
               children: [
                 const _Label('Bukti Foto'),
                 if (_selectedSub == ReportSubStatus.reviewing)
-                  const Text('* Wajib di tahap Reviewing', style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
+                  const Text('* Wajib di tahap Reviewing',
+                      style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 8),
@@ -1174,28 +1253,33 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                  border: Border.all(
+                      color: Colors.grey.shade300, style: BorderStyle.solid),
                 ),
                 child: _attachedPhoto != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: kIsWeb 
-                          ? Image.network(_attachedPhoto!.path, fit: BoxFit.cover)
-                          : Image.file(File(_attachedPhoto!.path), fit: BoxFit.cover),
+                        child: kIsWeb
+                            ? Image.network(_attachedPhoto!.path,
+                                fit: BoxFit.cover)
+                            : Image.file(File(_attachedPhoto!.path),
+                                fit: BoxFit.cover),
                       )
                     : const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.add_a_photo, color: Colors.grey, size: 40),
                           SizedBox(height: 8),
-                          Text('Klik untuk ambil foto (Kamera/Galeri)', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                          Text('Klik untuk ambil foto (Kamera/Galeri)',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 13)),
                         ],
                       ),
               ),
             ),
 
             const SizedBox(height: 40),
-            
+
             // ── Save Button ──────────────────────────────────────────────
             SizedBox(
               width: double.infinity,
@@ -1205,12 +1289,15 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A56C4),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
                 child: _isSaving
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Simpan Perubahan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    : const Text('Simpan Perubahan',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 40),
@@ -1226,6 +1313,8 @@ class _Label extends StatelessWidget {
   const _Label(this.text);
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54));
+    return Text(text,
+        style: const TextStyle(
+            fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54));
   }
 }

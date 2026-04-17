@@ -137,34 +137,38 @@ class _CreateInspectionScreenState extends State<CreateInspectionScreen> {
               // ── Photo placeholder ─────────────────────────────────────
               Container(
                 width: double.infinity,
-                height: 160,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   border:
                       Border.all(color: _blue.withValues(alpha: 0.3), width: 1.5),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Row(
                   children: [
                     Container(
-                      width: 56,
-                      height: 56,
+                      width: 32,
+                      height: 32,
                       decoration: const BoxDecoration(
                           color: _blueLight, shape: BoxShape.circle),
                       child: const Icon(Icons.camera_alt_outlined,
-                          color: _blue, size: 28),
+                          color: _blue, size: 16),
                     ),
-                    const SizedBox(height: 10),
-                    const Text('Tambah Foto Inspeksi',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: _blue,
-                            fontSize: 14)),
-                    const SizedBox(height: 2),
-                    const Text('Kamera atau Galeri',
-                        style:
-                            TextStyle(fontSize: 12, color: Colors.grey)),
+                    const SizedBox(width: 10),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Tambah Foto Inspeksi',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: _blue,
+                                fontSize: 12)),
+                        Text('Kamera atau Galeri',
+                            style: TextStyle(fontSize: 10, color: Colors.grey)),
+                      ],
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.chevron_right, color: Colors.grey, size: 18),
                   ],
                 ),
               ),

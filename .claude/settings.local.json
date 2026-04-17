@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter pub:*)",
+      "Bash(where flutter:*)",
+      "Bash(cmd /c \"where flutter\")",
+      "Bash(cmd /c \"dir C:\\\\flutter\\\\bin\\\\flutter.bat 2>nul && echo found || dir D:\\\\flutter\\\\bin\\\\flutter.bat 2>nul && echo found || echo notfound\")",
+      "Bash(cmd /c \"powershell -command \\\\\"Get-Command flutter -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\\\\\"\")",
+      "Bash(cmd /c \"powershell -command \\\\\"[System.Environment]::GetEnvironmentVariable\\('PATH','Machine'\\) + ';' + [System.Environment]::GetEnvironmentVariable\\('PATH','User'\\)\\\\\"\")",
+      "Bash(cmd /c \"powershell -NoProfile -Command \\\\\"[System.Environment]::GetEnvironmentVariable\\('PATH','User'\\)\\\\\"\")",
+      "Bash(cmd /c echo %PATH%)",
+      "Bash(\"/d/Magang/PT.KDC/testingflutter/archive/lib/flutter/bin/flutter.bat\" pub:*)",
+      "Bash(\"/d/Magang/PT.KDC/testingflutter/archive/lib/flutter/bin/flutter.bat\" analyze:*)"
+    ]
+  }
+}

@@ -359,15 +359,6 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 ),
 
                 const SizedBox(height: 14),
-                _label('Deskripsi *'),
-                TextFormField(
-                  controller: _descriptionCtrl,
-                  maxLines: 4,
-                  validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
-                  decoration: _inputDeco(hint: 'Jelaskan kondisi hazard secara detail...'),
-                ),
-
-                const SizedBox(height: 14),
                 _label('Deskripsi Kronologi *'),
                 TextFormField(
                   controller: _kronologiCtrl,
@@ -463,31 +454,31 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
       onTap: _showPhotoOptions,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(color: _blue.withValues(alpha: 0.3), width: 1.5),
         ),
         child: Row(
           children: [
             Container(
-              width: 40, height: 40,
+              width: 32, height: 32,
               decoration: const BoxDecoration(color: _blueLight, shape: BoxShape.circle),
-              child: const Icon(Icons.camera_alt_outlined, color: _blue, size: 20),
+              child: const Icon(Icons.camera_alt_outlined, color: _blue, size: 16),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Tambah Foto Hazard',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: _blue, fontSize: 13)),
+                    style: TextStyle(fontWeight: FontWeight.w600, color: _blue, fontSize: 12)),
                 Text('Kamera atau Galeri',
-                    style: TextStyle(fontSize: 11, color: Colors.grey)),
+                    style: TextStyle(fontSize: 10, color: Colors.grey)),
               ],
             ),
             const Spacer(),
-            const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+            const Icon(Icons.chevron_right, color: Colors.grey, size: 18),
           ],
         ),
       ),

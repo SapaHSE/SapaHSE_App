@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
+import 'package:intl/intl.dart';
 import '../models/report.dart';
 import '../data/news_data.dart';
 import 'report_detail_screen.dart';
@@ -573,7 +574,8 @@ class _ReportCard extends StatelessWidget {
                 offset: const Offset(0, 2)),
           ],
         ),
-        child: IntrinsicHeight(
+        child: SizedBox(
+          height: 110,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -585,7 +587,7 @@ class _ReportCard extends StatelessWidget {
                 ),
                 child: SizedBox(
                   width: 100,
-                  height: double.infinity,
+                  height: 110,
                   child: CachedNetworkImage(
                     imageUrl: report.imageUrl,
                     fit: BoxFit.cover,
@@ -608,24 +610,25 @@ class _ReportCard extends StatelessWidget {
             // ── Content ──────────────────────────────────────────────
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Type badge + Severity badge
+                    // Baris 1: Type badge + Status
                     Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                              horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
                             color: _typeColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(_typeIcon, size: 11, color: _typeColor),
+                              Icon(_typeIcon, size: 10, color: _typeColor),
                               const SizedBox(width: 3),
                               Text(
                                 report.type.label,
@@ -639,11 +642,68 @@ class _ReportCard extends StatelessWidget {
                         ),
                         const Spacer(),
                         Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _statusColor,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          report.status.label,
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: _statusColor),
+                        ),
+                      ],
+                    ),
+
+                    // Baris 2: Judul + Deskripsi
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          report.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          report.description,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade500,
+                              height: 1.3),
+                        ),
+                      ],
+                    ),
+
+                    // Baris 3: Tanggal + Severity badge
+                    Row(
+                      children: [
+                        Icon(Icons.calendar_today_outlined,
+                            size: 10, color: Colors.grey.shade400),
+                        const SizedBox(width: 3),
+                        Text(
+                          DateFormat('dd MMM yyyy').format(report.createdAt),
+                          style: TextStyle(
+                              fontSize: 10, color: Colors.grey.shade500),
+                        ),
+                        const Spacer(),
+                        Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                              horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
                             color: _severityColor,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             report.severity.label,
@@ -653,54 +713,6 @@ class _ReportCard extends StatelessWidget {
                                 fontWeight: FontWeight.w600),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Title
-                    Text(
-                      report.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87),
-                    ),
-                    const SizedBox(height: 4),
-
-                    // Description
-                    Text(
-                      report.description,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 11, color: Colors.grey, height: 1.4),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Status badge
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _statusColor,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          report.status.label,
-                          style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: _statusColor),
-                        ),
-                        const Spacer(),
-                        Icon(Icons.chevron_right,
-                            color: Colors.grey.shade400, size: 16),
                       ],
                     ),
                   ],

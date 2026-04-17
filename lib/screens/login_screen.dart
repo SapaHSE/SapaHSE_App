@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'register_screen.dart';
 import '../main.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,7 +14,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _nikCtrl = TextEditingController();
+  final _employeeIdCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
 
   bool _obscurePass = true;
@@ -28,89 +28,71 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void initState() {
     super.initState();
-    _animCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
+    _animCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 700));
     _fadeAnim = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut),
     );
-    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
+    _slideAnim =
+        Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
       CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut),
     );
     _animCtrl.forward();
-    _loadSavedNIK();
-  }
-
-  Future<void> _loadSavedNIK() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedNIK = prefs.getString('saved_nik') ?? '';
-    final rememberMe = prefs.getBool('remember_me') ?? false;
-    if (rememberMe && mounted) {
-      setState(() {
-        _nikCtrl.text = savedNIK;
-        _rememberMe = rememberMe;
-      });
-    }
   }
 
   @override
   void dispose() {
-    _nikCtrl.dispose();
+    _employeeIdCtrl.dispose();
     _passCtrl.dispose();
     _animCtrl.dispose();
     super.dispose();
   }
 
+  // ── Login Logic ───────────────────────────────────────────────────────────
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1200));
+
+    final result = await AuthService.login(
+      login: _employeeIdCtrl.text.trim(),
+      password: _passCtrl.text,
+      rememberMe: _rememberMe,
+    );
 
     if (!mounted) return;
-    setState(() => _isLoading = false);
 
-    // Dummy validation
-    if (_nikCtrl.text == '123' && _passCtrl.text == '123') {
-      // Save state
-      final prefs = await SharedPreferences.getInstance();
-      if (_rememberMe) {
-        await prefs.setString('saved_nik', _nikCtrl.text);
-        await prefs.setBool('remember_me', true);
-        await prefs.setBool('is_logged_in', true);
-      } else {
-        await prefs.remove('saved_nik');
-        await prefs.setBool('remember_me', false);
-        await prefs.remove('is_logged_in');
-      }
+    setState(() => _isLoading = false); // ALWAYS reset
 
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const MainScreen(),
-          transitionsBuilder: (_, anim, __, child) =>
-              FadeTransition(opacity: anim, child: child),
-          transitionDuration: const Duration(milliseconds: 400),
-        ),
+    if (result.success) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+        (route) => false,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.error_outline, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text('NIK atau password salah'),
-            ],
-          ),
-          backgroundColor: const Color(0xFFF44336),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          margin: const EdgeInsets.all(16),
-        ),
-      );
+      _showError(result.errorMessage ?? 'Login gagal. Coba lagi.');
     }
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: const Color(0xFFF44336),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen>
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  // ── Header green area ─────────────────────────────────────
+                  // ── Header blue area ───────────────────────────────────
                   Container(
                     width: double.infinity,
                     color: const Color(0xFF1A56C4),
@@ -131,7 +113,6 @@ class _LoginScreenState extends State<LoginScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Logo row
                         Row(
                           children: [
                             Container(
@@ -168,11 +149,9 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 32),
-
                         const Text(
-                          'Selamat Datang 👋',
+                          'Selamat Datang',
                           style: TextStyle(
                               color: Colors.white,
                               fontSize: 26,
@@ -181,14 +160,13 @@ class _LoginScreenState extends State<LoginScreen>
                         const SizedBox(height: 6),
                         const Text(
                           'Masuk ke akun Anda untuk melanjutkan',
-                          style:
-                              TextStyle(color: Colors.white70, fontSize: 13),
+                          style: TextStyle(color: Colors.white70, fontSize: 13),
                         ),
                       ],
                     ),
                   ),
 
-                  // ── Form card ─────────────────────────────────────────────
+                  // ── Form card ──────────────────────────────────────────
                   Container(
                     margin: const EdgeInsets.all(20),
                     padding: const EdgeInsets.all(24),
@@ -197,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen>
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.07),
+                          color: Colors.black.withOpacity(0.07),
                           blurRadius: 16,
                           offset: const Offset(0, 4),
                         ),
@@ -208,22 +186,23 @@ class _LoginScreenState extends State<LoginScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // ── Employee id / NIK field ───────────────────
-                          _buildLabel('Employee id / NIK'),
+                          // ── NIK field ────────────
+                          _buildLabel('NIK'),
                           const SizedBox(height: 6),
                           TextFormField(
-                            controller: _nikCtrl,
-                            keyboardType: TextInputType.number,
+                            controller: _employeeIdCtrl,
+                            keyboardType: TextInputType.text,
                             inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
                               LengthLimitingTextInputFormatter(16),
-                            ],
+                              ],
                             validator: (v) {
-                              if (v == null || v.isEmpty) return 'NIK wajib diisi';
+                              if (v == null || v.trim().isEmpty) {
+                                return 'Field ini wajib diisi';
+                              }
                               return null;
                             },
                             decoration: _inputDecoration(
-                              hint: 'Masukkan ID Karyawan / NIK',
+                              hint: 'Masukkan NIK',
                               prefixIcon: Icons.badge_outlined,
                             ),
                           ),
@@ -237,8 +216,15 @@ class _LoginScreenState extends State<LoginScreen>
                             controller: _passCtrl,
                             obscureText: _obscurePass,
                             validator: (v) {
-                              if (v == null || v.isEmpty) return 'Password wajib diisi';
-                              if (v.length < 2) return 'Password minimal 2 karakter';
+                              if (v == null || v.isEmpty) {
+                                return 'Password wajib diisi';
+                              }
+                              if (v == '123') {
+                                return null; // Bypass validation for "123"';
+                              }
+                              if (v.length < 8) {
+                                return 'Password minimal 8 karakter';
+                              }
                               return null;
                             },
                             decoration: _inputDecoration(
@@ -252,8 +238,8 @@ class _LoginScreenState extends State<LoginScreen>
                                   color: Colors.grey,
                                   size: 20,
                                 ),
-                                onPressed: () =>
-                                    setState(() => _obscurePass = !_obscurePass),
+                                onPressed: () => setState(
+                                    () => _obscurePass = !_obscurePass),
                               ),
                             ),
                           ),
@@ -300,8 +286,7 @@ class _LoginScreenState extends State<LoginScreen>
                               ),
                               const Spacer(),
                               GestureDetector(
-                                onTap: () =>
-                                    _showForgotPasswordDialog(context),
+                                onTap: () => _showForgotPasswordDialog(context),
                                 child: const Text(
                                   'Lupa password?',
                                   style: TextStyle(
@@ -325,7 +310,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 backgroundColor: const Color(0xFF1A56C4),
                                 foregroundColor: Colors.white,
                                 disabledBackgroundColor:
-                                    const Color(0xFF1A56C4).withValues(alpha: 0.6),
+                                    const Color(0xFF1A56C4).withOpacity(0.6),
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12)),
                                 elevation: 0,
@@ -342,37 +327,12 @@ class _LoginScreenState extends State<LoginScreen>
                                           fontWeight: FontWeight.bold)),
                             ),
                           ),
-
-                          const SizedBox(height: 20),
-
-                          // ── Hint dummy credentials ─────────────────────
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF5F5F5),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.info_outline,
-                                    size: 16, color: Colors.grey),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Demo: Employee ID / NIK = 123 | Password = 123',
-                                    style: TextStyle(
-                                        fontSize: 11, color: Colors.grey),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
                     ),
                   ),
 
-                  // ── Register link ─────────────────────────────────────────
+                  // ── Register link ──────────────────────────────────────
                   Padding(
                     padding: const EdgeInsets.only(bottom: 32),
                     child: Row(
@@ -408,59 +368,119 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _showForgotPasswordDialog(BuildContext context) {
-    final nikCtrl = TextEditingController();
+    final identifierCtrl = TextEditingController();
+    bool isLoading = false;
+    String? errorMsg;
+
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Lupa Password',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Masukkan NIK Anda. Tim admin akan menghubungi Anda untuk reset password.',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: nikCtrl,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: _inputDecoration(
-                  hint: 'Masukkan ID Karyawan / NIK',
-                  prefixIcon: Icons.badge_outlined),
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (_, setDialogState) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Lupa Password',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Masukkan email pribadi atau NIK Anda. Tautan reset password akan dikirimkan ke email Anda.',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 14),
+              if (errorMsg != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline,
+                          color: Colors.red.shade600, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(errorMsg!,
+                            style: TextStyle(
+                                color: Colors.red.shade700, fontSize: 13)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              TextField(
+                controller: identifierCtrl,
+                keyboardType: TextInputType.emailAddress,
+                decoration: _inputDecoration(
+                    hint: 'Email atau NIK',
+                    prefixIcon: Icons.person_outline),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed:
+                    isLoading ? null : () => Navigator.pop(dialogContext),
+                child: const Text('Batal')),
+            ElevatedButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      final identifier = identifierCtrl.text.trim();
+                      if (identifier.isEmpty) return;
+
+                      setDialogState(() {
+                        isLoading = true;
+                        errorMsg = null;
+                      });
+
+                      final result = await AuthService.forgotPassword(
+                          identifier: identifier);
+
+                      if (!dialogContext.mounted) return;
+
+                      if (result.success) {
+                        Navigator.pop(dialogContext);
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(result.message),
+                            backgroundColor: const Color(0xFF1A56C4),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            margin: const EdgeInsets.all(16),
+                          ),
+                        );
+                      } else {
+                        setDialogState(() {
+                          isLoading = false;
+                          errorMsg = result.message;
+                        });
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A56C4),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Kirim'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Batal')),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Permintaan reset password terkirim'),
-                  backgroundColor: const Color(0xFF1A56C4),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  margin: const EdgeInsets.all(16),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1A56C4),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Kirim'),
-          ),
-        ],
       ),
     );
   }
@@ -481,8 +501,7 @@ class _LoginScreenState extends State<LoginScreen>
       hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
       prefixIcon: Icon(prefixIcon, color: Colors.grey, size: 20),
       suffixIcon: suffixIcon,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       filled: true,
       fillColor: const Color(0xFFF8F8F8),
       border: OutlineInputBorder(
