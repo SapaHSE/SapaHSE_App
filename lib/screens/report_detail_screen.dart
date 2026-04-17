@@ -241,6 +241,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         icon: Icons.category_outlined,
                         label: 'Kategori',
                         value: _report.category?.label ?? _report.type.label),
+                    const SizedBox(height: 12),
+                    _DetailRow(
+                        icon: Icons.confirmation_number_outlined,
+                        label: 'No. Tiket',
+                        value: '#TKT-${_report.id.padLeft(4, '0')}'),
                   ]),
             ),
 
