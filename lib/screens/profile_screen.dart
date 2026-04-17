@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/services.dart';
+//import 'package:shared_preferences/shared_preferences.dart';
 import '../models/profile_model.dart';
 import '../services/profile_service.dart';
 import '../services/storage_service.dart';
@@ -125,13 +125,15 @@ class _ProfileTabState extends State<_ProfileTab> {
   int _selectedSubTab = 0;
   bool _isLoading = true;
   String? _error;
+  bool _isWorkActive = true;
 
   ProfileData? _profileData;
   String _name = '';
   String _position = '';
   String _department = '';
   String _company = '';
-  String _email = '';
+  String _personalEmail = '';
+  String _workEmail = '';
   String _phone = '';
   String _employeeId = '';
   String? _profilePhoto;
@@ -177,34 +179,19 @@ class _ProfileTabState extends State<_ProfileTab> {
         _position = result.data!.position ?? '';
         _department = result.data!.department ?? '';
         _company = result.data!.company ?? '';
-        _email = result.data!.email;
+        _personalEmail = result.data!.personalEmail;
+        _workEmail = result.data!.workEmail ?? '';
         _phone = result.data!.phoneNumber ?? '';
         _employeeId = result.data!.employeeId;
         _profilePhoto = result.data!.profilePhoto;
         _isLoading = false;
       });
     } else {
-      // Check if unauthorized - redirect to login
-      if (result.errorMessage?.toLowerCase().contains('unauthenticated') ==
-              true ||
-          result.errorMessage?.toLowerCase().contains('tidak sah') == true) {
-        _handleLogout();
-        return;
-      }
+      if (result.statusCode == 401) return; 
       setState(() {
         _error = result.errorMessage ?? 'Gagal memuat profil';
         _isLoading = false;
       });
-    }
-  }
-
-  Future<void> _handleLogout() async {
-    await StorageService.clear();
-    if (mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
     }
   }
 
@@ -392,7 +379,58 @@ class _ProfileTabState extends State<_ProfileTab> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
+
+                    // ── Status Kerja ──────────────────────────────────
+                    GestureDetector(
+                      onTap: () => setState(() => _isWorkActive = !_isWorkActive),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _isWorkActive
+                              ? const Color(0xFF4CAF50).withValues(alpha: 0.12)
+                              : Colors.grey.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: _isWorkActive
+                                ? const Color(0xFF4CAF50)
+                                : Colors.grey.shade400,
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _isWorkActive
+                                    ? const Color(0xFF4CAF50)
+                                    : Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _isWorkActive ? 'Aktif' : 'Nonaktif',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: _isWorkActive
+                                    ? const Color(0xFF2E7D32)
+                                    : Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
                     Text(
                       _name,
                       style: const TextStyle(
@@ -475,23 +513,7 @@ class _ProfileTabState extends State<_ProfileTab> {
           const SizedBox(height: 4),
 
           // ── Sub-tab content ────────────────────────────────────────
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            transitionBuilder: (child, animation) => FadeTransition(
-              opacity: animation,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0.02, 0),
-                  end: Offset.zero,
-                ).animate(animation),
-                child: child,
-              ),
-            ),
-            child: SizedBox(
-              key: ValueKey(_selectedSubTab),
-              child: _buildSubTabContent(),
-            ),
-          ),
+          _buildSubTabContent(),
 
           const SizedBox(height: 80),
         ],
@@ -504,7 +526,8 @@ class _ProfileTabState extends State<_ProfileTab> {
       case 0:
         return _BiodataContent(
           employeeId: _employeeId,
-          email: _email,
+          personalEmail: _personalEmail,
+          workEmail: _workEmail,
           phone: _phone,
         );
       case 1:
@@ -568,12 +591,14 @@ class _DialogField extends StatelessWidget {
 // ── BIODATA ───────────────────────────────────────────────────────────────────
 class _BiodataContent extends StatefulWidget {
   final String employeeId;
-  final String email;
+  final String personalEmail;
+  final String workEmail;
   final String phone;
 
   const _BiodataContent({
     required this.employeeId,
-    required this.email,
+    required this.personalEmail,
+    required this.workEmail,
     required this.phone,
   });
 
@@ -582,32 +607,49 @@ class _BiodataContent extends StatefulWidget {
 }
 
 class _BiodataContentState extends State<_BiodataContent> {
-  late final TextEditingController _emailCtrl;
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _personalEmailCtrl;
+  late final TextEditingController _workEmailCtrl;
   late final TextEditingController _phoneCtrl;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _emailCtrl = TextEditingController(text: widget.email);
+    _personalEmailCtrl = TextEditingController(text: widget.personalEmail);
+    _workEmailCtrl = TextEditingController(text: widget.workEmail);
     _phoneCtrl = TextEditingController(text: widget.phone);
   }
 
   @override
   void dispose() {
-    _emailCtrl.dispose();
+    _personalEmailCtrl.dispose();
+    _workEmailCtrl.dispose();
     _phoneCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
+
+    final personalEmail = _personalEmailCtrl.text.trim();
+    final workEmail = _workEmailCtrl.text.trim();
+    final phoneNumber = _phoneCtrl.text.trim();
+    print(
+        'Saving profile - PersonalEmail: $personalEmail, WorkEmail: $workEmail, Phone: $phoneNumber');
+
     final result = await ProfileService.updateProfile(
-      email: _emailCtrl.text.trim(),
-      phoneNumber: _phoneCtrl.text.trim(),
+      personalEmail: personalEmail,
+      workEmail: workEmail.isEmpty ? null : workEmail,
+      phoneNumber: phoneNumber,
     );
+    print(
+        'Save result - Success: ${result.success}, Error: ${result.errorMessage}');
+
     if (mounted) {
       setState(() => _isSaving = false);
+      if (result.statusCode == 401) return; // global handler sudah handle
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result.success
@@ -622,61 +664,95 @@ class _BiodataContentState extends State<_BiodataContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _FormField(
-            label: 'NIK',
-            child: _ReadOnlyField(value: widget.employeeId),
-          ),
-          const SizedBox(height: 14),
-          _FormField(
-            label: 'Email Address',
-            child: _EditableField(
-                controller: _emailCtrl,
-                hint: 'Masukkan email',
-                keyboardType: TextInputType.emailAddress),
-          ),
-          const SizedBox(height: 14),
-          _FormField(
-            label: 'Telephone Number',
-            child: _EditableField(
-              controller: _phoneCtrl,
-              hint: 'Masukkan nomor telepon',
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(13)
-              ],
+    return Form(
+      key: _formKey,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _FormField(
+              label: 'NIK',
+              child: _ReadOnlyField(value: widget.employeeId),
             ),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: _isSaving ? null : _save,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1565C0),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-                elevation: 0,
+            const SizedBox(height: 14),
+            _FormField(
+              label: 'Email Pribadi *',
+              child: _EditableField(
+                  controller: _personalEmailCtrl,
+                  hint: 'Masukkan email pribadi',
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Email wajib diisi';
+                    }
+                    if (!value.contains('@') || !value.contains('.')) {
+                      return 'Format email tidak valid';
+                    }
+                    return null;
+                  }),
+            ),
+            const SizedBox(height: 14),
+            _FormField(
+              label: 'Email Kantor',
+              child: _EditableField(
+                  controller: _workEmailCtrl,
+                  hint: 'Masukkan email kantor (opsional)',
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return null;
+                    }
+                    if (!value.contains('@') || !value.contains('.')) {
+                      return 'Format email tidak valid';
+                    }
+                    return null;
+                  }),
+            ),
+            const SizedBox(height: 14),
+            _FormField(
+              label: 'Nomor Telepon',
+              child: _EditableField(
+                controller: _phoneCtrl,
+                hint: 'Masukkan nomor telepon',
+                keyboardType: TextInputType.phone,
+                inputFormatters: [LengthLimitingTextInputFormatter(13)],
+                validator: (v) {
+                  if (v!.isEmpty) return 'Wajib diisi';
+                  if (int.tryParse(v) == null) return 'Hanya boleh angka';
+                  if (v.length < 12 || v.length > 13) return 'Nomor telepon tidak valid';
+                  if (!v.startsWith('08')) return 'Nomor harus diawali 08';
+                  if (v.startsWith('+62')) return null;
+                  return null;
+                },
               ),
-              child: _isSaving
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2))
-                  : const Text('Simpan Perubahan',
-                      style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1565C0),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Simpan Perubahan',
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2203,17 +2279,20 @@ class _EditableField extends StatelessWidget {
   final String hint;
   final TextInputType keyboardType;
   final List<TextInputFormatter>? inputFormatters;
+  final String? Function(String?)? validator;
   const _EditableField(
       {required this.controller,
       required this.hint,
       required this.keyboardType,
-      this.inputFormatters});
+      this.inputFormatters,
+      this.validator});
 
   @override
-  Widget build(BuildContext context) => TextField(
+  Widget build(BuildContext context) => TextFormField(
         controller: controller,
         keyboardType: keyboardType,
         inputFormatters: inputFormatters,
+        validator: validator,
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           hintText: hint,

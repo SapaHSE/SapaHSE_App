@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'app_globals.dart';
+import 'services/storage_service.dart';
 import 'screens/splash_screen.dart';
+import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/news_screen.dart';
 import 'screens/inbox_screen.dart';
@@ -8,7 +12,9 @@ import 'screens/create_hazard_screen.dart';
 import 'screens/create_inspection_screen.dart';
 import 'screens/qr_scan_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SharedPreferences.getInstance();
   runApp(const BBEApp());
 }
 
@@ -28,6 +34,7 @@ class BBEApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
+      navigatorKey: navigatorKey,
       home: const SplashScreen(),
     );
   }
@@ -40,8 +47,66 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      StorageService.isLoggedIn().then((loggedIn) {
+        if (!loggedIn && mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Row(
+                children: [
+                  Icon(Icons.lock_clock, color: Color(0xFF1A56C4)),
+                  SizedBox(width: 8),
+                  Text('Sesi Berakhir'),
+                ],
+              ),
+              content: const Text(
+                'Sesi kamu telah habis. Silakan login kembali untuk melanjutkan.',
+              ),
+              actions: [
+                FilledButton(
+                  onPressed: () {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF1A56C4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Login Kembali'),
+                ),
+              ],
+            ),
+          );
+        }
+      });
+    }
+  }
 
   final List<Widget> _screens = const [
     HomeScreen(),

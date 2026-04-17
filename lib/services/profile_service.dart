@@ -9,7 +9,8 @@ class ProfileService {
 
     if (!response.success) {
       return ProfileResult.error(
-          response.errorMessage ?? 'Gagal memuat profil.');
+          response.errorMessage ?? 'Gagal memuat profil.',
+          statusCode: response.statusCode);
     }
 
     final userData = response.data['data'] as Map<String, dynamic>?;
@@ -74,13 +75,15 @@ class ProfileService {
 
   // ── Update profile (email, phone, position, department) ──────────────────
   static Future<ProfileResult> updateProfile({
-    String? email,
+    String? personalEmail,
+    String? workEmail,
     String? phoneNumber,
     String? position,
     String? department,
   }) async {
     final body = <String, dynamic>{};
-    if (email != null) body['email'] = email;
+    if (personalEmail != null) body['personal_email'] = personalEmail;
+    if (workEmail != null) body['work_email'] = workEmail;
     if (phoneNumber != null) body['phone_number'] = phoneNumber;
     if (position != null) body['position'] = position;
     if (department != null) body['department'] = department;
@@ -89,7 +92,8 @@ class ProfileService {
 
     if (!response.success) {
       return ProfileResult.error(
-          response.errorMessage ?? 'Gagal menyimpan profil.');
+          response.errorMessage ?? 'Gagal menyimpan profil.',
+          statusCode: response.statusCode);
     }
 
     final userData = response.data['data'] as Map<String, dynamic>?;
@@ -138,14 +142,15 @@ class ProfileResult {
   final bool success;
   final ProfileData? data;
   final String? errorMessage;
+  final int? statusCode;
 
-  ProfileResult._({required this.success, this.data, this.errorMessage});
+  ProfileResult._({required this.success, this.data, this.errorMessage, this.statusCode});
 
   factory ProfileResult.success(ProfileData data) =>
       ProfileResult._(success: true, data: data);
 
-  factory ProfileResult.error(String message) =>
-      ProfileResult._(success: false, errorMessage: message);
+  factory ProfileResult.error(String message, {int? statusCode}) =>
+      ProfileResult._(success: false, errorMessage: message, statusCode: statusCode);
 }
 
 class LicensesResult {

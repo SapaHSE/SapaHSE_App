@@ -1,10 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../data/news_data.dart';
+import '../services/news_service.dart';
 
-class NewsDetailScreen extends StatelessWidget {
+class NewsDetailScreen extends StatefulWidget {
   final NewsArticle article;
   const NewsDetailScreen({super.key, required this.article});
+
+  @override
+  State<NewsDetailScreen> createState() => _NewsDetailScreenState();
+}
+
+class _NewsDetailScreenState extends State<NewsDetailScreen> {
+  NewsArticle? _fullArticle;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDetail();
+  }
+
+  Future<void> _loadDetail() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await NewsService.getNewsDetail(widget.article.id);
+    if (!mounted) return;
+
+    if (result.success && result.article != null) {
+      setState(() {
+        _fullArticle = result.article;
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _error = result.errorMessage;
+        _isLoading = false;
+      });
+    }
+  }
 
   Color _categoryColor(String cat) {
     switch (cat) {
@@ -23,6 +61,7 @@ class NewsDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final article = _fullArticle ?? widget.article;
     final catColor = _categoryColor(article.category);
 
     return Scaffold(
@@ -87,7 +126,7 @@ class NewsDetailScreen extends StatelessWidget {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withValues(alpha: 0.7)
+                          Colors.black.withOpacity(0.7)
                         ],
                         stops: const [0.4, 1.0],
                       ),
@@ -110,9 +149,9 @@ class NewsDetailScreen extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: catColor.withValues(alpha: 0.12),
+                      color: catColor.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: catColor.withValues(alpha: 0.3)),
+                      border: Border.all(color: catColor.withOpacity(0.3)),
                     ),
                     child: Text(
                       article.category,
@@ -167,11 +206,35 @@ class NewsDetailScreen extends StatelessWidget {
                   ),
 
                   // Body content
-                  Text(
-                    article.content,
-                    style: const TextStyle(
-                        fontSize: 15, height: 1.7, color: Color(0xFF2D2D2D)),
-                  ),
+                  if (_isLoading)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 32),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  else if (_error != null)
+                    Column(
+                      children: [
+                        Text(
+                          article.excerpt,
+                          style: const TextStyle(
+                              fontSize: 15, height: 1.7, color: Color(0xFF2D2D2D)),
+                        ),
+                        const SizedBox(height: 16),
+                        TextButton.icon(
+                          onPressed: _loadDetail,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Muat ulang konten'),
+                        ),
+                      ],
+                    )
+                  else
+                    Text(
+                      article.content.isNotEmpty ? article.content : article.excerpt,
+                      style: const TextStyle(
+                          fontSize: 15, height: 1.7, color: Color(0xFF2D2D2D)),
+                    ),
 
                   const SizedBox(height: 32),
 
