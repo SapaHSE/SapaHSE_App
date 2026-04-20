@@ -416,7 +416,7 @@ class _ProfileTabState extends State<_ProfileTab> {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              _isWorkActive ? 'Aktif' : 'Nonaktif',
+                              _isWorkActive ? 'Status Karyawan : Aktif' : 'Status Karyawan : Nonaktif',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,

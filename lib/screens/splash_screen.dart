@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'login_screen.dart';
+import '../services/storage_service.dart';
 import '../main.dart';
+import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -47,28 +46,25 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Timer(const Duration(milliseconds: 2600), () async {
-      if (!mounted) return;
-      
-      final prefs = await SharedPreferences.getInstance();
-      final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+    _checkAuthAndNavigate();
+  }
 
-      Widget nextScreen = const LoginScreen();
-      if (isLoggedIn) {
-        nextScreen = const MainScreen();
-      }
+  Future<void> _checkAuthAndNavigate() async {
+    
+    await Future.delayed(const Duration(milliseconds: 2600));
 
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => nextScreen,
-          transitionsBuilder: (_, anim, __, child) =>
-              FadeTransition(opacity: anim, child: child),
-          transitionDuration: const Duration(milliseconds: 500),
+    if (!mounted) return;
+
+    final loggedIn = await StorageService.isLoggedIn();
+
+    if (!mounted) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => loggedIn ? const MainScreen() : const LoginScreen(),
         ),
+        (route) => false,
       );
-    });
   }
 
   @override
@@ -87,7 +83,6 @@ class _SplashScreenState extends State<SplashScreen>
           builder: (_, __) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ── Logo image ──────────────────────────────────────────
               FadeTransition(
                 opacity: _fadeAnim,
                 child: ScaleTransition(
@@ -99,7 +94,8 @@ class _SplashScreenState extends State<SplashScreen>
                       borderRadius: BorderRadius.circular(32),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF1A56C4).withValues(alpha: 0.15),
+                          color:
+                              const Color(0xFF1A56C4).withValues(alpha: 0.15),
                           blurRadius: 30,
                           offset: const Offset(0, 10),
                         ),
@@ -115,10 +111,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
               ),
-
               const SizedBox(height: 28),
-
-              // ── App name ────────────────────────────────────────────
               FadeTransition(
                 opacity: _textFadeAnim,
                 child: const Column(

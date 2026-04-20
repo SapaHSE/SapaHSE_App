@@ -35,14 +35,21 @@ class _CloudSaveScreenState extends State<CloudSaveScreen>
     _connectSub =
         CloudSaveService.instance.connectivityStream.listen((results) async {
       final online = await CloudSaveService.isOnline();
-      if (mounted) setState(() => _isOnline = online);
-      _loadDrafts(); // refresh count when connectivity changes
+      if (!mounted) return;
+      setState(() => _isOnline = online);
+      await _loadDrafts(); // refresh count when connectivity changes
+      if (mounted && _isOnline && _drafts.isNotEmpty && !_isSyncing) {
+        _syncAll();
+      }
     });
   }
 
   Future<void> _init() async {
     _isOnline = await CloudSaveService.isOnline();
     await _loadDrafts();
+    if (mounted && _isOnline && _drafts.isNotEmpty && !_isSyncing) {
+      _syncAll();
+    }
   }
 
   Future<void> _loadDrafts() async {

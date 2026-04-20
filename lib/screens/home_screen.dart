@@ -713,62 +713,6 @@ class _ReportCard extends StatelessWidget {
                 ),
               ),
 
-              // ── BOTTOM: Status Banner (Always present for uniform size) ───────
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                decoration: BoxDecoration(
-                  color: report.status == ReportStatus.open
-                      ? const Color(0xFFFFF4E5)
-                      : report.status == ReportStatus.inProgress
-                          ? const Color(0xFFF3E5F5)
-                          : const Color(0xFFE8F5E9),
-                  border: Border(
-                    top: BorderSide(
-                      color: report.status == ReportStatus.open
-                          ? Colors.orange.shade100
-                          : report.status == ReportStatus.inProgress
-                              ? Colors.purple.shade100
-                              : Colors.green.shade100,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      report.status == ReportStatus.open
-                          ? Icons.warning_amber_rounded
-                          : report.status == ReportStatus.inProgress
-                              ? Icons.pending_actions_rounded
-                              : Icons.check_circle_outline_rounded,
-                      size: 14,
-                      color: report.status == ReportStatus.open
-                          ? Colors.orange.shade900
-                          : report.status == ReportStatus.inProgress
-                              ? Colors.purple.shade900
-                              : Colors.green.shade900,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      report.status == ReportStatus.open
-                          ? 'BUTUH TINDAKAN SEGERA'
-                          : report.status == ReportStatus.inProgress
-                              ? 'LAPORAN SEDANG DIPROSES'
-                              : 'LAPORAN TELAH SELESAI',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: report.status == ReportStatus.open
-                            ? Colors.orange.shade900
-                            : report.status == ReportStatus.inProgress
-                                ? Colors.purple.shade900
-                                : Colors.green.shade900,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
