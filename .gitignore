@@ -1,45 +1,52 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
+# === OS & SISTEM ===
 .DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
+Thumbs.db
+*.log
+*.tmp
+*.bak
+*.swp
 
-# IntelliJ related
+# === IDE & EDITOR ===
+.idea/
+.vscode/
 *.iml
 *.ipr
 *.iws
-.idea/
+.settings/
+.project
+.classpath
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins-dependencies
+# === DEPENDENCIES (Sangat Penting untuk JS/Node) ===
+node_modules/        # Folder dependensi JavaScript/Node.js
+jspm_packages/
+bower_components/
+vendor/              # Sering digunakan di PHP/Composer atau Go
 .pub-cache/
 .pub/
-/build/
+.packages
+
+# === BUILD ARTIFACTS ===
+build/
+dist/                # Output standar untuk JavaScript/Web
+out/                 # Output standar untuk Java/Kotlin
+bin/
+obj/
 /coverage/
+.dart_tool/
+.next/               # Jika menggunakan Next.js
+.nuxt/               # Jika menggunakan Nuxt.js
 
-# Symbolication related
-app.*.symbols
+# === ENVIRONMENT & SECRETS ===
+.env*                # Menyembunyikan semua file .env, .env.local, dsb.
+*.pem
+*.key
+*.p12
 
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
+# === PLATFORM SPECIFIC (Mobile) ===
+.flutter-plugins
+.flutter-plugins-dependencies
 /android/app/debug
 /android/app/profile
 /android/app/release
+**/ios/Flutter/.last_build_id
+**/ios/**/Pods/      # Penting jika Anda bekerja dengan iOS/CocoaPods
