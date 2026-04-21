@@ -3,8 +3,11 @@ import 'dart:math' show Random;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import '../models/report.dart';
 import '../services/cloud_save_service.dart';
+import 'map_picker_screen.dart';
 
 const _perusahaanList = [
   'PT. Bukit Baiduri Energi',
@@ -100,6 +103,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   final _kronologiCtrl = TextEditingController();
   final _saranCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
+  final _pelaporLocationCtrl = TextEditingController();
+  final _kejadianLocationCtrl = TextEditingController();
   final List<XFile> _photoFiles = [];
   final _picker = ImagePicker();
 
@@ -113,6 +118,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     _kronologiCtrl.dispose();
     _saranCtrl.dispose();
     _locationCtrl.dispose();
+    _pelaporLocationCtrl.dispose();
+    _kejadianLocationCtrl.dispose();
     super.dispose();
   }
 
@@ -132,6 +139,77 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
       final matchDepartemen = _selectedDepartemen == null || pja.departemen == _selectedDepartemen;
       return matchPerusahaan && matchDepartemen;
     }).map((e) => e.nama).toList();
+  }
+
+  Future<void> _pickLocationFromMap(TextEditingController ctrl) async {
+    LatLng? current;
+    if (ctrl.text.isNotEmpty) {
+      final parts = ctrl.text.split(',');
+      if (parts.length == 2) {
+        final lat = double.tryParse(parts[0].trim());
+        final lng = double.tryParse(parts[1].trim());
+        if (lat != null && lng != null) {
+          current = LatLng(lat, lng);
+        }
+      }
+    }
+
+    final LatLng? result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapPickerScreen(initialLocation: current),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        ctrl.text = '${result.latitude}, ${result.longitude}';
+      });
+    }
+  }
+
+  Future<void> _getCurrentLocation(TextEditingController ctrl) async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Layanan lokasi tidak aktif.')));
+      }
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Izin lokasi ditolak.')));
+        }
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Izin lokasi ditolak permanen.')));
+      }
+      return;
+    }
+
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      setState(() {
+        ctrl.text = '${position.latitude}, ${position.longitude}';
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal mendapatkan lokasi: $e')));
+      }
+    }
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -202,6 +280,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
       'kronologi': _kronologiCtrl.text.trim(),
       'saran': _saranCtrl.text.trim(),
       'location': _locationCtrl.text.trim(),
+      'pelaporLocation': _pelaporLocationCtrl.text.trim(),
+      'kejadianLocation': _kejadianLocationCtrl.text.trim(),
       'perusahaan': _selectedPerusahaan,
       'tagOrang': _selectedTagOrang,
       'severity': _selectedSeverity?.name,
@@ -504,12 +584,62 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             decoration: _inputDeco(hint: 'Saran perbaikan...'),
           ),
           const SizedBox(height: 14),
-          _label('Lokasi Kejadian *'),
+          _label('Lokasi Kejadian (Keterangan) *'),
           TextFormField(
             controller: _locationCtrl,
             validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
             decoration: _inputDeco(
-                hint: 'Lokasi kejadian', icon: Icons.location_on_outlined),
+                hint: 'Detail lokasi kejadian', icon: Icons.location_on_outlined),
+          ),
+          const SizedBox(height: 14),
+          _label('Pinpoint Lokasi Pelapor *'),
+          TextFormField(
+            controller: _pelaporLocationCtrl,
+            readOnly: true,
+            validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
+            decoration: _inputDeco(
+              hint: 'Koordinat Pelapor', 
+              icon: Icons.my_location,
+            ).copyWith(
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.gps_fixed),
+                    onPressed: () => _getCurrentLocation(_pelaporLocationCtrl),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.map_outlined),
+                    onPressed: () => _pickLocationFromMap(_pelaporLocationCtrl),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          _label('Pinpoint Lokasi Kejadian *'),
+          TextFormField(
+            controller: _kejadianLocationCtrl,
+            readOnly: true,
+            validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
+            decoration: _inputDeco(
+              hint: 'Koordinat Kejadian', 
+              icon: Icons.place,
+            ).copyWith(
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.gps_fixed),
+                    onPressed: () => _getCurrentLocation(_kejadianLocationCtrl),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.map_outlined),
+                    onPressed: () => _pickLocationFromMap(_kejadianLocationCtrl),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 14),
           _label('Foto *'),
