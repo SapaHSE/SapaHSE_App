@@ -21,24 +21,31 @@ const _departemenList = [
   'Security',
 ];
 
-const _tagOrangList = [
-  'Budi Santoso',
-  'Ahmad Fauzi',
-  'Riko Pratama',
-  'Hendra Wijaya',
-  'Siti Rahayu',
-  'Dian Permata',
-  'Eko Susilo',
-  'Novi Andriani',
-  'Wahyu Hidayat',
-  'Agus Setiawan',
-  'Bambang Purnomo',
-  'Lintang Bhaskara',
-  'Maya Putri',
-  'Reza Firmansyah',
-  'Kevin Alfarisi',
-  'Deni Setiawan',
-  'Putri Wulandari',
+class PjaData {
+  final String nama;
+  final String perusahaan;
+  final String departemen;
+  const PjaData(this.nama, this.perusahaan, this.departemen);
+}
+
+const _pjaList = [
+  PjaData('Budi Santoso', 'PT. Bukit Baiduri Energi', 'HSE'),
+  PjaData('Ahmad Fauzi', 'PT. Khotai Makmur Insan Abadi', 'Produksi'),
+  PjaData('Riko Pratama', 'PT. Bukit Baiduri Energi', 'Maintenance'),
+  PjaData('Hendra Wijaya', 'PT. Khotai Makmur Insan Abadi', 'Engineering'),
+  PjaData('Siti Rahayu', 'PT. Bukit Baiduri Energi', 'HRD'),
+  PjaData('Dian Permata', 'PT. Khotai Makmur Insan Abadi', 'Logistik'),
+  PjaData('Eko Susilo', 'PT. Bukit Baiduri Energi', 'Security'),
+  PjaData('Novi Andriani', 'PT. Khotai Makmur Insan Abadi', 'HSE'),
+  PjaData('Wahyu Hidayat', 'PT. Bukit Baiduri Energi', 'Produksi'),
+  PjaData('Agus Setiawan', 'PT. Khotai Makmur Insan Abadi', 'Maintenance'),
+  PjaData('Bambang Purnomo', 'PT. Bukit Baiduri Energi', 'Engineering'),
+  PjaData('Lintang Bhaskara', 'PT. Khotai Makmur Insan Abadi', 'HRD'),
+  PjaData('Maya Putri', 'PT. Bukit Baiduri Energi', 'Logistik'),
+  PjaData('Reza Firmansyah', 'PT. Khotai Makmur Insan Abadi', 'Security'),
+  PjaData('Kevin Alfarisi', 'PT. Bukit Baiduri Energi', 'HSE'),
+  PjaData('Deni Setiawan', 'PT. Khotai Makmur Insan Abadi', 'Produksi'),
+  PjaData('Putri Wulandari', 'PT. Bukit Baiduri Energi', 'Maintenance'),
 ];
 
 const _subkategoriTTA = [
@@ -71,7 +78,7 @@ class CreateHazardScreen extends StatefulWidget {
 
 class _CreateHazardScreenState extends State<CreateHazardScreen> {
   static const _blue = Color(0xFF1A56C4);
-  static const _blueLight = Color(0xFFEFF4FF);
+
   static const _bgColor = Color(0xFFF0F0F0);
 
   int _currentStep = 0;
@@ -93,7 +100,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   final _kronologiCtrl = TextEditingController();
   final _saranCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
-  XFile? _photoFile;
+  final List<XFile> _photoFiles = [];
   final _picker = ImagePicker();
 
   // Step 3
@@ -110,21 +117,40 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   }
 
   List<String> get _subkategoriList {
-    if (_selectedKategori == 'TTA (Tindakan Tidak Aman)')
+    if (_selectedKategori == 'TTA (Tindakan Tidak Aman)') {
       return _subkategoriTTA;
-    if (_selectedKategori == 'KTA (Kondisi Tidak Aman)') return _subkategoriKTA;
+    }
+    if (_selectedKategori == 'KTA (Kondisi Tidak Aman)') {
+      return _subkategoriKTA;
+    }
     return [];
+  }
+
+  List<String> get _filteredPjaList {
+    return _pjaList.where((pja) {
+      final matchPerusahaan = _selectedPerusahaan == null || pja.perusahaan == _selectedPerusahaan;
+      final matchDepartemen = _selectedDepartemen == null || pja.departemen == _selectedDepartemen;
+      return matchPerusahaan && matchDepartemen;
+    }).map((e) => e.nama).toList();
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
   Future<void> _pickPhoto(ImageSource source) async {
     try {
-      final picked = await _picker.pickImage(
-        source: source,
-        imageQuality: 80,
-        maxWidth: 1280,
-      );
-      if (picked != null) setState(() => _photoFile = picked);
+      if (source == ImageSource.gallery) {
+        final picked = await _picker.pickMultiImage(
+          imageQuality: 80,
+          maxWidth: 1280,
+        );
+        if (picked.isNotEmpty) setState(() => _photoFiles.addAll(picked));
+      } else {
+        final picked = await _picker.pickImage(
+          source: source,
+          imageQuality: 80,
+          maxWidth: 1280,
+        );
+        if (picked != null) setState(() => _photoFiles.add(picked));
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -181,7 +207,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
       'severity': _selectedSeverity?.name,
       'kategori': _selectedKategori,
       'subkategori': _selectedSubkategori,
-      'photoPath': _photoFile?.path,
+      'photoPaths': _photoFiles.map((f) => f.path).toList(),
       'isPublic': _isPublic,
     };
 
@@ -319,7 +345,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
         children: [
           _label('Kategori Hazard *'),
           DropdownButtonFormField<String>(
-            value: _selectedKategori,
+            initialValue: _selectedKategori,
             validator: (v) => v == null ? 'Wajib dipilih' : null,
             decoration: _inputDeco(
                 hint: 'Pilih Kategori', icon: Icons.category_outlined),
@@ -334,7 +360,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           const SizedBox(height: 14),
           _label('Subkategori Hazard *'),
           DropdownButtonFormField<String>(
-            value: _selectedSubkategori,
+            initialValue: _selectedSubkategori,
             validator: (v) => v == null ? 'Wajib dipilih' : null,
             decoration: _inputDeco(
                 hint: 'Pilih Subkategori',
@@ -357,7 +383,10 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               initialSelection: _selectedPerusahaan,
               hintText: 'Pilih / Cari Perusahaan',
               inputDecorationTheme: _dropdownTheme(),
-              onSelected: (v) => setState(() => _selectedPerusahaan = v),
+              onSelected: (v) => setState(() {
+                _selectedPerusahaan = v;
+                _selectedTagOrang = null;
+              }),
               dropdownMenuEntries: _perusahaanList
                   .map((e) => DropdownMenuEntry(value: e, label: e))
                   .toList(),
@@ -374,7 +403,10 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               initialSelection: _selectedDepartemen,
               hintText: 'Pilih / Cari Departemen',
               inputDecorationTheme: _dropdownTheme(),
-              onSelected: (v) => setState(() => _selectedDepartemen = v),
+              onSelected: (v) => setState(() {
+                _selectedDepartemen = v;
+                _selectedTagOrang = null;
+              }),
               dropdownMenuEntries: _departemenList
                   .map((e) => DropdownMenuEntry(value: e, label: e))
                   .toList(),
@@ -384,6 +416,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           _label('PJA (Penanggung Jawab Area) *'),
           LayoutBuilder(
             builder: (context, constraints) => DropdownMenu<String>(
+              key: ValueKey('$_selectedPerusahaan-$_selectedDepartemen'),
               width: constraints.maxWidth,
               enableSearch: true,
               enableFilter: true,
@@ -392,7 +425,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               hintText: 'Pilih / Cari Orang',
               inputDecorationTheme: _dropdownTheme(),
               onSelected: (v) => setState(() => _selectedTagOrang = v),
-              dropdownMenuEntries: _tagOrangList
+              dropdownMenuEntries: _filteredPjaList
                   .map((e) => DropdownMenuEntry(value: e, label: e))
                   .toList(),
             ),
@@ -480,48 +513,60 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           ),
           const SizedBox(height: 14),
           _label('Foto *'),
-          _photoFile != null
-              ? Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: kIsWeb
-                          ? Image.network(_photoFile!.path,
-                              height: 120,
-                              width: double.infinity,
-                              fit: BoxFit.cover)
-                          : Image.file(File(_photoFile!.path),
-                              height: 120,
-                              width: double.infinity,
-                              fit: BoxFit.cover),
+          if (_photoFiles.isNotEmpty)
+            SizedBox(
+              height: 120,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _photoFiles.length,
+                itemBuilder: (context, index) {
+                  final photo = _photoFiles[index];
+                  return Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    width: 120,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: kIsWeb
+                              ? Image.network(photo.path, fit: BoxFit.cover)
+                              : Image.file(File(photo.path), fit: BoxFit.cover),
+                        ),
+                        Positioned(
+                          right: 4,
+                          top: 4,
+                          child: GestureDetector(
+                            onTap: () => setState(() => _photoFiles.removeAt(index)),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                              child: const Icon(Icons.close, color: Colors.white, size: 16),
+                            ),
+                          ),
+                        )
+                      ],
                     ),
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.white),
-                        style:
-                            IconButton.styleFrom(backgroundColor: Colors.red),
-                        onPressed: () => setState(() => _photoFile = null),
-                      ),
-                    )
-                  ],
-                )
-              : Row(
-                  children: [
-                    Expanded(
-                        child: OutlinedButton.icon(
-                            onPressed: () => _pickPhoto(ImageSource.camera),
-                            icon: const Icon(Icons.camera_alt),
-                            label: const Text('Kamera'))),
-                    const SizedBox(width: 8),
-                    Expanded(
-                        child: OutlinedButton.icon(
-                            onPressed: () => _pickPhoto(ImageSource.gallery),
-                            icon: const Icon(Icons.photo),
-                            label: const Text('Galeri'))),
-                  ],
-                ),
+                  );
+                },
+              ),
+            ),
+          if (_photoFiles.isNotEmpty) const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                  child: OutlinedButton.icon(
+                      onPressed: () => _pickPhoto(ImageSource.camera),
+                      icon: const Icon(Icons.camera_alt),
+                      label: const Text('Kamera'))),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: OutlinedButton.icon(
+                      onPressed: () => _pickPhoto(ImageSource.gallery),
+                      icon: const Icon(Icons.photo),
+                      label: const Text('Galeri'))),
+            ],
+          ),
         ],
       ),
     );
@@ -556,20 +601,32 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               _previewItem('Kronologi', _kronologiCtrl.text),
               _previewItem('Saran', _saranCtrl.text),
               _previewItem('Lokasi', _locationCtrl.text),
-              if (_photoFile != null) ...[
+              if (_photoFiles.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 const Text('Foto:',
                     style: TextStyle(color: Colors.grey, fontSize: 13)),
                 const SizedBox(height: 4),
-                GestureDetector(
-                  onTap: () => _showPhotoZoom(context),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: kIsWeb
-                        ? Image.network(_photoFile!.path,
-                            height: 120, width: double.infinity, fit: BoxFit.cover)
-                        : Image.file(File(_photoFile!.path),
-                            height: 120, width: double.infinity, fit: BoxFit.cover),
+                SizedBox(
+                  height: 120,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _photoFiles.length,
+                    itemBuilder: (context, index) {
+                      final photo = _photoFiles[index];
+                      return GestureDetector(
+                        onTap: () => _showPhotoZoom(context, photo),
+                        child: Container(
+                          width: 120,
+                          margin: const EdgeInsets.only(right: 8),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: kIsWeb
+                                ? Image.network(photo.path, fit: BoxFit.cover)
+                                : Image.file(File(photo.path), fit: BoxFit.cover),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -593,11 +650,14 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               RadioListTile<bool>(
                 title: const Text('Public'),
                 subtitle: const Text(
-                    'Laporan dapat dilihat oleh semua orang di menu News',
+                    'Laporan dapat dilihat oleh semua orang di menu Utama',
                     style: TextStyle(fontSize: 12)),
+                // ignore: deprecated_member_use
                 value: true,
+                // ignore: deprecated_member_use
                 groupValue: _isPublic,
                 activeColor: _blue,
+                // ignore: deprecated_member_use
                 onChanged: (v) => setState(() => _isPublic = v!),
               ),
               RadioListTile<bool>(
@@ -605,9 +665,12 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 subtitle: const Text(
                     'Laporan hanya dilihat oleh Anda dan pihak terkait',
                     style: TextStyle(fontSize: 12)),
+                // ignore: deprecated_member_use
                 value: false,
+                // ignore: deprecated_member_use
                 groupValue: _isPublic,
                 activeColor: _blue,
+                // ignore: deprecated_member_use
                 onChanged: (v) => setState(() => _isPublic = v!),
               ),
             ],
@@ -637,8 +700,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     );
   }
 
-  void _showPhotoZoom(BuildContext context) {
-    if (_photoFile == null) return;
+  void _showPhotoZoom(BuildContext context, XFile photo) {
     showDialog(
       context: context,
       builder: (_) => Dialog(
@@ -655,8 +717,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: kIsWeb
-                    ? Image.network(_photoFile!.path)
-                    : Image.file(File(_photoFile!.path)),
+                    ? Image.network(photo.path)
+                    : Image.file(File(photo.path)),
               ),
             ),
             Positioned(

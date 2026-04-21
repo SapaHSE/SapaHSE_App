@@ -670,7 +670,8 @@ class _InboxCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           child: Column(
             children: [
-              IntrinsicHeight(
+              SizedBox(
+                height: 135,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -735,14 +736,16 @@ class _InboxCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              report.description,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.black54,
-                                height: 1.3,
+                            Expanded(
+                              child: Text(
+                                report.description,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.black54,
+                                  height: 1.3,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -991,35 +994,3 @@ class _AnnouncementCard extends StatelessWidget {
   }
 }
 
-// ── DETAIL ROW ────────────────────────────────────────────────────────────────
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _DetailRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 90, // Menyamakan ukuran label agar rapi
-          child: Text(
-            label,
-            style: const TextStyle(fontSize: 13, color: Colors.black54),
-          ),
-        ),
-        const Text(': ', style: TextStyle(fontSize: 13, color: Colors.black54)),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-                fontSize: 13,
-                color: Colors.black87,
-                fontWeight: FontWeight.w500),
-          ),
-        ),
-      ],
-    );
-  }
-}

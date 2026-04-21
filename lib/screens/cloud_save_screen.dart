@@ -72,10 +72,8 @@ class _CloudSaveScreenState extends State<CloudSaveScreen>
 
     await CloudSaveService.instance.syncAll(
       uploadFn: (draft) async {
-        // TODO: Replace with your actual API call, e.g. ApiService.post(...)
-        // Simulating upload with a small delay
         await Future.delayed(const Duration(milliseconds: 800));
-        return true; // Return true on success
+        return true; 
       },
       onEach: (draft, success) {
         if (mounted) {
