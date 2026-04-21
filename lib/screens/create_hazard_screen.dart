@@ -113,6 +113,33 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    _fetchPelaporLocationSilent();
+  }
+
+  Future<void> _fetchPelaporLocationSilent() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+      
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      
+      if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+        final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+        if (mounted) {
+          _pelaporLocationCtrl.text = '${pos.latitude}, ${pos.longitude}';
+        }
+      }
+    } catch (e) {
+      debugPrint('Gagal fetch lokasi pelapor: $e');
+    }
+  }
+
+  @override
   void dispose() {
     _titleCtrl.dispose();
     _kronologiCtrl.dispose();
@@ -584,38 +611,13 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             decoration: _inputDeco(hint: 'Saran perbaikan...'),
           ),
           const SizedBox(height: 14),
-          _label('Lokasi Kejadian (Keterangan) *'),
+          _label('Lokasi Kejadian *'),
           TextFormField(
             controller: _locationCtrl,
             validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
-            decoration: _inputDeco(
-                hint: 'Detail lokasi kejadian', icon: Icons.location_on_outlined),
+            decoration: _inputDeco(hint: 'Detail lokasi kejadian'),
           ),
-          const SizedBox(height: 14),
-          _label('Pinpoint Lokasi Pelapor *'),
-          TextFormField(
-            controller: _pelaporLocationCtrl,
-            readOnly: true,
-            validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
-            decoration: _inputDeco(
-              hint: 'Koordinat Pelapor', 
-              icon: Icons.my_location,
-            ).copyWith(
-              suffixIcon: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.gps_fixed),
-                    onPressed: () => _getCurrentLocation(_pelaporLocationCtrl),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.map_outlined),
-                    onPressed: () => _pickLocationFromMap(_pelaporLocationCtrl),
-                  ),
-                ],
-              ),
-            ),
-          ),
+
           const SizedBox(height: 14),
           _label('Pinpoint Lokasi Kejadian *'),
           TextFormField(

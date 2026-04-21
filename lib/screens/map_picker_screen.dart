@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -16,6 +17,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   LatLng? _selectedLocation;
   final MapController _mapController = MapController();
   bool _isLoading = true;
+  bool _isSatellite = false;
+  double _mapRotation = 0.0;
 
   @override
   void initState() {
@@ -82,11 +85,21 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                   _selectedLocation = point;
                 });
               },
+              onPositionChanged: (camera, hasGesture) {
+                if (_mapRotation != camera.rotation) {
+                  setState(() {
+                    _mapRotation = camera.rotation;
+                  });
+                }
+              },
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: _isSatellite 
+                    ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.sapahse.app',
+                maxZoom: 19,
               ),
               if (_selectedLocation != null)
                 MarkerLayer(
@@ -103,10 +116,52 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           ),
           if (_isLoading)
             const Center(child: CircularProgressIndicator()),
+            
+          // Compass & Layer controls
+          Positioned(
+            top: 20,
+            right: 20,
+            child: Column(
+              children: [
+                // Layer Toggle
+                FloatingActionButton(
+                  heroTag: 'layerToggle',
+                  mini: true,
+                  backgroundColor: Colors.white,
+                  onPressed: () {
+                    setState(() {
+                      _isSatellite = !_isSatellite;
+                    });
+                  },
+                  child: Icon(
+                    _isSatellite ? Icons.map : Icons.satellite, 
+                    color: const Color(0xFF1A56C4)
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Compass
+                FloatingActionButton(
+                  heroTag: 'compassReset',
+                  mini: true,
+                  backgroundColor: Colors.white,
+                  onPressed: () {
+                    _mapController.rotate(0.0);
+                  },
+                  child: Transform.rotate(
+                    angle: -_mapRotation * (math.pi / 180),
+                    child: const Icon(Icons.explore, color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // My Location Button
           Positioned(
             bottom: 20,
             right: 20,
             child: FloatingActionButton(
+              heroTag: 'myLocation',
               onPressed: () async {
                 try {
                   bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
