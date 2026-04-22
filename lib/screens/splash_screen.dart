@@ -50,7 +50,6 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _checkAuthAndNavigate() async {
-    
     await Future.delayed(const Duration(milliseconds: 2600));
 
     if (!mounted) return;
@@ -60,11 +59,11 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => loggedIn ? const MainScreen() : const LoginScreen(),
-        ),
-        (route) => false,
-      );
+      MaterialPageRoute(
+        builder: (_) => loggedIn ? const MainScreen() : const LoginScreen(),
+      ),
+      (route) => false,
+    );
   }
 
   @override

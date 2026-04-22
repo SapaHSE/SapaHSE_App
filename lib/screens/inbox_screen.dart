@@ -77,7 +77,7 @@ class _InboxScreenState extends State<InboxScreen>
   @override
   void initState() {
     super.initState();
-    _mainTabController = TabController(length: 2, vsync: this);
+    _mainTabController = TabController(length: 3, vsync: this);
     _mainTabController.addListener(() {
       if (!_mainTabController.indexIsChanging) {
         setState(() {
@@ -92,15 +92,45 @@ class _InboxScreenState extends State<InboxScreen>
   final Set<String> _readAnnouncementIds = {};
 
   // ── Filtered reports ───────────────────────────────────────────────────────
+  List<Report> get _personalReports => dummyReports
+      .where((r) => r.reportedBy != 'Noor Lintang Bhaskara')
+      .toList();
+  List<Report> get _myReports => dummyReports
+      .where((r) => r.reportedBy == 'Noor Lintang Bhaskara')
+      .toList();
+
   List<Report> get _baseReports {
     if (_activeFilter == _SubFilter.unread) {
-      return dummyReports.where((r) => !_readReportIds.contains(r.id)).toList();
+      return _personalReports
+          .where((r) => !_readReportIds.contains(r.id))
+          .toList();
     }
-    return dummyReports.where((r) => _readReportIds.contains(r.id)).toList();
+    return _personalReports
+        .where((r) => _readReportIds.contains(r.id))
+        .toList();
+  }
+
+  List<Report> get _baseMyReports {
+    if (_activeFilter == _SubFilter.unread) {
+      return _myReports.where((r) => !_readReportIds.contains(r.id)).toList();
+    }
+    return _myReports.where((r) => _readReportIds.contains(r.id)).toList();
   }
 
   List<Report> get _activeReports {
     final base = _baseReports;
+    if (_searchQuery.isEmpty) return base;
+    final q = _searchQuery.toLowerCase();
+    return base
+        .where((r) =>
+            r.title.toLowerCase().contains(q) ||
+            r.reportedBy.toLowerCase().contains(q) ||
+            r.location.toLowerCase().contains(q))
+        .toList();
+  }
+
+  List<Report> get _activeMyReports {
+    final base = _baseMyReports;
     if (_searchQuery.isEmpty) return base;
     final q = _searchQuery.toLowerCase();
     return base
@@ -137,13 +167,19 @@ class _InboxScreenState extends State<InboxScreen>
 
   // ── Badge counts ───────────────────────────────────────────────────────────
   int get _unreadReportCount =>
-      dummyReports.where((r) => !_readReportIds.contains(r.id)).length;
+      _personalReports.where((r) => !_readReportIds.contains(r.id)).length;
+
+  int get _unreadMyReportCount =>
+      _myReports.where((r) => !_readReportIds.contains(r.id)).length;
 
   int get _unreadAnnouncementCount => dummyAnnouncements
       .where((a) => !_readAnnouncementIds.contains(a.id))
       .length;
 
-  int get _readReportCount => _readReportIds.length;
+  int get _readReportCount =>
+      _personalReports.where((r) => _readReportIds.contains(r.id)).length;
+  int get _readMyReportCount =>
+      _myReports.where((r) => _readReportIds.contains(r.id)).length;
   int get _readAnnouncementCount => _readAnnouncementIds.length;
 
   @override
@@ -274,7 +310,7 @@ class _InboxScreenState extends State<InboxScreen>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text('Personal'),
+                            const Text('Tugas'),
                             if (_unreadReportCount > 0) ...[
                               const SizedBox(width: 6),
                               _TabBadge(count: _unreadReportCount),
@@ -286,10 +322,22 @@ class _InboxScreenState extends State<InboxScreen>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text('Announcement'),
+                            const Text('Pengumuman'),
                             if (_unreadAnnouncementCount > 0) ...[
                               const SizedBox(width: 6),
                               _TabBadge(count: _unreadAnnouncementCount),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('MyPost'),
+                            if (_unreadMyReportCount > 0) ...[
+                              const SizedBox(width: 6),
+                              _TabBadge(count: _unreadMyReportCount),
                             ],
                           ],
                         ),
@@ -313,9 +361,13 @@ class _InboxScreenState extends State<InboxScreen>
                       isActive: _activeFilter == _SubFilter.unread,
                       badge: _mainTabController.index == 0
                           ? (_unreadReportCount > 0 ? _unreadReportCount : null)
-                          : (_unreadAnnouncementCount > 0
-                              ? _unreadAnnouncementCount
-                              : null),
+                          : _mainTabController.index == 1
+                              ? (_unreadAnnouncementCount > 0
+                                  ? _unreadAnnouncementCount
+                                  : null)
+                              : (_unreadMyReportCount > 0
+                                  ? _unreadMyReportCount
+                                  : null),
                       onTap: () =>
                           setState(() => _activeFilter = _SubFilter.unread),
                     ),
@@ -327,9 +379,13 @@ class _InboxScreenState extends State<InboxScreen>
                       isActive: _activeFilter == _SubFilter.read,
                       badge: _mainTabController.index == 0
                           ? (_readReportCount > 0 ? _readReportCount : null)
-                          : (_readAnnouncementCount > 0
-                              ? _readAnnouncementCount
-                              : null),
+                          : _mainTabController.index == 1
+                              ? (_readAnnouncementCount > 0
+                                  ? _readAnnouncementCount
+                                  : null)
+                              : (_readMyReportCount > 0
+                                  ? _readMyReportCount
+                                  : null),
                       onTap: () =>
                           setState(() => _activeFilter = _SubFilter.read),
                     ),
@@ -343,8 +399,9 @@ class _InboxScreenState extends State<InboxScreen>
               child: TabBarView(
                 controller: _mainTabController,
                 children: [
-                  _buildListTab(false),
-                  _buildListTab(true),
+                  _buildListTab(type: 0), // Personal
+                  _buildListTab(type: 1), // Announcement
+                  _buildListTab(type: 2), // Laporan Saya
                 ],
               ),
             ),
@@ -354,8 +411,14 @@ class _InboxScreenState extends State<InboxScreen>
     );
   }
 
-  Widget _buildListTab(bool isAnnouncement) {
-    final list = isAnnouncement ? _activeAnnouncements : _activeReports;
+  Widget _buildListTab({required int type}) {
+    List<dynamic> list = [];
+    if (type == 0)
+      list = _activeReports;
+    else if (type == 1)
+      list = _activeAnnouncements;
+    else if (type == 2) list = _activeMyReports;
+
     if (list.isEmpty) {
       return Center(
         child: Column(
@@ -384,7 +447,7 @@ class _InboxScreenState extends State<InboxScreen>
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       itemCount: list.length,
       itemBuilder: (context, i) {
-        if (isAnnouncement) {
+        if (type == 1) {
           final ann = list[i] as Announcement;
           return _AnnouncementCard(
             announcement: ann,
@@ -670,7 +733,8 @@ class _InboxCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           child: Column(
             children: [
-              IntrinsicHeight(
+              SizedBox(
+                height: 135,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -735,14 +799,16 @@ class _InboxCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              report.description,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.black54,
-                                height: 1.3,
+                            Expanded(
+                              child: Text(
+                                report.description,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.black54,
+                                  height: 1.3,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 8),

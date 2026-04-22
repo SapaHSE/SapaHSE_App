@@ -92,6 +92,85 @@ class ApiService {
     }
   }
 
+  // ── PUT ──────────────────────────────────────────────────────────────────
+  static Future<ApiResponse> put(
+    String endpoint,
+    Map<String, dynamic> body, {
+    bool auth = true,
+  }) async {
+    try {
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl$endpoint'),
+            headers: await _headers(auth: auth),
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 30));
+      return await _handleResponse(response);
+    } on SocketException {
+      return ApiResponse.error('No internet connection.');
+    } catch (e) {
+      return ApiResponse.error('Unexpected error: $e');
+    }
+  }
+
+  // ── POST MULTIPART ────────────────────────────────────────────────────────
+  static Future<ApiResponse> postMultipart(
+    String endpoint,
+    Map<String, dynamic> fields,
+    List<http.MultipartFile> files, {
+    bool auth = true,
+  }) async {
+    try {
+      final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint'));
+      request.headers.addAll(await _headers(auth: auth));
+      
+      // Add fields
+      fields.forEach((key, value) {
+        request.fields[key] = value?.toString() ?? '';
+      });
+      
+      // Add files
+      request.files.addAll(files);
+      
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 60));
+      final response = await http.Response.fromStream(streamedResponse);
+      return await _handleResponse(response);
+    } on SocketException {
+      return ApiResponse.error('No internet connection.');
+    } catch (e) {
+      return ApiResponse.error('Unexpected error: $e');
+    }
+  }
+
+  // ── PUT MULTIPART ─────────────────────────────────────────────────────────
+  static Future<ApiResponse> putMultipart(
+    String endpoint,
+    Map<String, dynamic> fields,
+    List<http.MultipartFile> files, {
+    bool auth = true,
+  }) async {
+    try {
+      // Laravel often requires _method=PUT for multipart updates
+      final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint'));
+      request.headers.addAll(await _headers(auth: auth));
+      
+      request.fields['_method'] = 'PUT';
+      fields.forEach((key, value) {
+        request.fields[key] = value?.toString() ?? '';
+      });
+      request.files.addAll(files);
+      
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 60));
+      final response = await http.Response.fromStream(streamedResponse);
+      return await _handleResponse(response);
+    } on SocketException {
+      return ApiResponse.error('No internet connection.');
+    } catch (e) {
+      return ApiResponse.error('Unexpected error: $e');
+    }
+  }
+
   // ── DELETE ────────────────────────────────────────────────────────────────
   static Future<ApiResponse> delete(String endpoint, {bool auth = true}) async {
     try {

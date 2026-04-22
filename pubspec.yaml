@@ -25,6 +25,10 @@ dependencies:
   fl_chart: ^1.2.0
   open_filex: ^4.7.0
   syncfusion_flutter_xlsio: ^33.1.49
+  geolocator: ^13.0.1
+  flutter_map: ^7.0.0
+  latlong2: ^0.9.1
+
  
 dev_dependencies:
   flutter_test:

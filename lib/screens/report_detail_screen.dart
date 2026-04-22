@@ -3,15 +3,13 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import '../models/report.dart';
 import '../data/report_store.dart';
-import '../services/api_service.dart';
 
 class ReportDetailScreen extends StatefulWidget {
   final Report report;
-  final bool isDialog;
-  const ReportDetailScreen({super.key, required this.report, this.isDialog = false});
+  const ReportDetailScreen({super.key, required this.report});
 
   @override
   State<ReportDetailScreen> createState() => _ReportDetailScreenState();
@@ -19,8 +17,6 @@ class ReportDetailScreen extends StatefulWidget {
 
 class _ReportDetailScreenState extends State<ReportDetailScreen> {
   late Report _report;
-  List<TimelineEvent> _timeline = [];
-  bool _isLoadingTimeline = true;
 
   static const _blue = Color(0xFF1A56C4);
   static const _blueLight = Color(0xFFEFF4FF);
@@ -28,50 +24,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _report = widget.report;
-    _fetchTimeline();
-  }
-
-  Future<void> _fetchTimeline() async {
-    final basePath = _report.type == ReportType.hazard ? '/hazard-reports' : '/inspection-reports';
-    final response = await ApiService.get('$basePath/${_report.id}/logs');
-    if (response.success && mounted) {
-      final data = response.data['data'] as List;
-      setState(() {
-        _timeline = data.map((json) {
-          return TimelineEvent(
-            status: _mapStatusFromApi(json['status']),
-            subStatus: _mapSubStatusFromApi(json['sub_status']),
-            timestamp: DateTime.parse(json['created_at']),
-            actor: json['user_name']?.toString() ?? 'System',
-            note: json['message']?.toString(),
-            photoPath: json['image_url']?.toString(),
-          );
-        }).toList();
-        _isLoadingTimeline = false;
-      });
-    } else if (mounted) {
-      setState(() {
-        _isLoadingTimeline = false;
-      });
-    }
-  }
-
-  ReportStatus _mapStatusFromApi(dynamic val) {
-    if (val == null) return ReportStatus.open;
-    final s = val.toString().toLowerCase();
-    if (s == 'in_progress' || s == 'progress') return ReportStatus.inProgress;
-    if (s == 'closed') return ReportStatus.closed;
-    return ReportStatus.open;
-  }
-
-  ReportSubStatus? _mapSubStatusFromApi(dynamic val) {
-    if (val == null) return null;
-    final s = val.toString().toLowerCase();
-    for (var v in ReportSubStatus.values) {
-      if (v.name.toLowerCase() == s) return v;
-    }
-    return null;
+    _report = ReportStore.instance.getById(widget.report.id) ?? widget.report;
   }
 
   final PageController _pageController = PageController();
@@ -188,7 +141,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final timeline = _timeline;
+    final timeline = ReportStore.instance.getTimeline(_report.id);
 
     final List<String> exampleImages = [
       _report.imageUrl,
@@ -197,22 +150,20 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F0F0),
-      appBar: widget.isDialog
-          ? null
-          : AppBar(
-              backgroundColor: Colors.white,
-              elevation: 0.5,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black87),
-                onPressed: () => Navigator.pop(context),
-              ),
-              title: const Text('Detail Laporan',
-                  style: TextStyle(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16)),
-              centerTitle: true,
-            ),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text('Detail Laporan',
+            style: TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+                fontSize: 16)),
+        centerTitle: true,
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -387,11 +338,126 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         icon: Icons.description_outlined,
                         label: 'Deskripsi',
                         value: _report.description),
+                    if (_report.saran != null && _report.saran!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.lightbulb_outline,
+                          label: 'Saran Perbaikan',
+                          value: _report.saran!),
+                    ],
+                  ]),
+            ),
+
+            // ── Info card (Detail Lanjutan) ────────────────────────────────
+            _card(
+              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _DetailRow(
+                        icon: Icons.category_outlined,
+                        label: 'Kategori',
+                        value: _report.category?.label ?? _report.type.label),
+                    if (_report.subkategori != null &&
+                        _report.subkategori!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.subdirectory_arrow_right,
+                          label: 'Subkategori',
+                          value: _report.subkategori!),
+                    ],
                     const SizedBox(height: 12),
                     _DetailRow(
                         icon: Icons.location_on_outlined,
-                        label: 'Lokasi',
+                        label: 'Lokasi Kejadian',
                         value: _report.location),
+                    if (_report.kejadianLocation != null &&
+                        _report.kejadianLocation!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                        icon: Icons.place_outlined,
+                        label: 'Koordinat Kejadian',
+                        value: _report.kejadianLocation!,
+                        trailing: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF4FF),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.map_outlined,
+                                color: Color(0xFF1A56C4), size: 20),
+                            onPressed: () async {
+                              final coords =
+                                  _report.kejadianLocation!.split(',');
+                              if (coords.length != 2) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'Format koordinat tidak valid')),
+                                  );
+                                }
+                                return;
+                              }
+
+                              final lat = double.tryParse(coords[0].trim());
+                              final lng = double.tryParse(coords[1].trim());
+
+                              if (lat == null || lng == null) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'Format koordinat tidak valid')),
+                                  );
+                                }
+                                return;
+                              }
+
+                              final query = Uri.encodeComponent('$lat,$lng');
+                              final url = Uri.parse('geo:0,0?q=$query');
+
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(url,
+                                    mode: LaunchMode.externalApplication);
+                              } else {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'Tidak dapat membuka aplikasi peta')),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (_report.perusahaan != null &&
+                        _report.perusahaan!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.business_outlined,
+                          label: 'Perusahaan',
+                          value: _report.perusahaan!),
+                    ],
+                    if (_report.departemen != null &&
+                        _report.departemen!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.apartment_outlined,
+                          label: 'Departemen',
+                          value: _report.departemen!),
+                    ],
+                    if (_report.tagOrang != null &&
+                        _report.tagOrang!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.manage_accounts_outlined,
+                          label: 'PJA (Penanggung Jawab Area)',
+                          value: _report.tagOrang!),
+                    ],
                     const SizedBox(height: 12),
                     _DetailRow(
                         icon: Icons.person_outline,
@@ -402,11 +468,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         icon: Icons.access_time,
                         label: 'Waktu Laporan',
                         value: _formatDate(_report.createdAt)),
-                    const SizedBox(height: 12),
-                    _DetailRow(
-                        icon: Icons.category_outlined,
-                        label: 'Kategori',
-                        value: _report.category?.label ?? _report.type.label),
                     const SizedBox(height: 12),
                     _DetailRow(
                         icon: Icons.confirmation_number_outlined,
@@ -451,15 +512,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     const SizedBox(height: 20),
 
                     // Timeline events (grouped by parent status)
-                    if (_isLoadingTimeline)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(20),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else
-                      ..._buildGroupedTimeline(timeline),
+                    ..._buildGroupedTimeline(timeline),
                   ]),
             ),
 
@@ -917,8 +970,12 @@ class _DetailRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final Widget? trailing;
   const _DetailRow(
-      {required this.icon, required this.label, required this.value});
+      {required this.icon,
+      required this.label,
+      required this.value,
+      this.trailing});
 
   @override
   Widget build(BuildContext context) => Row(
@@ -937,6 +994,10 @@ class _DetailRow extends StatelessWidget {
                       fontSize: 14, fontWeight: FontWeight.w500)),
             ]),
           ),
+          if (trailing != null) ...[
+            const SizedBox(width: 8),
+            trailing!,
+          ],
         ],
       );
 }
@@ -985,6 +1046,7 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
   final _noteCtrl = TextEditingController();
   final _deferredKeteranganCtrl = TextEditingController();
   final Set<String> _taggedPeople = {};
+
   final List<String> _departments = [
     'HSE',
     'Produksi',
@@ -1202,7 +1264,8 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
     }
 
     setState(() => _isSaving = true);
-    // Simulate network delay logic replaced by API call directly
+    // Simulate network
+    await Future.delayed(const Duration(milliseconds: 500));
 
     String? finalNote =
         _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
@@ -1222,41 +1285,21 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
       }
     }
 
-    final basePath = widget.report.type == ReportType.hazard ? '/hazard-reports' : '/inspection-reports';
-    final Map<String, String> fields = {
-      'status': _selectedStatus.name == 'inProgress' ? 'in_progress' : _selectedStatus.name,
-    };
-    if (_selectedSub != null) {
-      fields['sub_status'] = _selectedSub!.name;
-    }
-    if (finalNote != null) {
-      fields['message'] = finalNote;
-    }
-    
-    List<http.MultipartFile> files = [];
-    if (_attachedPhoto != null) {
-      final bytes = await _attachedPhoto!.readAsBytes();
-      files.add(http.MultipartFile.fromBytes('image', bytes,
-          filename: _attachedPhoto!.name));
-    }
-
-    final response = await ApiService.postMultipart('$basePath/${widget.report.id}/status', fields, files);
+    final updated = ReportStore.instance.updateStatus(
+      widget.report.id,
+      _selectedStatus,
+      newSubStatus: _selectedSub,
+      actor: 'Noor Lintang Bhaskara',
+      note: finalNote,
+      photoPath: _attachedPhoto?.path,
+    );
 
     if (mounted) {
-      setState(() => _isSaving = false);
-      if (response.success) {
-        final updated = Report.fromJson(response.data['data']);
-        Navigator.pop(context, updated);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Status berhasil diperbarui ke ${_selectedStatus.label}'),
-          backgroundColor: _statusColor(_selectedStatus),
-        ));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(response.errorMessage ?? 'Gagal memperbarui status'),
-          backgroundColor: Colors.red,
-        ));
-      }
+      Navigator.pop(context, updated);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Status berhasil diperbarui ke ${_selectedStatus.label}'),
+        backgroundColor: _statusColor(_selectedStatus),
+      ));
     }
   }
 

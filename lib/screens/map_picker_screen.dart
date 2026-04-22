@@ -37,7 +37,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (serviceEnabled) {
         LocationPermission permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+        if (permission == LocationPermission.always ||
+            permission == LocationPermission.whileInUse) {
           final position = await Geolocator.getCurrentPosition();
           setState(() {
             _selectedLocation = LatLng(position.latitude, position.longitude);
@@ -57,11 +58,13 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   @override
   Widget build(BuildContext context) {
     // Default fallback (e.g. Jakarta Pusat)
-    final initialCenter = _selectedLocation ?? const LatLng(-6.200000, 106.816666);
+    final initialCenter =
+        _selectedLocation ?? const LatLng(-6.200000, 106.816666);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pilih Lokasi dari Peta', style: TextStyle(fontSize: 16)),
+        title: const Text('Pilih Lokasi dari Peta',
+            style: TextStyle(fontSize: 16)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
@@ -69,7 +72,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           if (_selectedLocation != null)
             TextButton(
               onPressed: () => Navigator.pop(context, _selectedLocation),
-              child: const Text('Simpan', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A56C4))),
+              child: const Text('Simpan',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Color(0xFF1A56C4))),
             ),
         ],
       ),
@@ -95,7 +100,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate: _isSatellite 
+                urlTemplate: _isSatellite
                     ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
                     : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.sapahse.app',
@@ -108,15 +113,15 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                       point: _selectedLocation!,
                       width: 50,
                       height: 50,
-                      child: const Icon(Icons.location_on, color: Colors.red, size: 50),
+                      child: const Icon(Icons.location_on,
+                          color: Colors.red, size: 50),
                     ),
                   ],
                 ),
             ],
           ),
-          if (_isLoading)
-            const Center(child: CircularProgressIndicator()),
-            
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
+
           // Compass & Layer controls
           Positioned(
             top: 20,
@@ -133,10 +138,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                       _isSatellite = !_isSatellite;
                     });
                   },
-                  child: Icon(
-                    _isSatellite ? Icons.map : Icons.satellite, 
-                    color: const Color(0xFF1A56C4)
-                  ),
+                  child: Icon(_isSatellite ? Icons.map : Icons.satellite,
+                      color: const Color(0xFF1A56C4)),
                 ),
                 const SizedBox(height: 12),
                 // Compass
@@ -155,7 +158,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               ],
             ),
           ),
-          
+
           // My Location Button
           Positioned(
             bottom: 20,
@@ -164,27 +167,33 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               heroTag: 'myLocation',
               onPressed: () async {
                 try {
-                  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+                  bool serviceEnabled =
+                      await Geolocator.isLocationServiceEnabled();
                   if (!serviceEnabled) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Layanan lokasi belum diaktifkan')));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('Layanan lokasi belum diaktifkan')));
                     return;
                   }
-                  
-                  LocationPermission permission = await Geolocator.checkPermission();
+
+                  LocationPermission permission =
+                      await Geolocator.checkPermission();
                   if (permission == LocationPermission.denied) {
                     permission = await Geolocator.requestPermission();
                   }
 
-                  if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+                  if (permission == LocationPermission.always ||
+                      permission == LocationPermission.whileInUse) {
                     final position = await Geolocator.getCurrentPosition();
-                    final currentLatLng = LatLng(position.latitude, position.longitude);
+                    final currentLatLng =
+                        LatLng(position.latitude, position.longitude);
                     setState(() {
                       _selectedLocation = currentLatLng;
                     });
                     _mapController.move(currentLatLng, 15.0);
                   }
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal mendapatkan lokasi saat ini')));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Gagal mendapatkan lokasi saat ini')));
                 }
               },
               backgroundColor: Colors.white,

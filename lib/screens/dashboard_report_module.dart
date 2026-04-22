@@ -22,12 +22,12 @@ class DashboardReportModule extends StatefulWidget {
 
 class _DashboardReportModuleState extends State<DashboardReportModule> {
   final TextEditingController _searchCtrl = TextEditingController();
-  
+
   List<Report> _reports = [];
   bool _isLoading = false;
   int _totalPages = 1;
   int _currentPage = 1;
-  
+
   String _searchQuery = '';
   String _statusFilter = 'Semua';
   String _severityFilter = 'Semua';
@@ -52,9 +52,11 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
   Future<void> _fetchReports({int page = 1}) async {
     setState(() => _isLoading = true);
 
-    String path = widget.type == ReportType.hazard ? '/hazard-reports' : '/inspection-reports';
+    String path = widget.type == ReportType.hazard
+        ? '/hazard-reports'
+        : '/inspection-reports';
     String query = '?page=$page&search=$_searchQuery';
-    
+
     if (_statusFilter != 'Semua') {
       query += '&status=${_statusFilter.toLowerCase().replaceAll(' ', '_')}';
     }
@@ -67,22 +69,28 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
       try {
         dynamic dataObj = response.data;
         // Handle cases where response.data is wrapped in another 'data' key or is the list itself
-        final dynamic rawData = (dataObj is Map && dataObj.containsKey('data')) ? dataObj['data'] : dataObj;
-        
+        final dynamic rawData = (dataObj is Map && dataObj.containsKey('data'))
+            ? dataObj['data']
+            : dataObj;
+
         List<Report> parsedReports = [];
         int total = 1;
         int current = 1;
 
         if (rawData is Map<String, dynamic>) {
-          parsedReports = (rawData['data'] as List? ?? []).map((r) => Report.fromJson(r)).toList();
+          parsedReports = (rawData['data'] as List? ?? [])
+              .map((r) => Report.fromJson(r))
+              .toList();
           total = int.tryParse(rawData['last_page']?.toString() ?? '1') ?? 1;
-          current = int.tryParse(rawData['current_page']?.toString() ?? '1') ?? 1;
+          current =
+              int.tryParse(rawData['current_page']?.toString() ?? '1') ?? 1;
         } else if (rawData is List) {
           parsedReports = rawData.map((r) => Report.fromJson(r)).toList();
           if (dataObj is Map) {
             final meta = dataObj['meta'];
             total = int.tryParse(meta?['last_page']?.toString() ?? '1') ?? 1;
-            current = int.tryParse(meta?['current_page']?.toString() ?? '1') ?? 1;
+            current =
+                int.tryParse(meta?['current_page']?.toString() ?? '1') ?? 1;
           }
         }
 
@@ -108,9 +116,12 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
     showDialog(
       context: context,
       builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isMobileDialog ? 12 : 16)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(isMobileDialog ? 12 : 16)),
         backgroundColor: Colors.transparent,
-        insetPadding: isMobileDialog ? const EdgeInsets.all(8) : const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+        insetPadding: isMobileDialog
+            ? const EdgeInsets.all(8)
+            : const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
         child: Container(
           width: isMobileDialog ? screenSize.width : 1000,
           height: isMobileDialog ? screenSize.height * 0.90 : 800,
@@ -145,23 +156,33 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
               children: [
                 TextField(
                     controller: titleCtrl,
-                    decoration: const InputDecoration(labelText: 'Judul Laporan', border: OutlineInputBorder())),
+                    decoration: const InputDecoration(
+                        labelText: 'Judul Laporan',
+                        border: OutlineInputBorder())),
                 const SizedBox(height: 16),
                 TextField(
                     controller: locCtrl,
-                    decoration: const InputDecoration(labelText: 'Lokasi', border: OutlineInputBorder())),
+                    decoration: const InputDecoration(
+                        labelText: 'Lokasi', border: OutlineInputBorder())),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   initialValue: currentStatus,
-                  decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
-                  items: ['Open', 'In Progress', 'Closed'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                  decoration: const InputDecoration(
+                      labelText: 'Status', border: OutlineInputBorder()),
+                  items: ['Open', 'In Progress', 'Closed']
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                      .toList(),
                   onChanged: (v) => setModalState(() => currentStatus = v!),
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   initialValue: currentSeverity,
-                  decoration: const InputDecoration(labelText: 'Tingkat Risiko', border: OutlineInputBorder()),
-                  items: ['Low', 'Medium', 'High', 'Critical'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                  decoration: const InputDecoration(
+                      labelText: 'Tingkat Risiko',
+                      border: OutlineInputBorder()),
+                  items: ['Low', 'Medium', 'High', 'Critical']
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                      .toList(),
                   onChanged: (v) => setModalState(() => currentSeverity = v!),
                 ),
               ],
@@ -183,7 +204,8 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
                       final data = {
                         'title': titleCtrl.text,
                         'location': locCtrl.text,
-                        'status': currentStatus.toLowerCase().replaceAll(' ', '_'),
+                        'status':
+                            currentStatus.toLowerCase().replaceAll(' ', '_'),
                         'severity': currentSeverity.toLowerCase(),
                       };
 
@@ -241,20 +263,38 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Excel "$title" berhasil diexport'), behavior: SnackBarBehavior.floating),
+          SnackBar(
+              content: Text('Excel "$title" berhasil diexport'),
+              behavior: SnackBarBehavior.floating),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal export Excel: $e'), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
+          SnackBar(
+              content: Text('Gagal export Excel: $e'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating),
         );
       }
     }
   }
 
   String _fmt(DateTime dt) {
-    final m = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    final m = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des'
+    ];
     return '${dt.day} ${m[dt.month - 1]} ${dt.year}';
   }
 
@@ -264,7 +304,9 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DashboardSectionHeader(
-          title: widget.type == ReportType.hazard ? 'Manajemen Hazard' : 'Manajemen Inspection',
+          title: widget.type == ReportType.hazard
+              ? 'Manajemen Hazard'
+              : 'Manajemen Inspection',
           subtitle: widget.subtitle,
         ),
         const SizedBox(height: 32),
@@ -274,7 +316,9 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
           width: double.infinity,
           decoration: dashboardCardDecoration(radius: 20),
           child: _isLoading
-              ? const Padding(padding: EdgeInsets.all(100), child: Center(child: CircularProgressIndicator()))
+              ? const Padding(
+                  padding: EdgeInsets.all(100),
+                  child: Center(child: CircularProgressIndicator()))
               : Column(
                   children: [
                     _buildResponsiveList(),
@@ -309,8 +353,10 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
                     style: const TextStyle(fontSize: 14),
                     decoration: const InputDecoration(
                       hintText: 'Search records...',
-                      hintStyle: TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
-                      prefixIcon: Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
+                      hintStyle:
+                          TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
+                      prefixIcon: Icon(Icons.search_rounded,
+                          size: 20, color: Color(0xFF64748B)),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(vertical: 14),
                     ),
@@ -333,15 +379,24 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
             child: Row(
               children: [
                 _filterDropdown(
-                    'Status', _statusFilter, ['Semua', 'Open', 'In Progress', 'Closed'], (v) => setState(() => _statusFilter = v!)),
+                    'Status',
+                    _statusFilter,
+                    ['Semua', 'Open', 'In Progress', 'Closed'],
+                    (v) => setState(() => _statusFilter = v!)),
                 if (widget.type == ReportType.hazard) ...[
                   const SizedBox(width: 12),
-                  _filterDropdown('Risiko', _severityFilter, ['Semua', 'Low', 'Medium', 'High', 'Critical'],
+                  _filterDropdown(
+                      'Risiko',
+                      _severityFilter,
+                      ['Semua', 'Low', 'Medium', 'High', 'Critical'],
                       (v) => setState(() => _severityFilter = v!)),
                 ],
                 const SizedBox(width: 12),
                 _dateRangeButton(),
-                if (_searchQuery.isNotEmpty || _statusFilter != 'Semua' || _severityFilter != 'Semua' || _dateRange != null) ...[
+                if (_searchQuery.isNotEmpty ||
+                    _statusFilter != 'Semua' ||
+                    _severityFilter != 'Semua' ||
+                    _dateRange != null) ...[
                   const SizedBox(width: 12),
                   _resetButton(),
                 ],
@@ -371,7 +426,11 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
   Widget _dateRangeButton() {
     return OutlinedButton.icon(
       onPressed: _pickDateRange,
-      icon: Icon(Icons.calendar_today_rounded, size: 16, color: _dateRange != null ? const Color(0xFF1D4ED8) : const Color(0xFF64748B)),
+      icon: Icon(Icons.calendar_today_rounded,
+          size: 16,
+          color: _dateRange != null
+              ? const Color(0xFF1D4ED8)
+              : const Color(0xFF64748B)),
       label: Text(
         _dateRange == null
             ? 'All Dates'
@@ -379,13 +438,20 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
         style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: _dateRange != null ? const Color(0xFF1D4ED8) : const Color(0xFF334155)),
+            color: _dateRange != null
+                ? const Color(0xFF1D4ED8)
+                : const Color(0xFF334155)),
       ),
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        side: BorderSide(color: _dateRange != null ? const Color(0xFF1D4ED8) : const Color(0xFFE2E8F0)),
+        side: BorderSide(
+            color: _dateRange != null
+                ? const Color(0xFF1D4ED8)
+                : const Color(0xFFE2E8F0)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: _dateRange != null ? const Color(0xFF1D4ED8).withValues(alpha: 0.05) : Colors.white,
+        backgroundColor: _dateRange != null
+            ? const Color(0xFF1D4ED8).withValues(alpha: 0.05)
+            : Colors.white,
       ),
     );
   }
@@ -477,7 +543,8 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
     );
   }
 
-  Widget _filterDropdown(String label, String value, List<String> items, ValueChanged<String?> onChanged) {
+  Widget _filterDropdown(String label, String value, List<String> items,
+      ValueChanged<String?> onChanged) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
@@ -491,7 +558,11 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
             onChanged(v);
             _fetchReports(page: 1);
           },
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 13)))).toList(),
+          items: items
+              .map((e) => DropdownMenuItem(
+                  value: e,
+                  child: Text(e, style: const TextStyle(fontSize: 13))))
+              .toList(),
           style: const TextStyle(color: Colors.black87),
           icon: const Icon(Icons.arrow_drop_down, size: 20),
         ),
@@ -509,7 +580,8 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
             children: [
               Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFCBD5E1)),
               SizedBox(height: 12),
-              Text('No data found.', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+              Text('No data found.',
+                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
             ],
           ),
         ),
@@ -542,8 +614,11 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
         data: Theme.of(context).copyWith(dividerColor: const Color(0xFFF1F5F9)),
         child: DataTable(
           headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
-          headingTextStyle:
-              const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF475569), fontSize: 12, letterSpacing: 0.5),
+          headingTextStyle: const TextStyle(
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF475569),
+              fontSize: 12,
+              letterSpacing: 0.5),
           dataRowMinHeight: 64,
           dataRowMaxHeight: 72,
           columnSpacing: 40,
@@ -552,28 +627,38 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
             const DataColumn(label: Text('Ticket')),
             const DataColumn(label: Text('Title')),
             const DataColumn(label: Text('Location')),
-            if (widget.type == ReportType.hazard) const DataColumn(label: Text('Risk')),
+            if (widget.type == ReportType.hazard)
+              const DataColumn(label: Text('Risk')),
             const DataColumn(label: Text('Status')),
             const DataColumn(label: Text('At')),
             const DataColumn(label: Text('Action')),
           ],
           rows: _reports.map((r) {
             return DataRow(cells: [
-              DataCell(Text(r.ticketNumber, style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1E293B)))),
+              DataCell(Text(r.ticketNumber,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w700, color: Color(0xFF1E293B)))),
               DataCell(ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 200), child: Text(r.title, maxLines: 1, overflow: TextOverflow.ellipsis))),
+                  constraints: const BoxConstraints(maxWidth: 200),
+                  child: Text(r.title,
+                      maxLines: 1, overflow: TextOverflow.ellipsis))),
               DataCell(Text(r.location)),
-              if (widget.type == ReportType.hazard) DataCell(DashboardSeverityBadge(r.severity)),
+              if (widget.type == ReportType.hazard)
+                DataCell(DashboardSeverityBadge(r.severity)),
               DataCell(DashboardStatusBadge(r.status)),
-              DataCell(Text(_fmt(r.createdAt), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
+              DataCell(Text(_fmt(r.createdAt),
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
               DataCell(Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.visibility_outlined, size: 20, color: Color(0xFF1A56C4)),
+                    icon: const Icon(Icons.visibility_outlined,
+                        size: 20, color: Color(0xFF1A56C4)),
                     onPressed: () => _showReportDetails(r),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.edit_outlined, size: 20, color: Color(0xFF64748B)),
+                    icon: const Icon(Icons.edit_outlined,
+                        size: 20, color: Color(0xFF64748B)),
                     onPressed: () => _showEditReportForm(r),
                   ),
                 ],
@@ -589,17 +674,29 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
     if (_totalPages <= 1) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFF1F5F9)))),
+      decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: Color(0xFFF1F5F9)))),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text('Showing page $_currentPage of $_totalPages',
-              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+              style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w500)),
           Row(
             children: [
-              DashboardPagerButton(icon: Icons.chevron_left_rounded, onPressed: _currentPage > 1 ? () => _fetchReports(page: _currentPage - 1) : null),
+              DashboardPagerButton(
+                  icon: Icons.chevron_left_rounded,
+                  onPressed: _currentPage > 1
+                      ? () => _fetchReports(page: _currentPage - 1)
+                      : null),
               const SizedBox(width: 8),
-              DashboardPagerButton(icon: Icons.chevron_right_rounded, onPressed: _currentPage < _totalPages ? () => _fetchReports(page: _currentPage + 1) : null),
+              DashboardPagerButton(
+                  icon: Icons.chevron_right_rounded,
+                  onPressed: _currentPage < _totalPages
+                      ? () => _fetchReports(page: _currentPage + 1)
+                      : null),
             ],
           ),
         ],

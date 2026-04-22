@@ -110,8 +110,7 @@ class _QrScanScreenState extends State<QrScanScreen>
             ),
 
           // ── Freeze frame when scanned ──────────────────────────────────
-          if (_hasScanned)
-            Container(color: const Color(0xFF1A1A2E)),
+          if (_hasScanned) Container(color: const Color(0xFF1A1A2E)),
 
           // ── Dark overlay with scan window cutout ───────────────────────
           if (!_hasScanned)
@@ -358,8 +357,7 @@ class _CornerPainter extends CustomPainter {
         Path()
           ..moveTo(0, size.height - len - r)
           ..lineTo(0, size.height - r)
-          ..arcToPoint(Offset(r, size.height),
-              radius: const Radius.circular(r))
+          ..arcToPoint(Offset(r, size.height), radius: const Radius.circular(r))
           ..lineTo(len + r, size.height),
         paint);
 

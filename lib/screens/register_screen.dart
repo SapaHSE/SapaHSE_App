@@ -23,15 +23,15 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _confirmPassCtrl = TextEditingController();
 
   String _selectedDepartemen = 'Departemen HSE';
-  String _selectedPerusahaan = 'PT BUKIT BAIDURI ENERGI';
+  String _selectedPerusahaan = 'PT Bukit Baiduri Energi';
   bool _obscurePass = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
   bool _agreeTerms = false;
 
   final List<String> _perusahaanList = [
-    'PT BUKIT BAIDURI ENERGI',
-    'PT KHOTAI MAKMUR INSAN ABADI',
+    'PT Bukit Baiduri Energi',
+    'PT. Khotai Makmur Insan Abadi',
   ];
 
   // Step: 0 = data diri, 1 = akun

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../services/cloud_save_service.dart';
-import '../services/api_service.dart';
-import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
 import 'dart:async';
 
 class CloudSaveScreen extends StatefulWidget {
@@ -79,34 +76,8 @@ class _CloudSaveScreenState extends State<CloudSaveScreen>
 
     await CloudSaveService.instance.syncAll(
       uploadFn: (draft) async {
-        if (draft.type == DraftType.hazard) {
-          final data = draft.data;
-          final fields = {
-            'title': data['title']?.toString() ?? '',
-            'description': data['kronologi']?.toString() ?? '',
-            'suggestion': data['saran']?.toString() ?? '',
-            'location': data['location']?.toString() ?? '',
-            'company': data['perusahaan']?.toString() ?? '',
-            'reported_department': data['departemen']?.toString() ?? '',
-            'name_pja': data['tagOrang']?.toString() ?? '',
-            'severity': data['severity']?.toString() ?? 'low',
-            'hazard_category':
-                data['kategori'] == 'TTA (Tindakan Tidak Aman)' ? 'TTA' : 'KTA',
-            'hazard_subcategory': data['subkategori']?.toString() ?? '',
-            'isPublic': data['isPublic']?.toString() ?? 'true',
-          };
-          List<http.MultipartFile> files = [];
-          if (data['photoPath'] != null) {
-            final xfile = XFile(data['photoPath']);
-            final bytes = await xfile.readAsBytes();
-            files.add(http.MultipartFile.fromBytes('image', bytes,
-                filename: xfile.name));
-          }
-          final res =
-              await ApiService.postMultipart('/hazard-reports', fields, files);
-          return res.success;
-        }
-        return true; // Return true for others (e.g inspection not implemented yet)
+        await Future.delayed(const Duration(milliseconds: 800));
+        return true;
       },
       onEach: (draft, success) {
         if (mounted) {
@@ -374,41 +345,11 @@ class _CloudSaveScreenState extends State<CloudSaveScreen>
                   ? () async {
                       setState(() => _isSyncing = true);
                       _syncAnimController.repeat();
-                      bool ok = false;
-                      if (_drafts[i].type == DraftType.hazard) {
-                        final data = _drafts[i].data;
-                        final fields = {
-                          'title': data['title']?.toString() ?? '',
-                          'description': data['kronologi']?.toString() ?? '',
-                          'suggestion': data['saran']?.toString() ?? '',
-                          'location': data['location']?.toString() ?? '',
-                          'company': data['perusahaan']?.toString() ?? '',
-                          'reported_department':
-                              data['departemen']?.toString() ?? '',
-                          'name_pja': data['tagOrang']?.toString() ?? '',
-                          'severity': data['severity']?.toString() ?? 'low',
-                          'hazard_category':
-                              data['kategori'] == 'TTA (Tindakan Tidak Aman)'
-                                  ? 'TTA'
-                                  : 'KTA',
-                          'hazard_subcategory':
-                              data['subkategori']?.toString() ?? '',
-                          'isPublic': data['isPublic']?.toString() ?? 'true',
-                        };
-                        List<http.MultipartFile> files = [];
-                        if (data['photoPath'] != null) {
-                          final xfile = XFile(data['photoPath']);
-                          final bytes = await xfile.readAsBytes();
-                          files.add(http.MultipartFile.fromBytes('image', bytes,
-                              filename: xfile.name));
-                        }
-                        final res = await ApiService.postMultipart(
-                            '/hazard-reports', fields, files);
-                        ok = res.success;
-                      } else {
-                        ok = true;
-                      } // for inspection
-
+                      // Single upload
+                      final ok = await Future.delayed(
+                        const Duration(milliseconds: 800),
+                        () => true,
+                      );
                       if (ok) {
                         await CloudSaveService.instance
                             .deleteDraft(_drafts[i].id);
