@@ -9,7 +9,8 @@ import '../data/report_store.dart';
 
 class ReportDetailScreen extends StatefulWidget {
   final Report report;
-  const ReportDetailScreen({super.key, required this.report});
+  final bool isDialog;
+  const ReportDetailScreen({super.key, required this.report, this.isDialog = false});
 
   @override
   State<ReportDetailScreen> createState() => _ReportDetailScreenState();
@@ -149,21 +150,23 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F0F0),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Detail Laporan',
-            style: TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.bold,
-                fontSize: 16)),
-        centerTitle: true,
-      ),
+      backgroundColor: widget.isDialog ? Colors.white : const Color(0xFFF0F0F0),
+      appBar: widget.isDialog
+          ? null
+          : AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0.5,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text('Detail Laporan',
+                  style: TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16)),
+              centerTitle: true,
+            ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
