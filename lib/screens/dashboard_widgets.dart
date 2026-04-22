@@ -411,7 +411,7 @@ class _DashboardReportCardState extends State<DashboardReportCard> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        r.ticketNumber,
+                        r.ticketNumber ?? '-',
                         style: const TextStyle(
                             fontWeight: FontWeight.w800,
                             fontSize: 11,
