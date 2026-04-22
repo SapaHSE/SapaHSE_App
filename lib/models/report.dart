@@ -1,5 +1,7 @@
 enum ReportType { hazard, inspection }
+
 enum ReportSeverity { low, medium, high, critical }
+
 enum ReportStatus { open, inProgress, closed }
 
 // Sub-kategori hazard / inspection
@@ -36,11 +38,13 @@ enum ReportSubStatus {
 
 class Report {
   final String id;
+  final String ticketNumber;
   final String title;
   final String description;
   final ReportType type;
   final HazardCategory? category;
-  final String? subkategori;       // Subkategori hazard (TTA/KTA)
+  final String? hazardSubcategory; // English version
+  final String? subkategori;       // Indonesian version (compat)
   final ReportSeverity severity;
   final ReportStatus status;
   final ReportSubStatus? subStatus;
@@ -54,12 +58,23 @@ class Report {
   final String reportedBy;
   final String imageUrl;
 
+  // Additional Backend Fields
+  final String? pja;
+  final String? department;
+  final String? suggestion;
+  final String? area; // Untuk Inspection
+  final String? inspector;
+  final String? notes;
+  final String? result;
+
   const Report({
     required this.id,
+    this.ticketNumber = '',
     required this.title,
     required this.description,
     required this.type,
     this.category,
+    this.hazardSubcategory,
     this.subkategori,
     required this.severity,
     required this.status,
@@ -73,7 +88,114 @@ class Report {
     required this.createdAt,
     required this.reportedBy,
     required this.imageUrl,
+    this.pja,
+    this.department,
+    this.suggestion,
+    this.area,
+    this.inspector,
+    this.notes,
+    this.result,
   });
+
+  factory Report.fromJson(Map<String, dynamic> json) {
+    // Detect type based on fields or provided type
+    final isInspection = json.containsKey('area') ||
+        json.containsKey('name_inspector') ||
+        json['type'] == 'inspection';
+
+    return Report(
+      id: json['id']?.toString() ?? '',
+      ticketNumber: json['ticket_number']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      type: isInspection ? ReportType.inspection : ReportType.hazard,
+      category: _mapCategory(json['hazard_category']),
+      hazardSubcategory: json['hazard_subcategory']?.toString() ?? json['subkategori']?.toString(),
+      subkategori: json['subkategori']?.toString() ?? json['hazard_subcategory']?.toString(),
+      severity: _mapSeverity(json['severity']),
+      status: _mapStatus(json['status']),
+      subStatus: _mapSubStatus(json['sub_status']),
+      location: json['location']?.toString() ?? json['kejadian_location']?.toString() ?? '',
+      kejadianLocation: json['kejadian_location']?.toString() ?? json['location']?.toString(),
+      saran: json['saran']?.toString() ?? json['suggestion']?.toString(),
+      perusahaan: json['perusahaan']?.toString(),
+      departemen: json['departemen']?.toString() ?? json['reported_department']?.toString(),
+      tagOrang: json['tag_orang']?.toString() ?? json['name_pja']?.toString(),
+      createdAt: json['created_at'] != null
+          ? (json['created_at'] is String
+              ? DateTime.parse(json['created_at'])
+              : DateTime.now())
+          : DateTime.now(),
+      reportedBy: _mapReportedBy(json),
+      imageUrl: json['image_url']?.toString() ?? '',
+      pja: json['name_pja']?.toString() ?? json['tag_orang']?.toString(),
+      department: json['reported_department']?.toString() ?? json['departemen']?.toString(),
+      suggestion: json['suggestion']?.toString() ?? json['saran']?.toString(),
+      area: json['area']?.toString(),
+      inspector: json['name_inspector']?.toString(),
+      notes: json['notes']?.toString(),
+      result: json['result']?.toString(),
+    );
+  }
+
+  static String _mapReportedBy(Map<String, dynamic> json) {
+    final rb = json['reported_by'];
+    if (rb is Map) {
+      return rb['full_name']?.toString() ??
+          rb['name']?.toString() ??
+          rb['username']?.toString() ??
+          'User';
+    }
+    if (rb != null) return rb.toString();
+
+    final pja = json['name_pja'] ?? json['tag_orang'];
+    if (pja != null) return pja.toString();
+
+    final insp = json['name_inspector'];
+    if (insp != null) return insp.toString();
+
+    return 'Unknown';
+  }
+
+  static HazardCategory? _mapCategory(dynamic val) {
+    if (val == null) return null;
+    final s = val.toString().toLowerCase();
+    if (s.contains('act') || s == 'tta' || s.contains('tindakan')) return HazardCategory.unsafeAct;
+    if (s.contains('condition') || s == 'kta' || s.contains('kondisi')) return HazardCategory.unsafeCondition;
+    if (s.contains('miss')) return HazardCategory.nearMiss;
+    if (s.contains('damage')) return HazardCategory.propertyDamage;
+    if (s.contains('enviro')) return HazardCategory.environmentalHazard;
+    if (s.contains('spill')) return HazardCategory.spill;
+    if (s.contains('slip') || s.contains('fall')) return HazardCategory.slipTripFall;
+    if (s.contains('fire')) return HazardCategory.fireSafety;
+    return null;
+  }
+
+  static ReportSeverity _mapSeverity(dynamic val) {
+    if (val == null) return ReportSeverity.low;
+    final s = val.toString().toLowerCase();
+    if (s == 'high') return ReportSeverity.high;
+    if (s == 'medium') return ReportSeverity.medium;
+    if (s == 'critical') return ReportSeverity.critical;
+    return ReportSeverity.low;
+  }
+
+  static ReportStatus _mapStatus(dynamic val) {
+    if (val == null) return ReportStatus.open;
+    final s = val.toString().toLowerCase();
+    if (s == 'in_progress' || s == 'progress') return ReportStatus.inProgress;
+    if (s == 'closed') return ReportStatus.closed;
+    return ReportStatus.open;
+  }
+
+  static ReportSubStatus? _mapSubStatus(dynamic val) {
+    if (val == null) return null;
+    final s = val.toString().toLowerCase();
+    for (var v in ReportSubStatus.values) {
+      if (v.name.toLowerCase() == s) return v;
+    }
+    return null;
+  }
 }
 
 extension ReportTypeLabel on ReportType {

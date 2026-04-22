@@ -4,45 +4,38 @@ final List<Report> dummyReports = [
   Report(
     id: '1',
     title: 'Rambu Kotor',
-    description: 'Rambu keselamatan di area tambang kotor dan tidak terbaca dengan jelas, perlu segera dibersihkan.',
+    description:
+        'Rambu keselamatan di area tambang kotor dan tidak terbaca dengan jelas, perlu segera dibersihkan.',
     type: ReportType.hazard,
     category: HazardCategory.unsafeCondition,
-    subkategori: 'Kondisi Lantai/Jalan Berbahaya',
     severity: ReportSeverity.medium,
     status: ReportStatus.inProgress,
-    location: 'Jalan Hauling, Area Tambang Sektor A',
-    kejadianLocation: '-20.626418, 166.305487',
-    saran: 'Segera bersihkan rambu dan pasang proteksi cover anti-debu. Jadwalkan pembersihan rutin setiap minggu.',
-    perusahaan: 'PT. Bukit Baiduri Energi',
-    departemen: 'HSE',
-    tagOrang: 'Budi Santoso',
+    location: 'Jalan Hauling',
     createdAt: DateTime.now().subtract(const Duration(days: 4)),
     reportedBy: 'Muhammad Faiz',
-    imageUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80',
   ),
   Report(
     id: '2',
     title: 'Barang Workshop Berserakan',
-    description: 'Barang-barang workshop berserakan di depan area workshop dan menghambat jalur evakuasi.',
+    description:
+        'Barang-barang workshop berserakan di depan area workshop dan menghambat jalur evakuasi.',
     type: ReportType.hazard,
     category: HazardCategory.unsafeCondition,
-    subkategori: 'Penyimpanan Material Tidak Aman',
     severity: ReportSeverity.low,
     status: ReportStatus.open,
-    location: 'Depan Workshop, Gedung B',
-    kejadianLocation: '-0.5310, 117.1509',
-    saran: 'Rapikan dan simpan peralatan sesuai rak yang tersedia. Pasang label dan marking area penyimpanan.',
-    perusahaan: 'PT. Khotai Makmur Insan Abadi',
-    departemen: 'Maintenance',
-    tagOrang: 'Riko Pratama',
+    location: 'Depan Workshop',
     createdAt: DateTime.now().subtract(const Duration(days: 1)),
     reportedBy: 'Noor Lintang Bhaskara',
-    imageUrl: 'https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=400&q=80',
   ),
   Report(
     id: '3',
     title: 'Barang Workshop Berserakan',
-    description: 'Barang-barang workshop berserakan di depan area workshop dan menghambat jalur evakuasi.',
+    description:
+        'Barang-barang workshop berserakan di depan area workshop dan menghambat jalur evakuasi.',
     type: ReportType.inspection,
     category: HazardCategory.routineInspection,
     severity: ReportSeverity.low,
@@ -50,31 +43,29 @@ final List<Report> dummyReports = [
     location: 'Depan Workshop',
     createdAt: DateTime.now().subtract(const Duration(days: 2)),
     reportedBy: 'Noor Lintang Bhaskara',
-    imageUrl: 'https://images.unsplash.com/photo-1567789884554-0b844b597180?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1567789884554-0b844b597180?w=400&q=80',
   ),
   Report(
     id: '4',
     title: 'Kabel Listrik Terkelupas',
-    description: 'Kabel listrik di ruang server terkelupas dan berpotensi bahaya sengatan listrik.',
+    description:
+        'Kabel listrik di ruang server terkelup\as dan berpotensi bahaya sengatan listrik.',
     type: ReportType.hazard,
     category: HazardCategory.nearMiss,
-    subkategori: 'Instalasi Listrik Tidak Aman',
     severity: ReportSeverity.high,
     status: ReportStatus.open,
     location: 'Ruang Server - Lantai 3',
-    kejadianLocation: '-0.5290, 117.1445',
-    saran: 'Isolasi segera kabel yang terkelupas dengan isolator listrik. Panggil teknisi untuk penanganan permanen.',
-    perusahaan: 'PT. Bukit Baiduri Energi',
-    departemen: 'Engineering',
-    tagOrang: 'Bambang Purnomo',
     createdAt: DateTime.now().subtract(const Duration(days: 3)),
     reportedBy: 'Dewi Kusuma',
-    imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80',
   ),
   Report(
     id: '5',
     title: 'Inspeksi Alat Berat Rutin',
-    description: 'Inspeksi rutin alat berat excavator nomor 3 di area tambang sektor B.',
+    description:
+        'Inspeksi rutin alat berat excavator nomor 3 di area tambang sektor B.',
     type: ReportType.inspection,
     category: HazardCategory.equipmentInspection,
     severity: ReportSeverity.medium,
@@ -82,12 +73,14 @@ final List<Report> dummyReports = [
     location: 'Area Tambang Sektor B',
     createdAt: DateTime.now().subtract(const Duration(days: 5)),
     reportedBy: 'Rudi Hartono',
-    imageUrl: 'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=400&q=80',
   ),
   Report(
     id: '6',
     title: 'Inspeksi Instalasi Listrik',
-    description: 'Inspeksi rutin instalasi listrik di area workshop untuk memastikan tidak ada kabel yang terkelupas atau konsleting.',
+    description:
+        'Inspeksi rutin instalasi listrik di area workshop untuk memastikan tidak ada kabel yang terkelupas atau konsleting.',
     type: ReportType.inspection,
     category: HazardCategory.electricalInspection,
     severity: ReportSeverity.high,
@@ -95,31 +88,29 @@ final List<Report> dummyReports = [
     location: 'Workshop Listrik',
     createdAt: DateTime.now().subtract(const Duration(days: 6)),
     reportedBy: 'Hendra Wijaya',
-    imageUrl: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&q=80',
   ),
   Report(
     id: '7',
     title: 'Pintu Darurat Terkunci',
-    description: 'Pintu darurat di lantai 2 area office terkunci dari luar. Ini sangat fatal jika terjadi keadaan darurat.',
+    description:
+        'Pintu darurat di lantai 2 area office terkunci dari luar. Ini sangat fatal jika terjadi keadaan darurat.',
     type: ReportType.hazard,
     category: HazardCategory.unsafeCondition,
-    subkategori: 'Mengabaikan Prosedur Keselamatan',
     severity: ReportSeverity.high,
     status: ReportStatus.open,
     location: 'Lantai 2 Office',
-    kejadianLocation: '-0.5265, 117.1470',
-    saran: 'Buka kunci pintu darurat segera. Pasang peringatan larangan mengunci pintu darurat dan lakukan audit akses.',
-    perusahaan: 'PT. Bukit Baiduri Energi',
-    departemen: 'Security',
-    tagOrang: 'Eko Susilo',
     createdAt: DateTime.now().subtract(const Duration(days: 7)),
     reportedBy: 'Ahmad Santoso',
-    imageUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80',
   ),
   Report(
     id: '8',
     title: 'Tumpahan Oli di Area Parkir',
-    description: 'Terdapat tumpahan cairan oli yang cukup luas di area parkir alat berat. Sangat licin dan berbahaya.',
+    description:
+        'Terdapat tumpahan cairan oli yang cukup luas di area parkir alat berat. Sangat licin dan berbahaya.',
     type: ReportType.hazard,
     category: HazardCategory.spill,
     severity: ReportSeverity.medium,
@@ -127,12 +118,14 @@ final List<Report> dummyReports = [
     location: 'Area Parkir HD',
     createdAt: DateTime.now().subtract(const Duration(days: 8)),
     reportedBy: 'Budi Raharjo',
-    imageUrl: 'https://images.unsplash.com/photo-1596700812970-877db2da8f7c?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1596700812970-877db2da8f7c?w=400&q=80',
   ),
   Report(
     id: '9',
     title: 'Kurang Ventilasi Tambang Bawah Tanah',
-    description: 'Sistem ventilasi di lorong D-4 terasa kurang optimal. Udara sangat pengap dan berdebu tebal.',
+    description:
+        'Sistem ventilasi di lorong D-4 terasa kurang optimal. Udara sangat pengap dan berdebu tebal.',
     type: ReportType.hazard,
     category: HazardCategory.unsafeCondition,
     severity: ReportSeverity.high,
@@ -140,12 +133,14 @@ final List<Report> dummyReports = [
     location: 'Lorong D-4 Underground',
     createdAt: DateTime.now().subtract(const Duration(days: 9)),
     reportedBy: 'Joko Widodo',
-    imageUrl: 'https://images.unsplash.com/photo-1587393855524-087f83d95bc9?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1587393855524-087f83d95bc9?w=400&q=80',
   ),
   Report(
     id: '10',
     title: 'Inspeksi Hydrant Area Fuel',
-    description: 'Pengecekan rutin kondisi fungsi kotak Hydrant dan sprinkle fire alarm di sektor penampungan bahan bakar.',
+    description:
+        'Pengecekan rutin kondisi fungsi kotak Hydrant dan sprinkle fire alarm di sektor penampungan bahan bakar.',
     type: ReportType.inspection,
     category: HazardCategory.fireSafety,
     severity: ReportSeverity.medium,
@@ -153,12 +148,14 @@ final List<Report> dummyReports = [
     location: 'Area Fuel Storage',
     createdAt: DateTime.now().subtract(const Duration(days: 10)),
     reportedBy: 'Cipto Mangunkusumo',
-    imageUrl: 'https://images.unsplash.com/photo-1544627429-2cd1cdfb696c?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1544627429-2cd1cdfb696c?w=400&q=80',
   ),
   Report(
     id: '11',
     title: 'Retakan Dinding Tahan Tanah',
-    description: 'Ditemukan indikasi retakan mikro pada dinding penahan di area PIT 1. Perlu pemantauan lanjutan.',
+    description:
+        'Ditemukan indikasi retakan mikro pada dinding penahan di area PIT 1. Perlu pemantauan lanjutan.',
     type: ReportType.hazard,
     category: HazardCategory.unsafeCondition,
     severity: ReportSeverity.high,
@@ -166,31 +163,29 @@ final List<Report> dummyReports = [
     location: 'Dinding PIT 1',
     createdAt: DateTime.now().subtract(const Duration(days: 11)),
     reportedBy: 'Yayan Ruhian',
-    imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&q=80',
   ),
   Report(
     id: '12',
     title: 'Operator Tidak Pakai Harness',
-    description: 'Terpantau salah satu operator bekerja di ketinggian 5 meter tanpa menggunakan safety harness.',
+    description:
+        'Terpantau salah satu operator bekerja di ketinggian 5 meter tanpa menggunakan safety harness.',
     type: ReportType.hazard,
     category: HazardCategory.unsafeAct,
-    subkategori: 'Tidak Menggunakan APD',
     severity: ReportSeverity.high,
     status: ReportStatus.inProgress,
-    location: 'Plant Area B, Level 2',
-    kejadianLocation: '-0.5320, 117.1490',
-    saran: 'Tegur operator dan wajibkan penggunaan harness. Laksanakan toolbox meeting mengenai keselamatan bekerja di ketinggian.',
-    perusahaan: 'PT. Khotai Makmur Insan Abadi',
-    departemen: 'Produksi',
-    tagOrang: 'Ahmad Fauzi',
+    location: 'Plant Area B',
     createdAt: DateTime.now().subtract(const Duration(days: 12)),
     reportedBy: 'Dian Sastro',
-    imageUrl: 'https://images.unsplash.com/photo-1508344928928-7137b29de216?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1508344928928-7137b29de216?w=400&q=80',
   ),
   Report(
     id: '13',
     title: 'Inspeksi Kotak P3K',
-    description: 'Pemeriksaan rutin setiap bulan untuk seluruh kelengkapan obat-obatan dan perban di kotak first aid.',
+    description:
+        'Pemeriksaan rutin setiap bulan untuk seluruh kelengkapan obat-obatan dan perban di kotak first aid.',
     type: ReportType.inspection,
     category: HazardCategory.routineInspection,
     severity: ReportSeverity.low,
@@ -198,12 +193,14 @@ final List<Report> dummyReports = [
     location: 'Pos Satpam Utama',
     createdAt: DateTime.now().subtract(const Duration(days: 13)),
     reportedBy: 'Ratna Mutiara',
-    imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5e1654859?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1584308666744-24d5e1654859?w=400&q=80',
   ),
   Report(
     id: '14',
     title: 'Lampu Peringatan Mati',
-    description: 'Lampu peringatan (beacon) di unit Haul Truck nomor HD-45 tidak menyala sama sekali.',
+    description:
+        'Lampu peringatan (beacon) di unit Haul Truck nomor HD-45 tidak menyala sama sekali.',
     type: ReportType.hazard,
     category: HazardCategory.unsafeCondition,
     severity: ReportSeverity.medium,
@@ -211,12 +208,14 @@ final List<Report> dummyReports = [
     location: 'Area Hauling',
     createdAt: DateTime.now().subtract(const Duration(days: 14)),
     reportedBy: 'Rahmat Hidayat',
-    imageUrl: 'https://images.unsplash.com/photo-1629864273200-8d5f3080bf59?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1629864273200-8d5f3080bf59?w=400&q=80',
   ),
   Report(
     id: '15',
     title: 'Genangan Air di Jalur Pedestrian',
-    description: 'Terdapat genangan air cukup tinggi di area pejalan kaki dari mess menuju kantin utama.',
+    description:
+        'Terdapat genangan air cukup tinggi di area pejalan kaki dari mess menuju kantin utama.',
     type: ReportType.hazard,
     category: HazardCategory.slipTripFall,
     severity: ReportSeverity.low,
@@ -224,12 +223,14 @@ final List<Report> dummyReports = [
     location: 'Depan Kantin Utama',
     createdAt: DateTime.now().subtract(const Duration(days: 15)),
     reportedBy: 'Indra Bekti',
-    imageUrl: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=400&q=80',
   ),
   Report(
     id: '16',
     title: 'Inspeksi Pagar Pembatas area Pit',
-    description: 'Monitor dan pengecekan apakah ada bund wall atau pita pengaman yang terputus di perimeter PIT.',
+    description:
+        'Monitor dan pengecekan apakah ada bund wall atau pita pengaman yang terputus di perimeter PIT.',
     type: ReportType.inspection,
     category: HazardCategory.routineInspection,
     severity: ReportSeverity.high,
@@ -237,12 +238,14 @@ final List<Report> dummyReports = [
     location: 'Perimeter PIT Selatan',
     createdAt: DateTime.now().subtract(const Duration(days: 16)),
     reportedBy: 'Donny Alamsyah',
-    imageUrl: 'https://images.unsplash.com/photo-1520697926131-0dfae1604a37?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1520697926131-0dfae1604a37?w=400&q=80',
   ),
   Report(
     id: '17',
     title: 'Tumpukan Sampah Medis Penuh',
-    description: 'Tempat sampah pembuangan jarum suntik di pos klinik penuh dan perlu segera di angkut ke TPS B3.',
+    description:
+        'Tempat sampah pembuangan jarum suntik di pos klinik penuh dan perlu segera di angkut ke TPS B3.',
     type: ReportType.hazard,
     category: HazardCategory.unsafeCondition,
     severity: ReportSeverity.medium,
@@ -250,12 +253,14 @@ final List<Report> dummyReports = [
     location: 'Klinik Site',
     createdAt: DateTime.now().subtract(const Duration(days: 17)),
     reportedBy: 'Mawar Eva',
-    imageUrl: 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=400&q=80',
   ),
   Report(
     id: '18',
     title: 'Suara Bising Mesin Genset',
-    description: 'Genset utama gedung C berbunyi sangat bising melebihi ambang batas normal NAB. Butuh kalibrasi.',
+    description:
+        'Genset utama gedung C berbunyi sangat bising melebihi ambang batas normal NAB. Butuh kalibrasi.',
     type: ReportType.hazard,
     category: HazardCategory.equipmentInspection,
     severity: ReportSeverity.medium,
@@ -263,12 +268,14 @@ final List<Report> dummyReports = [
     location: 'Gedung C - Generator Room',
     createdAt: DateTime.now().subtract(const Duration(days: 18)),
     reportedBy: 'Fajar Nugraha',
-    imageUrl: 'https://images.unsplash.com/photo-1533560799638-09bbd5ef9b0d?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1533560799638-09bbd5ef9b0d?w=400&q=80',
   ),
   Report(
     id: '19',
     title: 'Pemeriksaan Tabung APAR Rutin',
-    description: 'Cek pressure indikator dan pengecekan fisik tabung pemadam api di seluruh lantai tower kantor.',
+    description:
+        'Cek pressure indikator dan pengecekan fisik tabung pemadam api di seluruh lantai tower kantor.',
     type: ReportType.inspection,
     category: HazardCategory.fireSafety,
     severity: ReportSeverity.low,
@@ -276,12 +283,14 @@ final List<Report> dummyReports = [
     location: 'Tower Kantor Pusat',
     createdAt: DateTime.now().subtract(const Duration(days: 19)),
     reportedBy: 'Ariel Tatum',
-    imageUrl: 'https://images.unsplash.com/photo-1568285514695-17ff1682fac4?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1568285514695-17ff1682fac4?w=400&q=80',
   ),
   Report(
     id: '20',
     title: 'Pekerja Tidak Memakai Kacamata Safety',
-    description: 'Di area pemotongan besi las, tampak satu crew tidak menggunakan kacamata pelindung.',
+    description:
+        'Di area pemotongan besi las, tampak satu crew tidak menggunakan kacamata pelindung.',
     type: ReportType.hazard,
     category: HazardCategory.unsafeAct,
     severity: ReportSeverity.high,
@@ -289,7 +298,8 @@ final List<Report> dummyReports = [
     location: 'Welding Fabrication Area',
     createdAt: DateTime.now().subtract(const Duration(days: 20)),
     reportedBy: 'Gading Marten',
-    imageUrl: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80',
   ),
 ];
 
@@ -299,23 +309,16 @@ void updateReportStatus(String id, ReportStatus newStatus) {
   if (idx != -1) {
     final r = dummyReports[idx];
     dummyReports[idx] = Report(
-      id:               r.id,
-      title:            r.title,
-      description:      r.description,
-      type:             r.type,
-      category:         r.category,
-      subkategori:      r.subkategori,
-      severity:         r.severity,
-      status:           newStatus,
-      location:         r.location,
-      kejadianLocation: r.kejadianLocation,
-      saran:            r.saran,
-      perusahaan:       r.perusahaan,
-      departemen:       r.departemen,
-      tagOrang:         r.tagOrang,
-      createdAt:        r.createdAt,
-      reportedBy:       r.reportedBy,
-      imageUrl:         r.imageUrl,
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      type: r.type,
+      severity: r.severity,
+      status: newStatus,
+      location: r.location,
+      createdAt: r.createdAt,
+      reportedBy: r.reportedBy,
+      imageUrl: r.imageUrl,
     );
   }
 }

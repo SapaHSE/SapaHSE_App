@@ -3,15 +3,14 @@ import 'dart:math' show Random;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
 import '../models/report.dart';
+import '../services/api_service.dart';
 import '../services/cloud_save_service.dart';
-import 'map_picker_screen.dart';
+import 'package:http/http.dart' as http;
 
 const _perusahaanList = [
-  'PT. Bukit Baiduri Energi',
-  'PT. Khotai Makmur Insan Abadi',
+  'PT BUKIT BAIDURI ENERGI',
+  'PT KHOTAI MAKMUR INSAN ABADI',
 ];
 
 const _departemenList = [
@@ -24,31 +23,24 @@ const _departemenList = [
   'Security',
 ];
 
-class PjaData {
-  final String nama;
-  final String perusahaan;
-  final String departemen;
-  const PjaData(this.nama, this.perusahaan, this.departemen);
-}
-
-const _pjaList = [
-  PjaData('Budi Santoso', 'PT. Bukit Baiduri Energi', 'HSE'),
-  PjaData('Ahmad Fauzi', 'PT. Khotai Makmur Insan Abadi', 'Produksi'),
-  PjaData('Riko Pratama', 'PT. Bukit Baiduri Energi', 'Maintenance'),
-  PjaData('Hendra Wijaya', 'PT. Khotai Makmur Insan Abadi', 'Engineering'),
-  PjaData('Siti Rahayu', 'PT. Bukit Baiduri Energi', 'HRD'),
-  PjaData('Dian Permata', 'PT. Khotai Makmur Insan Abadi', 'Logistik'),
-  PjaData('Eko Susilo', 'PT. Bukit Baiduri Energi', 'Security'),
-  PjaData('Novi Andriani', 'PT. Khotai Makmur Insan Abadi', 'HSE'),
-  PjaData('Wahyu Hidayat', 'PT. Bukit Baiduri Energi', 'Produksi'),
-  PjaData('Agus Setiawan', 'PT. Khotai Makmur Insan Abadi', 'Maintenance'),
-  PjaData('Bambang Purnomo', 'PT. Bukit Baiduri Energi', 'Engineering'),
-  PjaData('Lintang Bhaskara', 'PT. Khotai Makmur Insan Abadi', 'HRD'),
-  PjaData('Maya Putri', 'PT. Bukit Baiduri Energi', 'Logistik'),
-  PjaData('Reza Firmansyah', 'PT. Khotai Makmur Insan Abadi', 'Security'),
-  PjaData('Kevin Alfarisi', 'PT. Bukit Baiduri Energi', 'HSE'),
-  PjaData('Deni Setiawan', 'PT. Khotai Makmur Insan Abadi', 'Produksi'),
-  PjaData('Putri Wulandari', 'PT. Bukit Baiduri Energi', 'Maintenance'),
+const _tagOrangList = [
+  'Budi Santoso',
+  'Ahmad Fauzi',
+  'Riko Pratama',
+  'Hendra Wijaya',
+  'Siti Rahayu',
+  'Dian Permata',
+  'Eko Susilo',
+  'Novi Andriani',
+  'Wahyu Hidayat',
+  'Agus Setiawan',
+  'Bambang Purnomo',
+  'Lintang Bhaskara',
+  'Maya Putri',
+  'Reza Firmansyah',
+  'Kevin Alfarisi',
+  'Deni Setiawan',
+  'Putri Wulandari',
 ];
 
 const _subkategoriTTA = [
@@ -81,7 +73,6 @@ class CreateHazardScreen extends StatefulWidget {
 
 class _CreateHazardScreenState extends State<CreateHazardScreen> {
   static const _blue = Color(0xFF1A56C4);
-
   static const _bgColor = Color(0xFFF0F0F0);
 
   int _currentStep = 0;
@@ -94,19 +85,16 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   String? _selectedKategori;
   String? _selectedSubkategori;
   String? _selectedPerusahaan;
-  List<String> _selectedPIC = [];
-  final _picSearchCtrl = TextEditingController();
+  String? _selectedDepartemen;
+  String? _selectedTagOrang;
 
   // Step 2
   final _titleCtrl = TextEditingController();
   ReportSeverity? _selectedSeverity;
   final _kronologiCtrl = TextEditingController();
-  final _pelakuCtrl = TextEditingController();
   final _saranCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
-  final _pelaporLocationCtrl = TextEditingController();
-  final _kejadianLocationCtrl = TextEditingController();
-  final List<XFile> _photoFiles = [];
+  XFile? _photoFile;
   final _picker = ImagePicker();
 
   // Step 3
@@ -114,42 +102,11 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   bool _isSubmitting = false;
 
   @override
-  void initState() {
-    super.initState();
-    _fetchPelaporLocationSilent();
-  }
-
-  Future<void> _fetchPelaporLocationSilent() async {
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) return;
-      
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      
-      if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
-        final pos = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium));
-        if (mounted) {
-          _pelaporLocationCtrl.text = '${pos.latitude}, ${pos.longitude}';
-        }
-      }
-    } catch (e) {
-      debugPrint('Gagal fetch lokasi pelapor: $e');
-    }
-  }
-
-  @override
   void dispose() {
-    _picSearchCtrl.dispose();
     _titleCtrl.dispose();
     _kronologiCtrl.dispose();
-    _pelakuCtrl.dispose();
     _saranCtrl.dispose();
     _locationCtrl.dispose();
-    _pelaporLocationCtrl.dispose();
-    _kejadianLocationCtrl.dispose();
     super.dispose();
   }
 
@@ -157,116 +114,19 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     if (_selectedKategori == 'TTA (Tindakan Tidak Aman)') {
       return _subkategoriTTA;
     }
-    if (_selectedKategori == 'KTA (Kondisi Tidak Aman)') {
-      return _subkategoriKTA;
-    }
+    if (_selectedKategori == 'KTA (Kondisi Tidak Aman)') return _subkategoriKTA;
     return [];
-  }
-
-  List<String> get _picOptions {
-    if (_selectedPerusahaan == null) return [];
-    
-    final pjaFiltered = _pjaList.where((p) => p.perusahaan == _selectedPerusahaan).toList();
-    final depts = pjaFiltered.map((p) => p.departemen).toSet().toList();
-    
-    final List<String> options = [];
-    for (var d in depts) {
-      options.add('Departemen $d');
-    }
-    for (var p in pjaFiltered) {
-      options.add('${p.nama} (${p.departemen})');
-    }
-    return options;
-  }
-
-  Future<void> _pickLocationFromMap(TextEditingController ctrl) async {
-    LatLng? current;
-    if (ctrl.text.isNotEmpty) {
-      final parts = ctrl.text.split(',');
-      if (parts.length == 2) {
-        final lat = double.tryParse(parts[0].trim());
-        final lng = double.tryParse(parts[1].trim());
-        if (lat != null && lng != null) {
-          current = LatLng(lat, lng);
-        }
-      }
-    }
-
-    final LatLng? result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MapPickerScreen(initialLocation: current),
-      ),
-    );
-
-    if (result != null) {
-      setState(() {
-        ctrl.text = '${result.latitude}, ${result.longitude}';
-      });
-    }
-  }
-
-  Future<void> _getCurrentLocation(TextEditingController ctrl) async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Layanan lokasi tidak aktif.')));
-      }
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Izin lokasi ditolak.')));
-        }
-        return;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Izin lokasi ditolak permanen.')));
-      }
-      return;
-    }
-
-    try {
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-      );
-      setState(() {
-        ctrl.text = '${position.latitude}, ${position.longitude}';
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal mendapatkan lokasi: $e')));
-      }
-    }
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
   Future<void> _pickPhoto(ImageSource source) async {
     try {
-      if (source == ImageSource.gallery) {
-        final picked = await _picker.pickMultiImage(
-          imageQuality: 80,
-          maxWidth: 1280,
-        );
-        if (picked.isNotEmpty) setState(() => _photoFiles.addAll(picked));
-      } else {
-        final picked = await _picker.pickImage(
-          source: source,
-          imageQuality: 80,
-          maxWidth: 1280,
-        );
-        if (picked != null) setState(() => _photoFiles.add(picked));
-      }
+      final picked = await _picker.pickImage(
+        source: source,
+        imageQuality: 80,
+        maxWidth: 1280,
+      );
+      if (picked != null) setState(() => _photoFile = picked);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -280,9 +140,11 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   void _nextStep() {
     if (_currentStep == 0) {
       if (!_formKey1.currentState!.validate()) return;
-      if (_selectedPerusahaan == null || _selectedPIC.isEmpty) {
+      if (_selectedPerusahaan == null ||
+          _selectedDepartemen == null ||
+          _selectedTagOrang == null) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Perusahaan dan PIC wajib diisi'),
+          content: Text('Perusahaan, Departemen, dan Tag Orang wajib diisi'),
           backgroundColor: Colors.red,
         ));
         return;
@@ -316,17 +178,15 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     final data = {
       'title': _titleCtrl.text.trim(),
       'kronologi': _kronologiCtrl.text.trim(),
-      'pelakuPelanggaran': _pelakuCtrl.text.trim(),
       'saran': _saranCtrl.text.trim(),
       'location': _locationCtrl.text.trim(),
-      'pelaporLocation': _pelaporLocationCtrl.text.trim(),
-      'kejadianLocation': _kejadianLocationCtrl.text.trim(),
       'perusahaan': _selectedPerusahaan,
-      'pic': _selectedPIC,
+      'departemen': _selectedDepartemen,
+      'tagOrang': _selectedTagOrang,
       'severity': _selectedSeverity?.name,
       'kategori': _selectedKategori,
       'subkategori': _selectedSubkategori,
-      'photoPaths': _photoFiles.map((f) => f.path).toList(),
+      'photoPath': _photoFile?.path,
       'isPublic': _isPublic,
     };
 
@@ -348,14 +208,47 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
         message: 'Tidak ada koneksi internet. Laporan disimpan secara lokal.',
       );
     } else {
-      await Future.delayed(const Duration(seconds: 1));
+      final fields = {
+        'title': _titleCtrl.text.trim(),
+        'description':
+            _kronologiCtrl.text.trim(), // API usually maps description
+        'suggestion': _saranCtrl.text.trim(),
+        'location': _locationCtrl.text.trim(),
+        'company': _selectedPerusahaan ?? '',
+        'reported_department': _selectedDepartemen ?? '',
+        'name_pja': _selectedTagOrang ?? '',
+        'severity': _selectedSeverity?.name ?? 'low',
+        'hazard_category':
+            _selectedKategori == 'TTA (Tindakan Tidak Aman)' ? 'TTA' : 'KTA',
+        'hazard_subcategory': _selectedSubkategori ?? '',
+        'isPublic': _isPublic.toString(),
+      };
+
+      List<http.MultipartFile> files = [];
+      if (_photoFile != null) {
+        final bytes = await _photoFile!.readAsBytes();
+        files.add(http.MultipartFile.fromBytes('image', bytes,
+            filename: _photoFile!.name));
+      }
+
+      final res =
+          await ApiService.postMultipart('/hazard-reports', fields, files);
+
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      _showResultDialog(
-        isOffline: false,
-        title: 'Laporan Terkirim!',
-        message: 'Laporan hazard Anda berhasil dikirim.',
-      );
+
+      if (res.success) {
+        _showResultDialog(
+          isOffline: false,
+          title: 'Laporan Terkirim!',
+          message: 'Laporan hazard Anda berhasil dikirim.',
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(res.errorMessage ?? 'Gagal mengirim laporan'),
+          backgroundColor: Colors.red,
+        ));
+      }
     }
   }
 
@@ -455,59 +348,6 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 color: Colors.black87)),
       );
 
-  Widget _picDropdownField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _label('PIC / Departemen (Penanggung Jawab) *'),
-        LayoutBuilder(
-          builder: (context, constraints) => DropdownMenu<String>(
-            key: ValueKey(_selectedPerusahaan),
-            controller: _picSearchCtrl,
-            width: constraints.maxWidth,
-            enableSearch: true,
-            enableFilter: true,
-            requestFocusOnTap: true,
-            hintText: 'Cari Nama atau Departemen...',
-            inputDecorationTheme: _dropdownTheme(),
-            onSelected: (v) {
-              if (v != null && v.isNotEmpty) {
-                setState(() {
-                  if (!_selectedPIC.contains(v)) {
-                    _selectedPIC.add(v);
-                  }
-                  // Clear search text so they can search again
-                  _picSearchCtrl.clear();
-                });
-              }
-            },
-            dropdownMenuEntries: _picOptions
-                .map((e) => DropdownMenuEntry(value: e, label: e))
-                .toList(),
-          ),
-        ),
-        if (_selectedPIC.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: _selectedPIC
-                .map((e) => Chip(
-                      label: Text(e, style: const TextStyle(fontSize: 12)),
-                      padding: EdgeInsets.zero,
-                      onDeleted: () {
-                        setState(() {
-                          _selectedPIC.remove(e);
-                        });
-                      },
-                    ))
-                .toList(),
-          ),
-        ],
-      ],
-    );
-  }
-
   // ── Step 1 ────────────────────────────────────────────────────────────────
   Widget _buildStep1() {
     return Form(
@@ -555,17 +395,46 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               initialSelection: _selectedPerusahaan,
               hintText: 'Pilih / Cari Perusahaan',
               inputDecorationTheme: _dropdownTheme(),
-              onSelected: (v) => setState(() {
-                _selectedPerusahaan = v;
-                _selectedPIC.clear();
-              }),
+              onSelected: (v) => setState(() => _selectedPerusahaan = v),
               dropdownMenuEntries: _perusahaanList
                   .map((e) => DropdownMenuEntry(value: e, label: e))
                   .toList(),
             ),
           ),
           const SizedBox(height: 14),
-          _picDropdownField(),
+          _label('Departemen *'),
+          LayoutBuilder(
+            builder: (context, constraints) => DropdownMenu<String>(
+              width: constraints.maxWidth,
+              enableSearch: true,
+              enableFilter: true,
+              requestFocusOnTap: true,
+              initialSelection: _selectedDepartemen,
+              hintText: 'Pilih / Cari Departemen',
+              inputDecorationTheme: _dropdownTheme(),
+              onSelected: (v) => setState(() => _selectedDepartemen = v),
+              dropdownMenuEntries: _departemenList
+                  .map((e) => DropdownMenuEntry(value: e, label: e))
+                  .toList(),
+            ),
+          ),
+          const SizedBox(height: 14),
+          _label('PJA (Penanggung Jawab Area) *'),
+          LayoutBuilder(
+            builder: (context, constraints) => DropdownMenu<String>(
+              width: constraints.maxWidth,
+              enableSearch: true,
+              enableFilter: true,
+              requestFocusOnTap: true,
+              initialSelection: _selectedTagOrang,
+              hintText: 'Pilih / Cari Orang',
+              inputDecorationTheme: _dropdownTheme(),
+              onSelected: (v) => setState(() => _selectedTagOrang = v),
+              dropdownMenuEntries: _tagOrangList
+                  .map((e) => DropdownMenuEntry(value: e, label: e))
+                  .toList(),
+            ),
+          ),
         ],
       ),
     );
@@ -589,14 +458,14 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           Row(
             children: [
               ReportSeverity.low,
-              ReportSeverity.medium,
-              ReportSeverity.high
+              ReportSeverity.high,
+              ReportSeverity.critical
             ].map((s) {
               final isSelected = _selectedSeverity == s;
               final colors = {
                 ReportSeverity.low: Colors.green,
-                ReportSeverity.medium: Colors.orange,
-                ReportSeverity.high: Colors.red,
+                ReportSeverity.high: Colors.orange,
+                ReportSeverity.critical: Colors.red,
               };
               return Expanded(
                 child: GestureDetector(
@@ -632,16 +501,11 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             decoration: _inputDeco(hint: 'Jelaskan kronologi...'),
           ),
           const SizedBox(height: 14),
-          _label('Pelaku Pelanggaran (Opsional)'),
-          TextFormField(
-            controller: _pelakuCtrl,
-            decoration: _inputDeco(hint: 'Siapa yang melakukan pelanggaran?'),
-          ),
-          const SizedBox(height: 14),
-          _label('Deskripsi Saran (Opsional)'),
+          _label('Deskripsi Saran *'),
           TextFormField(
             controller: _saranCtrl,
             maxLines: 3,
+            validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
             decoration: _inputDeco(hint: 'Saran perbaikan...'),
           ),
           const SizedBox(height: 14),
@@ -649,90 +513,53 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           TextFormField(
             controller: _locationCtrl,
             validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
-            decoration: _inputDeco(hint: 'Detail lokasi kejadian'),
-          ),
-
-          const SizedBox(height: 14),
-          _label('Pinpoint Lokasi Kejadian *'),
-          TextFormField(
-            controller: _kejadianLocationCtrl,
-            readOnly: true,
-            validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
             decoration: _inputDeco(
-              hint: 'Koordinat Kejadian', 
-              icon: Icons.place,
-            ).copyWith(
-              suffixIcon: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.gps_fixed),
-                    onPressed: () => _getCurrentLocation(_kejadianLocationCtrl),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.map_outlined),
-                    onPressed: () => _pickLocationFromMap(_kejadianLocationCtrl),
-                  ),
-                ],
-              ),
-            ),
+                hint: 'Lokasi kejadian', icon: Icons.location_on_outlined),
           ),
           const SizedBox(height: 14),
           _label('Foto *'),
-          if (_photoFiles.isNotEmpty)
-            SizedBox(
-              height: 120,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _photoFiles.length,
-                itemBuilder: (context, index) {
-                  final photo = _photoFiles[index];
-                  return Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    width: 120,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: kIsWeb
-                              ? Image.network(photo.path, fit: BoxFit.cover)
-                              : Image.file(File(photo.path), fit: BoxFit.cover),
-                        ),
-                        Positioned(
-                          right: 4,
-                          top: 4,
-                          child: GestureDetector(
-                            onTap: () => setState(() => _photoFiles.removeAt(index)),
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                              child: const Icon(Icons.close, color: Colors.white, size: 16),
-                            ),
-                          ),
-                        )
-                      ],
+          _photoFile != null
+              ? Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: kIsWeb
+                          ? Image.network(_photoFile!.path,
+                              height: 120,
+                              width: double.infinity,
+                              fit: BoxFit.cover)
+                          : Image.file(File(_photoFile!.path),
+                              height: 120,
+                              width: double.infinity,
+                              fit: BoxFit.cover),
                     ),
-                  );
-                },
-              ),
-            ),
-          if (_photoFiles.isNotEmpty) const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                  child: OutlinedButton.icon(
-                      onPressed: () => _pickPhoto(ImageSource.camera),
-                      icon: const Icon(Icons.camera_alt),
-                      label: const Text('Kamera'))),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: OutlinedButton.icon(
-                      onPressed: () => _pickPhoto(ImageSource.gallery),
-                      icon: const Icon(Icons.photo),
-                      label: const Text('Galeri'))),
-            ],
-          ),
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.white),
+                        style:
+                            IconButton.styleFrom(backgroundColor: Colors.red),
+                        onPressed: () => setState(() => _photoFile = null),
+                      ),
+                    )
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                        child: OutlinedButton.icon(
+                            onPressed: () => _pickPhoto(ImageSource.camera),
+                            icon: const Icon(Icons.camera_alt),
+                            label: const Text('Kamera'))),
+                    const SizedBox(width: 8),
+                    Expanded(
+                        child: OutlinedButton.icon(
+                            onPressed: () => _pickPhoto(ImageSource.gallery),
+                            icon: const Icon(Icons.photo),
+                            label: const Text('Galeri'))),
+                  ],
+                ),
         ],
       ),
     );
@@ -759,46 +586,40 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               _previewItem(
                   'Kategori', '$_selectedKategori - $_selectedSubkategori'),
               _previewItem('Perusahaan', '$_selectedPerusahaan'),
-              _previewItem('PIC', _selectedPIC.join(', ')),
+              _previewItem('Departemen', '$_selectedDepartemen'),
+              _previewItem('PJA', '$_selectedTagOrang'),
               _previewItem('Judul', _titleCtrl.text),
               _previewItem(
                   'Resiko', _selectedSeverity?.name.toUpperCase() ?? '-'),
               _previewItem('Kronologi', _kronologiCtrl.text),
-              if (_pelakuCtrl.text.trim().isNotEmpty)
-                _previewItem('Pelaku Pelanggaran', _pelakuCtrl.text),
-              if (_saranCtrl.text.trim().isNotEmpty)
-                _previewItem('Saran', _saranCtrl.text),
+              _previewItem('Saran', _saranCtrl.text),
               _previewItem('Lokasi', _locationCtrl.text),
-              if (_photoFiles.isNotEmpty) ...[
+              if (_photoFile != null) ...[
                 const SizedBox(height: 8),
                 const Text('Foto:',
                     style: TextStyle(color: Colors.grey, fontSize: 13)),
                 const SizedBox(height: 4),
-                SizedBox(
-                  height: 120,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _photoFiles.length,
-                    itemBuilder: (context, index) {
-                      final photo = _photoFiles[index];
-                      return GestureDetector(
-                        onTap: () => _showPhotoZoom(context, photo),
-                        child: Container(
-                          width: 120,
-                          margin: const EdgeInsets.only(right: 8),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: kIsWeb
-                                ? Image.network(photo.path, fit: BoxFit.cover)
-                                : Image.file(File(photo.path), fit: BoxFit.cover),
-                          ),
-                        ),
-                      );
-                    },
+                GestureDetector(
+                  onTap: () => _showPhotoZoom(context),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: kIsWeb
+                        ? Image.network(_photoFile!.path,
+                            height: 120,
+                            width: double.infinity,
+                            fit: BoxFit.cover)
+                        : Image.file(File(_photoFile!.path),
+                            height: 120,
+                            width: double.infinity,
+                            fit: BoxFit.cover),
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text('Ketuk foto untuk memperbesar', style: TextStyle(fontSize: 10, color: Colors.grey, fontStyle: FontStyle.italic)),
+                const Text('Ketuk foto untuk memperbesar',
+                    style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey,
+                        fontStyle: FontStyle.italic)),
               ],
             ],
           ),
@@ -818,14 +639,11 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               RadioListTile<bool>(
                 title: const Text('Public'),
                 subtitle: const Text(
-                    'Laporan dapat dilihat oleh semua orang di menu Utama',
+                    'Laporan dapat dilihat oleh semua orang di menu News',
                     style: TextStyle(fontSize: 12)),
-                // ignore: deprecated_member_use
                 value: true,
-                // ignore: deprecated_member_use
                 groupValue: _isPublic,
                 activeColor: _blue,
-                // ignore: deprecated_member_use
                 onChanged: (v) => setState(() => _isPublic = v!),
               ),
               RadioListTile<bool>(
@@ -833,12 +651,9 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 subtitle: const Text(
                     'Laporan hanya dilihat oleh Anda dan pihak terkait',
                     style: TextStyle(fontSize: 12)),
-                // ignore: deprecated_member_use
                 value: false,
-                // ignore: deprecated_member_use
                 groupValue: _isPublic,
                 activeColor: _blue,
-                // ignore: deprecated_member_use
                 onChanged: (v) => setState(() => _isPublic = v!),
               ),
             ],
@@ -868,7 +683,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     );
   }
 
-  void _showPhotoZoom(BuildContext context, XFile photo) {
+  void _showPhotoZoom(BuildContext context) {
+    if (_photoFile == null) return;
     showDialog(
       context: context,
       builder: (_) => Dialog(
@@ -885,8 +701,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: kIsWeb
-                    ? Image.network(photo.path)
-                    : Image.file(File(photo.path)),
+                    ? Image.network(_photoFile!.path)
+                    : Image.file(File(_photoFile!.path)),
               ),
             ),
             Positioned(

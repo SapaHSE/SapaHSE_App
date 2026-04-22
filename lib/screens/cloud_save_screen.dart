@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../services/cloud_save_service.dart';
+import '../services/api_service.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'dart:async';
 
 class CloudSaveScreen extends StatefulWidget {
@@ -54,7 +57,11 @@ class _CloudSaveScreenState extends State<CloudSaveScreen>
 
   Future<void> _loadDrafts() async {
     final drafts = await CloudSaveService.instance.getDrafts();
-    if (mounted) setState(() { _drafts = drafts; _isLoading = false; });
+    if (mounted)
+      setState(() {
+        _drafts = drafts;
+        _isLoading = false;
+      });
   }
 
   @override
@@ -72,8 +79,34 @@ class _CloudSaveScreenState extends State<CloudSaveScreen>
 
     await CloudSaveService.instance.syncAll(
       uploadFn: (draft) async {
-        await Future.delayed(const Duration(milliseconds: 800));
-        return true; 
+        if (draft.type == DraftType.hazard) {
+          final data = draft.data;
+          final fields = {
+            'title': data['title']?.toString() ?? '',
+            'description': data['kronologi']?.toString() ?? '',
+            'suggestion': data['saran']?.toString() ?? '',
+            'location': data['location']?.toString() ?? '',
+            'company': data['perusahaan']?.toString() ?? '',
+            'reported_department': data['departemen']?.toString() ?? '',
+            'name_pja': data['tagOrang']?.toString() ?? '',
+            'severity': data['severity']?.toString() ?? 'low',
+            'hazard_category':
+                data['kategori'] == 'TTA (Tindakan Tidak Aman)' ? 'TTA' : 'KTA',
+            'hazard_subcategory': data['subkategori']?.toString() ?? '',
+            'isPublic': data['isPublic']?.toString() ?? 'true',
+          };
+          List<http.MultipartFile> files = [];
+          if (data['photoPath'] != null) {
+            final xfile = XFile(data['photoPath']);
+            final bytes = await xfile.readAsBytes();
+            files.add(http.MultipartFile.fromBytes('image', bytes,
+                filename: xfile.name));
+          }
+          final res =
+              await ApiService.postMultipart('/hazard-reports', fields, files);
+          return res.success;
+        }
+        return true; // Return true for others (e.g inspection not implemented yet)
       },
       onEach: (draft, success) {
         if (mounted) {
@@ -94,9 +127,8 @@ class _CloudSaveScreenState extends State<CloudSaveScreen>
                 ),
               ),
             ]),
-            backgroundColor: success
-                ? const Color(0xFF2E7D32)
-                : const Color(0xFFC62828),
+            backgroundColor:
+                success ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
             behavior: SnackBarBehavior.floating,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -147,8 +179,18 @@ class _CloudSaveScreenState extends State<CloudSaveScreen>
   // ── Format date ───────────────────────────────────────────────────────────
   String _formatDate(DateTime dt) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     final diff = DateTime.now().difference(dt);
     if (diff.inMinutes < 60) return '${diff.inMinutes} menit lalu';
@@ -288,7 +330,8 @@ class _CloudSaveScreenState extends State<CloudSaveScreen>
               color: _blueLight,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.cloud_done_outlined, size: 44, color: _blue),
+            child:
+                const Icon(Icons.cloud_done_outlined, size: 44, color: _blue),
           ),
           const SizedBox(height: 20),
           const Text(
@@ -331,11 +374,41 @@ class _CloudSaveScreenState extends State<CloudSaveScreen>
                   ? () async {
                       setState(() => _isSyncing = true);
                       _syncAnimController.repeat();
-                      // Single upload
-                      final ok = await Future.delayed(
-                        const Duration(milliseconds: 800),
-                        () => true,
-                      );
+                      bool ok = false;
+                      if (_drafts[i].type == DraftType.hazard) {
+                        final data = _drafts[i].data;
+                        final fields = {
+                          'title': data['title']?.toString() ?? '',
+                          'description': data['kronologi']?.toString() ?? '',
+                          'suggestion': data['saran']?.toString() ?? '',
+                          'location': data['location']?.toString() ?? '',
+                          'company': data['perusahaan']?.toString() ?? '',
+                          'reported_department':
+                              data['departemen']?.toString() ?? '',
+                          'name_pja': data['tagOrang']?.toString() ?? '',
+                          'severity': data['severity']?.toString() ?? 'low',
+                          'hazard_category':
+                              data['kategori'] == 'TTA (Tindakan Tidak Aman)'
+                                  ? 'TTA'
+                                  : 'KTA',
+                          'hazard_subcategory':
+                              data['subkategori']?.toString() ?? '',
+                          'isPublic': data['isPublic']?.toString() ?? 'true',
+                        };
+                        List<http.MultipartFile> files = [];
+                        if (data['photoPath'] != null) {
+                          final xfile = XFile(data['photoPath']);
+                          final bytes = await xfile.readAsBytes();
+                          files.add(http.MultipartFile.fromBytes('image', bytes,
+                              filename: xfile.name));
+                        }
+                        final res = await ApiService.postMultipart(
+                            '/hazard-reports', fields, files);
+                        ok = res.success;
+                      } else {
+                        ok = true;
+                      } // for inspection
+
                       if (ok) {
                         await CloudSaveService.instance
                             .deleteDraft(_drafts[i].id);
@@ -370,15 +443,13 @@ class _DraftCard extends StatelessWidget {
 
   static const _blue = Color(0xFF1A56C4);
 
-  Color get _typeColor =>
-      draft.type == DraftType.hazard
-          ? const Color(0xFFF44336)
-          : const Color(0xFF1565C0);
+  Color get _typeColor => draft.type == DraftType.hazard
+      ? const Color(0xFFF44336)
+      : const Color(0xFF1565C0);
 
-  IconData get _typeIcon =>
-      draft.type == DraftType.hazard
-          ? Icons.warning_amber_rounded
-          : Icons.search;
+  IconData get _typeIcon => draft.type == DraftType.hazard
+      ? Icons.warning_amber_rounded
+      : Icons.search;
 
   String get _typeLabel =>
       draft.type == DraftType.hazard ? 'Hazard' : 'Inspeksi';
@@ -516,11 +587,11 @@ class _DraftCard extends StatelessWidget {
                           icon: const Icon(Icons.delete_outline,
                               size: 15, color: Colors.red),
                           label: const Text('Hapus',
-                              style: TextStyle(fontSize: 12, color: Colors.red)),
+                              style:
+                                  TextStyle(fontSize: 12, color: Colors.red)),
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Colors.red),
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 8),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8)),
                           ),

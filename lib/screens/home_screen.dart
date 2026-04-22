@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   String _selectedType = 'All Report';
-  String _statusFilter = 'Semua';
+  bool _showOpenInProgress = false;
 
   int _displayedCount = 5;
   bool _isLoadingMore = false;
@@ -63,7 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      final filteredCount = _getFilteredReports(ReportStore.instance.reports.value).length;
+      final filteredCount =
+          _getFilteredReports(ReportStore.instance.reports.value).length;
       if (!_isLoadingMore && _displayedCount < filteredCount) {
         setState(() {
           _isLoadingMore = true;
@@ -109,13 +110,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return allReports.where((r) {
       final matchType =
           _selectedType == 'All Report' || r.type.label == _selectedType;
-      bool matchStatus = true;
-      if (_statusFilter == 'Aktif') {
-        matchStatus = r.status != ReportStatus.closed;
-      } else if (_statusFilter == 'Selesai') {
-        matchStatus = r.status == ReportStatus.closed;
-      }
-
+      final matchStatus =
+          !_showOpenInProgress || r.status == ReportStatus.closed;
       final matchSearch = _searchQuery.isEmpty ||
           r.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           r.description.toLowerCase().contains(_searchQuery.toLowerCase());
@@ -173,7 +169,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               const Text('Report List',
                                   style: TextStyle(
-                                      fontWeight: FontWeight.bold, fontSize: 16)),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
                               const Spacer(),
                               Text(
                                 '${filtered.length} laporan',
@@ -191,7 +188,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     valueListenable: ReportStore.instance.reports,
                     builder: (context, allReports, _) {
                       final filtered = _getFilteredReports(allReports);
-                      final displayList = filtered.take(_displayedCount).toList();
+                      final displayList =
+                          filtered.take(_displayedCount).toList();
 
                       if (filtered.isEmpty) {
                         return const SliverFillRemaining(
@@ -237,7 +235,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             );
                           },
-                          childCount: displayList.length + (_isLoadingMore ? 1 : 0),
+                          childCount:
+                              displayList.length + (_isLoadingMore ? 1 : 0),
                         ),
                       );
                     },
@@ -468,94 +467,68 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'STATUS',
-            style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Colors.grey,
-                letterSpacing: 0.6),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _buildStatusChip('Semua'),
-              const SizedBox(width: 8),
-              _buildStatusChip('Aktif'),
-              const SizedBox(width: 8),
-              _buildStatusChip('Selesai'),
-            ],
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: () => setState(() {
+              _showOpenInProgress = !_showOpenInProgress;
+              _displayedCount = 5;
+            }),
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _showOpenInProgress
+                        ? const Color(0xFF1A56C4)
+                        : Colors.transparent,
+                    border: Border.all(
+                      color: _showOpenInProgress
+                          ? const Color(0xFF1A56C4)
+                          : Colors.grey.shade400,
+                      width: 2,
+                    ),
+                  ),
+                  child: _showOpenInProgress
+                      ? const Icon(Icons.check, color: Colors.white, size: 13)
+                      : null,
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  'Show Completed Only',
+                  style: TextStyle(fontSize: 14, color: Colors.black87),
+                ),
+                if (_showOpenInProgress) ...[
+                  const SizedBox(width: 8),
+                  ValueListenableBuilder<List<Report>>(
+                    valueListenable: ReportStore.instance.reports,
+                    builder: (context, reports, _) {
+                      final count = _getFilteredReports(reports).length;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A56C4).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '$count',
+                          style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF1A56C4),
+                              fontWeight: FontWeight.bold),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(String label) {
-    final isSelected = _statusFilter == label;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _statusFilter = label;
-          _displayedCount = 5;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1A56C4) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF1A56C4) : Colors.grey.shade300,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF1A56C4).withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : [],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey.shade700,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                fontSize: 13,
-              ),
-            ),
-            if (isSelected) ...[
-              const SizedBox(width: 6),
-              ValueListenableBuilder<List<Report>>(
-                valueListenable: ReportStore.instance.reports,
-                builder: (context, reports, _) {
-                  final count = _getFilteredReports(reports).length;
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '$count',
-                      style: const TextStyle(
-                          fontSize: 10,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ],
-        ),
       ),
     );
   }
@@ -569,31 +542,53 @@ class _ReportCard extends StatelessWidget {
   const _ReportCard({required this.report, required this.onTap});
 
   String _formatDate(DateTime dt) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des'
+    ];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
 
   Color get _severityColor {
     switch (report.severity) {
-      case ReportSeverity.low:      return const Color(0xFF4CAF50);
-      case ReportSeverity.medium:   return const Color(0xFFFF9800);
-      case ReportSeverity.high:     return const Color(0xFFF44336);
-      case ReportSeverity.critical: return const Color(0xFFB71C1C);
+      case ReportSeverity.low:
+        return const Color(0xFF4CAF50);
+      case ReportSeverity.medium:
+        return const Color(0xFFFF9800);
+      case ReportSeverity.high:
+        return const Color(0xFFF44336);
+      case ReportSeverity.critical:
+        return const Color(0xFFB71C1C);
     }
   }
 
   Color get _statusColor {
     switch (report.status) {
-      case ReportStatus.open:       return const Color(0xFF2196F3);
-      case ReportStatus.inProgress: return const Color(0xFF9C27B0);
-      case ReportStatus.closed:     return const Color(0xFF757575);
+      case ReportStatus.open:
+        return const Color(0xFF2196F3);
+      case ReportStatus.inProgress:
+        return const Color(0xFF9C27B0);
+      case ReportStatus.closed:
+        return const Color(0xFF757575);
     }
   }
 
   Color get _typeColor {
     switch (report.type) {
-      case ReportType.hazard:       return const Color(0xFFF44336);
-      case ReportType.inspection:   return const Color(0xFF1565C0);
+      case ReportType.hazard:
+        return const Color(0xFFF44336);
+      case ReportType.inspection:
+        return const Color(0xFF1565C0);
     }
   }
 
@@ -619,8 +614,7 @@ class _ReportCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           child: Column(
             children: [
-              SizedBox(
-                height: 135,
+              IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -636,11 +630,14 @@ class _ReportCard extends StatelessWidget {
                               fit: BoxFit.cover,
                               placeholder: (_, __) => Container(
                                 color: Colors.grey.shade200,
-                                child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                child: const Center(
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2)),
                               ),
                               errorWidget: (_, __, ___) => Container(
                                 color: Colors.grey.shade200,
-                                child: const Icon(Icons.image_outlined, color: Colors.grey),
+                                child: const Icon(Icons.image_outlined,
+                                    color: Colors.grey),
                               ),
                             ),
                           ),
@@ -681,30 +678,37 @@ class _ReportCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Expanded(
-                              child: Text(
-                                report.description,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.black54,
-                                  height: 1.3,
-                                ),
+                            Text(
+                              report.description,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.black54,
+                                height: 1.3,
                               ),
                             ),
                             const SizedBox(height: 8),
-                            
+
                             // Date & Location
                             Row(
                               children: [
-                                const Icon(Icons.calendar_today_outlined, size: 10, color: Colors.grey),
+                                const Icon(Icons.calendar_today_outlined,
+                                    size: 10, color: Colors.grey),
                                 const SizedBox(width: 4),
-                                Text(_formatDate(report.createdAt), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                                Text(_formatDate(report.createdAt),
+                                    style: const TextStyle(
+                                        fontSize: 10, color: Colors.grey)),
                                 const SizedBox(width: 12),
-                                const Icon(Icons.location_on_outlined, size: 10, color: Colors.grey),
+                                const Icon(Icons.location_on_outlined,
+                                    size: 10, color: Colors.grey),
                                 const SizedBox(width: 4),
-                                Expanded(child: Text(report.location, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: Colors.grey))),
+                                Expanded(
+                                    child: Text(report.location,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                            fontSize: 10, color: Colors.grey))),
                               ],
                             ),
                             const SizedBox(height: 10),
@@ -714,26 +718,36 @@ class _ReportCard extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
                                     color: _statusColor.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: _statusColor.withValues(alpha: 0.3)),
+                                    border: Border.all(
+                                        color: _statusColor.withValues(
+                                            alpha: 0.3)),
                                   ),
                                   child: Text(
                                     report.status.label,
-                                    style: TextStyle(color: _statusColor, fontSize: 9, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                        color: _statusColor,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
                                     color: _severityColor,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
                                     report.severity.label,
-                                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ],
@@ -745,7 +759,6 @@ class _ReportCard extends StatelessWidget {
                   ],
                 ),
               ),
-
             ],
           ),
         ),

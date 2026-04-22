@@ -3,13 +3,15 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 import '../models/report.dart';
 import '../data/report_store.dart';
+import '../services/api_service.dart';
 
 class ReportDetailScreen extends StatefulWidget {
   final Report report;
-  const ReportDetailScreen({super.key, required this.report});
+  final bool isDialog;
+  const ReportDetailScreen({super.key, required this.report, this.isDialog = false});
 
   @override
   State<ReportDetailScreen> createState() => _ReportDetailScreenState();
@@ -17,6 +19,8 @@ class ReportDetailScreen extends StatefulWidget {
 
 class _ReportDetailScreenState extends State<ReportDetailScreen> {
   late Report _report;
+  List<TimelineEvent> _timeline = [];
+  bool _isLoadingTimeline = true;
 
   static const _blue = Color(0xFF1A56C4);
   static const _blueLight = Color(0xFFEFF4FF);
@@ -24,7 +28,50 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _report = ReportStore.instance.getById(widget.report.id) ?? widget.report;
+    _report = widget.report;
+    _fetchTimeline();
+  }
+
+  Future<void> _fetchTimeline() async {
+    final basePath = _report.type == ReportType.hazard ? '/hazard-reports' : '/inspection-reports';
+    final response = await ApiService.get('$basePath/${_report.id}/logs');
+    if (response.success && mounted) {
+      final data = response.data['data'] as List;
+      setState(() {
+        _timeline = data.map((json) {
+          return TimelineEvent(
+            status: _mapStatusFromApi(json['status']),
+            subStatus: _mapSubStatusFromApi(json['sub_status']),
+            timestamp: DateTime.parse(json['created_at']),
+            actor: json['user_name']?.toString() ?? 'System',
+            note: json['message']?.toString(),
+            photoPath: json['image_url']?.toString(),
+          );
+        }).toList();
+        _isLoadingTimeline = false;
+      });
+    } else if (mounted) {
+      setState(() {
+        _isLoadingTimeline = false;
+      });
+    }
+  }
+
+  ReportStatus _mapStatusFromApi(dynamic val) {
+    if (val == null) return ReportStatus.open;
+    final s = val.toString().toLowerCase();
+    if (s == 'in_progress' || s == 'progress') return ReportStatus.inProgress;
+    if (s == 'closed') return ReportStatus.closed;
+    return ReportStatus.open;
+  }
+
+  ReportSubStatus? _mapSubStatusFromApi(dynamic val) {
+    if (val == null) return null;
+    final s = val.toString().toLowerCase();
+    for (var v in ReportSubStatus.values) {
+      if (v.name.toLowerCase() == s) return v;
+    }
+    return null;
   }
 
   final PageController _pageController = PageController();
@@ -118,10 +165,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       child: CachedNetworkImage(
                         imageUrl: imageUrl,
                         fit: BoxFit.contain,
-                        placeholder: (_, __) =>
-                            const CircularProgressIndicator(color: Colors.white),
-                        errorWidget: (_, __, ___) =>
-                            const Icon(Icons.image, color: Colors.white54, size: 80),
+                        placeholder: (_, __) => const CircularProgressIndicator(
+                            color: Colors.white),
+                        errorWidget: (_, __, ___) => const Icon(Icons.image,
+                            color: Colors.white54, size: 80),
                       ),
                     )
                   : CachedNetworkImage(
@@ -129,8 +176,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       fit: BoxFit.contain,
                       placeholder: (_, __) =>
                           const CircularProgressIndicator(color: Colors.white),
-                      errorWidget: (_, __, ___) =>
-                          const Icon(Icons.image, color: Colors.white54, size: 80),
+                      errorWidget: (_, __, ___) => const Icon(Icons.image,
+                          color: Colors.white54, size: 80),
                     ),
             ),
           ),
@@ -141,7 +188,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final timeline = ReportStore.instance.getTimeline(_report.id);
+    final timeline = _timeline;
 
     final List<String> exampleImages = [
       _report.imageUrl,
@@ -150,20 +197,22 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F0F0),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Detail Laporan',
-            style: TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.bold,
-                fontSize: 16)),
-        centerTitle: true,
-      ),
+      appBar: widget.isDialog
+          ? null
+          : AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0.5,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text('Detail Laporan',
+                  style: TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16)),
+              centerTitle: true,
+            ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,7 +224,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               child: Stack(fit: StackFit.expand, children: [
                 PageView.builder(
                   controller: _pageController,
-                  onPageChanged: (idx) => setState(() => _currentImageIndex = idx),
+                  onPageChanged: (idx) =>
+                      setState(() => _currentImageIndex = idx),
                   itemCount: exampleImages.length,
                   itemBuilder: (context, index) {
                     final imgUrl = exampleImages[index];
@@ -191,7 +241,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                                   color: const Color(0xFF37474F),
                                   child: const Center(
                                       child: CircularProgressIndicator(
-                                          color: Colors.white38, strokeWidth: 2)),
+                                          color: Colors.white38,
+                                          strokeWidth: 2)),
                                 ),
                                 errorWidget: (_, __, ___) => Container(
                                   color: const Color(0xFF37474F),
@@ -251,14 +302,18 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     bottom: 12,
                     right: 16,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.black45,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         '${_currentImageIndex + 1}/${exampleImages.length}',
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -272,10 +327,13 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         radius: 18,
                         child: IconButton(
                           padding: EdgeInsets.zero,
-                          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                          icon: const Icon(Icons.arrow_back_ios_new,
+                              color: Colors.white, size: 18),
                           onPressed: () {
                             if (_currentImageIndex > 0) {
-                              _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                              _pageController.previousPage(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut);
                             }
                           },
                         ),
@@ -292,10 +350,13 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         radius: 18,
                         child: IconButton(
                           padding: EdgeInsets.zero,
-                          icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 18),
+                          icon: const Icon(Icons.arrow_forward_ios,
+                              color: Colors.white, size: 18),
                           onPressed: () {
                             if (_currentImageIndex < exampleImages.length - 1) {
-                              _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                              _pageController.nextPage(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut);
                             }
                           },
                         ),
@@ -326,112 +387,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         icon: Icons.description_outlined,
                         label: 'Deskripsi',
                         value: _report.description),
-                    if (_report.saran != null && _report.saran!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _DetailRow(
-                          icon: Icons.lightbulb_outline,
-                          label: 'Saran Perbaikan',
-                          value: _report.saran!),
-                    ],
-                  ]),
-            ),
-
-            // ── Info card (Detail Lanjutan) ────────────────────────────────
-            _card(
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _DetailRow(
-                        icon: Icons.category_outlined,
-                        label: 'Kategori',
-                        value: _report.category?.label ?? _report.type.label),
-                    if (_report.subkategori != null && _report.subkategori!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _DetailRow(
-                          icon: Icons.subdirectory_arrow_right,
-                          label: 'Subkategori',
-                          value: _report.subkategori!),
-                    ],
                     const SizedBox(height: 12),
                     _DetailRow(
                         icon: Icons.location_on_outlined,
-                        label: 'Lokasi Kejadian',
+                        label: 'Lokasi',
                         value: _report.location),
-                    if (_report.kejadianLocation != null && _report.kejadianLocation!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _DetailRow(
-                          icon: Icons.place_outlined,
-                          label: 'Koordinat Kejadian',
-                          value: _report.kejadianLocation!,
-                          trailing: Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEFF4FF),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.map_outlined, color: Color(0xFF1A56C4), size: 20),
-                              onPressed: () async {
-                                final coords = _report.kejadianLocation!.split(',');
-                                if (coords.length != 2) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Format koordinat tidak valid')),
-                                    );
-                                  }
-                                  return;
-                                }
-                                
-                                final lat = double.tryParse(coords[0].trim());
-                                final lng = double.tryParse(coords[1].trim());
-
-                                if (lat == null || lng == null) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Format koordinat tidak valid')),
-                                    );
-                                  }
-                                  return;
-                                }
-
-                                final query = Uri.encodeComponent('$lat,$lng');
-                                final url = Uri.parse('geo:0,0?q=$query');
-
-                                if (await canLaunchUrl(url)) {
-                                  await launchUrl(url, mode: LaunchMode.externalApplication);
-                                } else {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Tidak dapat membuka aplikasi peta')),
-                                    );
-                                  }
-                                }
-                              },
-                            ),
-                          ),
-                      ),
-                    ],
-                    if (_report.perusahaan != null && _report.perusahaan!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _DetailRow(
-                          icon: Icons.business_outlined,
-                          label: 'Perusahaan',
-                          value: _report.perusahaan!),
-                    ],
-                    if (_report.departemen != null && _report.departemen!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _DetailRow(
-                          icon: Icons.apartment_outlined,
-                          label: 'Departemen',
-                          value: _report.departemen!),
-                    ],
-                    if (_report.tagOrang != null && _report.tagOrang!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _DetailRow(
-                          icon: Icons.manage_accounts_outlined,
-                          label: 'PJA (Penanggung Jawab Area)',
-                          value: _report.tagOrang!),
-                    ],
                     const SizedBox(height: 12),
                     _DetailRow(
                         icon: Icons.person_outline,
@@ -442,6 +402,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         icon: Icons.access_time,
                         label: 'Waktu Laporan',
                         value: _formatDate(_report.createdAt)),
+                    const SizedBox(height: 12),
+                    _DetailRow(
+                        icon: Icons.category_outlined,
+                        label: 'Kategori',
+                        value: _report.category?.label ?? _report.type.label),
                     const SizedBox(height: 12),
                     _DetailRow(
                         icon: Icons.confirmation_number_outlined,
@@ -486,7 +451,15 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     const SizedBox(height: 20),
 
                     // Timeline events (grouped by parent status)
-                    ..._buildGroupedTimeline(timeline),
+                    if (_isLoadingTimeline)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    else
+                      ..._buildGroupedTimeline(timeline),
                   ]),
             ),
 
@@ -944,9 +917,8 @@ class _DetailRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  final Widget? trailing;
   const _DetailRow(
-      {required this.icon, required this.label, required this.value, this.trailing});
+      {required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) => Row(
@@ -965,10 +937,6 @@ class _DetailRow extends StatelessWidget {
                       fontSize: 14, fontWeight: FontWeight.w500)),
             ]),
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: 8),
-            trailing!,
-          ],
         ],
       );
 }
@@ -1017,7 +985,6 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
   final _noteCtrl = TextEditingController();
   final _deferredKeteranganCtrl = TextEditingController();
   final Set<String> _taggedPeople = {};
-  
   final List<String> _departments = [
     'HSE',
     'Produksi',
@@ -1116,7 +1083,9 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
-          final filteredPeople = _allPeople.where((p) => p.toLowerCase().contains(query.toLowerCase())).toList();
+          final filteredPeople = _allPeople
+              .where((p) => p.toLowerCase().contains(query.toLowerCase()))
+              .toList();
           return Container(
             height: MediaQuery.of(context).size.height * 0.7,
             decoration: const BoxDecoration(
@@ -1136,16 +1105,22 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                 ),
                 const SizedBox(height: 12),
                 const Text('Pilih Orang',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Cari nama...',
                       prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 0),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: Colors.grey.shade300)),
+                      enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: Colors.grey.shade300)),
                     ),
                     onChanged: (val) => setSheetState(() => query = val),
                   ),
@@ -1166,7 +1141,8 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                                 fontWeight: FontWeight.bold),
                           ),
                         ),
-                        title: Text(person, style: const TextStyle(fontSize: 14)),
+                        title:
+                            Text(person, style: const TextStyle(fontSize: 14)),
                         trailing: isTagged
                             ? const Icon(Icons.check_circle,
                                 color: Color(0xFF1A56C4))
@@ -1226,35 +1202,61 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
     }
 
     setState(() => _isSaving = true);
-    // Simulate network
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Simulate network delay logic replaced by API call directly
 
-    String? finalNote = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
-    if (_selectedSub == ReportSubStatus.assigned || _selectedSub == ReportSubStatus.deferred) {
-      final dept = _selectedDepartment == null ? '' : 'Departemen: $_selectedDepartment';
-      final pjaTags = _taggedPeople.isEmpty ? '' : 'PJA: ${_taggedPeople.join(', ')}';
-      final ket = _deferredKeteranganCtrl.text.trim().isEmpty ? '' : 'Keterangan: ${_deferredKeteranganCtrl.text.trim()}';
-      final addInfo = [dept, pjaTags, ket].where((s) => s.isNotEmpty).join('\n');
+    String? finalNote =
+        _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
+    if (_selectedSub == ReportSubStatus.assigned ||
+        _selectedSub == ReportSubStatus.deferred) {
+      final dept =
+          _selectedDepartment == null ? '' : 'Departemen: $_selectedDepartment';
+      final pjaTags =
+          _taggedPeople.isEmpty ? '' : 'PJA: ${_taggedPeople.join(', ')}';
+      final ket = _deferredKeteranganCtrl.text.trim().isEmpty
+          ? ''
+          : 'Keterangan: ${_deferredKeteranganCtrl.text.trim()}';
+      final addInfo =
+          [dept, pjaTags, ket].where((s) => s.isNotEmpty).join('\n');
       if (addInfo.isNotEmpty) {
         finalNote = finalNote == null ? addInfo : '$finalNote\n\n$addInfo';
       }
     }
 
-    final updated = ReportStore.instance.updateStatus(
-      widget.report.id,
-      _selectedStatus,
-      newSubStatus: _selectedSub,
-      actor: 'Noor Lintang Bhaskara',
-      note: finalNote,
-      photoPath: _attachedPhoto?.path,
-    );
+    final basePath = widget.report.type == ReportType.hazard ? '/hazard-reports' : '/inspection-reports';
+    final Map<String, String> fields = {
+      'status': _selectedStatus.name == 'inProgress' ? 'in_progress' : _selectedStatus.name,
+    };
+    if (_selectedSub != null) {
+      fields['sub_status'] = _selectedSub!.name;
+    }
+    if (finalNote != null) {
+      fields['message'] = finalNote;
+    }
+    
+    List<http.MultipartFile> files = [];
+    if (_attachedPhoto != null) {
+      final bytes = await _attachedPhoto!.readAsBytes();
+      files.add(http.MultipartFile.fromBytes('image', bytes,
+          filename: _attachedPhoto!.name));
+    }
+
+    final response = await ApiService.postMultipart('$basePath/${widget.report.id}/status', fields, files);
 
     if (mounted) {
-      Navigator.pop(context, updated);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Status berhasil diperbarui ke ${_selectedStatus.label}'),
-        backgroundColor: _statusColor(_selectedStatus),
-      ));
+      setState(() => _isSaving = false);
+      if (response.success) {
+        final updated = Report.fromJson(response.data['data']);
+        Navigator.pop(context, updated);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Status berhasil diperbarui ke ${_selectedStatus.label}'),
+          backgroundColor: _statusColor(_selectedStatus),
+        ));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(response.errorMessage ?? 'Gagal memperbarui status'),
+          backgroundColor: Colors.red,
+        ));
+      }
     }
   }
 
@@ -1396,7 +1398,8 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
             const SizedBox(height: 20),
 
             // ── Assigned/Deferred: Tag PJA & Keterangan ─────────────────────────
-            if (_selectedSub == ReportSubStatus.assigned || _selectedSub == ReportSubStatus.deferred) ...[
+            if (_selectedSub == ReportSubStatus.assigned ||
+                _selectedSub == ReportSubStatus.deferred) ...[
               const _Label('Departemen'),
               const SizedBox(height: 8),
               Container(
@@ -1410,12 +1413,15 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                   child: DropdownButton<String>(
                     value: _selectedDepartment,
                     isExpanded: true,
-                    hint: const Text('Pilih departemen...', style: TextStyle(color: Colors.grey, fontSize: 14)),
-                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                    hint: const Text('Pilih departemen...',
+                        style: TextStyle(color: Colors.grey, fontSize: 14)),
+                    icon: const Icon(Icons.keyboard_arrow_down,
+                        color: Colors.grey),
                     items: _departments
                         .map((d) => DropdownMenuItem(value: d, child: Text(d)))
                         .toList(),
-                    onChanged: (val) => setState(() => _selectedDepartment = val),
+                    onChanged: (val) =>
+                        setState(() => _selectedDepartment = val),
                   ),
                 ),
               ),
@@ -1524,7 +1530,8 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                   child: GestureDetector(
                     onTap: _showPhotoOptions,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 13),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
@@ -1532,20 +1539,29 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.camera_alt_outlined, color: Colors.grey, size: 20),
+                          const Icon(Icons.camera_alt_outlined,
+                              color: Colors.grey, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              _attachedPhoto != null ? _attachedPhoto!.name : 'Pilih / Ambil Foto...',
-                              style: TextStyle(color: _attachedPhoto != null ? Colors.black87 : Colors.grey, fontSize: 13),
+                              _attachedPhoto != null
+                                  ? _attachedPhoto!.name
+                                  : 'Pilih / Ambil Foto...',
+                              style: TextStyle(
+                                  color: _attachedPhoto != null
+                                      ? Colors.black87
+                                      : Colors.grey,
+                                  fontSize: 13),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           if (_attachedPhoto != null)
                             GestureDetector(
-                              onTap: () => setState(() => _attachedPhoto = null),
-                              child: const Icon(Icons.close, size: 18, color: Colors.red),
+                              onTap: () =>
+                                  setState(() => _attachedPhoto = null),
+                              child: const Icon(Icons.close,
+                                  size: 18, color: Colors.red),
                             )
                         ],
                       ),
@@ -1556,17 +1572,32 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                   const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => Scaffold(
-                        backgroundColor: Colors.black,
-                        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0, iconTheme: const IconThemeData(color: Colors.white)),
-                        body: Center(child: InteractiveViewer(child: kIsWeb ? Image.network(_attachedPhoto!.path) : Image.file(File(_attachedPhoto!.path)))),
-                      )));
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => Scaffold(
+                                    backgroundColor: Colors.black,
+                                    appBar: AppBar(
+                                        backgroundColor: Colors.transparent,
+                                        elevation: 0,
+                                        iconTheme: const IconThemeData(
+                                            color: Colors.white)),
+                                    body: Center(
+                                        child: InteractiveViewer(
+                                            child: kIsWeb
+                                                ? Image.network(
+                                                    _attachedPhoto!.path)
+                                                : Image.file(File(
+                                                    _attachedPhoto!.path)))),
+                                  )));
                     },
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: kIsWeb
-                          ? Image.network(_attachedPhoto!.path, width: 48, height: 48, fit: BoxFit.cover)
-                          : Image.file(File(_attachedPhoto!.path), width: 48, height: 48, fit: BoxFit.cover),
+                          ? Image.network(_attachedPhoto!.path,
+                              width: 48, height: 48, fit: BoxFit.cover)
+                          : Image.file(File(_attachedPhoto!.path),
+                              width: 48, height: 48, fit: BoxFit.cover),
                     ),
                   ),
                 ],

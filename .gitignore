@@ -5,6 +5,15 @@ Thumbs.db
 *.tmp
 *.bak
 *.swp
+*.class
+*.pyc
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
 
 # === IDE & EDITOR ===
 .idea/
@@ -16,37 +25,40 @@ Thumbs.db
 .project
 .classpath
 
-# === DEPENDENCIES (Sangat Penting untuk JS/Node) ===
-node_modules/        # Folder dependensi JavaScript/Node.js
+# === DEPENDENCIES ===
+node_modules/
 jspm_packages/
 bower_components/
-vendor/              # Sering digunakan di PHP/Composer atau Go
+vendor/
 .pub-cache/
 .pub/
 .packages
 
 # === BUILD ARTIFACTS ===
 build/
-dist/                # Output standar untuk JavaScript/Web
-out/                 # Output standar untuk Java/Kotlin
+dist/
+out/
 bin/
 obj/
 /coverage/
 .dart_tool/
-.next/               # Jika menggunakan Next.js
-.nuxt/               # Jika menggunakan Nuxt.js
+.next/
+.nuxt/
 
 # === ENVIRONMENT & SECRETS ===
-.env*                # Menyembunyikan semua file .env, .env.local, dsb.
+.env*
 *.pem
 *.key
 *.p12
 
-# === PLATFORM SPECIFIC (Mobile) ===
+# === PLATFORM SPECIFIC ===
 .flutter-plugins
 .flutter-plugins-dependencies
 /android/app/debug
 /android/app/profile
 /android/app/release
 **/ios/Flutter/.last_build_id
-**/ios/**/Pods/      # Penting jika Anda bekerja dengan iOS/CocoaPods
+**/ios/**/Pods/
+**/doc/api/
+app.*.symbols
+app.*.map.json
