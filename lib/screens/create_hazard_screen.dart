@@ -94,13 +94,14 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   String? _selectedKategori;
   String? _selectedSubkategori;
   String? _selectedPerusahaan;
-  String? _selectedDepartemen;
-  String? _selectedTagOrang;
+  List<String> _selectedPIC = [];
+  final _picSearchCtrl = TextEditingController();
 
   // Step 2
   final _titleCtrl = TextEditingController();
   ReportSeverity? _selectedSeverity;
   final _kronologiCtrl = TextEditingController();
+  final _pelakuCtrl = TextEditingController();
   final _saranCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
   final _pelaporLocationCtrl = TextEditingController();
@@ -129,7 +130,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
       }
       
       if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
-        final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+        final pos = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium));
         if (mounted) {
           _pelaporLocationCtrl.text = '${pos.latitude}, ${pos.longitude}';
         }
@@ -141,8 +142,10 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
 
   @override
   void dispose() {
+    _picSearchCtrl.dispose();
     _titleCtrl.dispose();
     _kronologiCtrl.dispose();
+    _pelakuCtrl.dispose();
     _saranCtrl.dispose();
     _locationCtrl.dispose();
     _pelaporLocationCtrl.dispose();
@@ -160,12 +163,20 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     return [];
   }
 
-  List<String> get _filteredPjaList {
-    return _pjaList.where((pja) {
-      final matchPerusahaan = _selectedPerusahaan == null || pja.perusahaan == _selectedPerusahaan;
-      final matchDepartemen = _selectedDepartemen == null || pja.departemen == _selectedDepartemen;
-      return matchPerusahaan && matchDepartemen;
-    }).map((e) => e.nama).toList();
+  List<String> get _picOptions {
+    if (_selectedPerusahaan == null) return [];
+    
+    final pjaFiltered = _pjaList.where((p) => p.perusahaan == _selectedPerusahaan).toList();
+    final depts = pjaFiltered.map((p) => p.departemen).toSet().toList();
+    
+    final List<String> options = [];
+    for (var d in depts) {
+      options.add('Departemen $d');
+    }
+    for (var p in pjaFiltered) {
+      options.add('${p.nama} (${p.departemen})');
+    }
+    return options;
   }
 
   Future<void> _pickLocationFromMap(TextEditingController ctrl) async {
@@ -227,7 +238,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
 
     try {
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
       setState(() {
         ctrl.text = '${position.latitude}, ${position.longitude}';
@@ -269,9 +280,9 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   void _nextStep() {
     if (_currentStep == 0) {
       if (!_formKey1.currentState!.validate()) return;
-      if (_selectedPerusahaan == null || _selectedDepartemen == null || _selectedTagOrang == null) {
+      if (_selectedPerusahaan == null || _selectedPIC.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Perusahaan, Departemen, dan Tag Orang wajib diisi'),
+          content: Text('Perusahaan dan PIC wajib diisi'),
           backgroundColor: Colors.red,
         ));
         return;
@@ -305,12 +316,13 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     final data = {
       'title': _titleCtrl.text.trim(),
       'kronologi': _kronologiCtrl.text.trim(),
+      'pelakuPelanggaran': _pelakuCtrl.text.trim(),
       'saran': _saranCtrl.text.trim(),
       'location': _locationCtrl.text.trim(),
       'pelaporLocation': _pelaporLocationCtrl.text.trim(),
       'kejadianLocation': _kejadianLocationCtrl.text.trim(),
       'perusahaan': _selectedPerusahaan,
-      'tagOrang': _selectedTagOrang,
+      'pic': _selectedPIC,
       'severity': _selectedSeverity?.name,
       'kategori': _selectedKategori,
       'subkategori': _selectedSubkategori,
@@ -443,6 +455,59 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 color: Colors.black87)),
       );
 
+  Widget _picDropdownField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label('PIC / Departemen (Penanggung Jawab) *'),
+        LayoutBuilder(
+          builder: (context, constraints) => DropdownMenu<String>(
+            key: ValueKey(_selectedPerusahaan),
+            controller: _picSearchCtrl,
+            width: constraints.maxWidth,
+            enableSearch: true,
+            enableFilter: true,
+            requestFocusOnTap: true,
+            hintText: 'Cari Nama atau Departemen...',
+            inputDecorationTheme: _dropdownTheme(),
+            onSelected: (v) {
+              if (v != null && v.isNotEmpty) {
+                setState(() {
+                  if (!_selectedPIC.contains(v)) {
+                    _selectedPIC.add(v);
+                  }
+                  // Clear search text so they can search again
+                  _picSearchCtrl.clear();
+                });
+              }
+            },
+            dropdownMenuEntries: _picOptions
+                .map((e) => DropdownMenuEntry(value: e, label: e))
+                .toList(),
+          ),
+        ),
+        if (_selectedPIC.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: _selectedPIC
+                .map((e) => Chip(
+                      label: Text(e, style: const TextStyle(fontSize: 12)),
+                      padding: EdgeInsets.zero,
+                      onDeleted: () {
+                        setState(() {
+                          _selectedPIC.remove(e);
+                        });
+                      },
+                    ))
+                .toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
   // ── Step 1 ────────────────────────────────────────────────────────────────
   Widget _buildStep1() {
     return Form(
@@ -492,7 +557,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               inputDecorationTheme: _dropdownTheme(),
               onSelected: (v) => setState(() {
                 _selectedPerusahaan = v;
-                _selectedTagOrang = null;
+                _selectedPIC.clear();
               }),
               dropdownMenuEntries: _perusahaanList
                   .map((e) => DropdownMenuEntry(value: e, label: e))
@@ -500,43 +565,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          _label('Departemen *'),
-          LayoutBuilder(
-            builder: (context, constraints) => DropdownMenu<String>(
-              width: constraints.maxWidth,
-              enableSearch: true,
-              enableFilter: true,
-              requestFocusOnTap: true,
-              initialSelection: _selectedDepartemen,
-              hintText: 'Pilih / Cari Departemen',
-              inputDecorationTheme: _dropdownTheme(),
-              onSelected: (v) => setState(() {
-                _selectedDepartemen = v;
-                _selectedTagOrang = null;
-              }),
-              dropdownMenuEntries: _departemenList
-                  .map((e) => DropdownMenuEntry(value: e, label: e))
-                  .toList(),
-            ),
-          ),
-          const SizedBox(height: 14),
-          _label('PJA (Penanggung Jawab Area) *'),
-          LayoutBuilder(
-            builder: (context, constraints) => DropdownMenu<String>(
-              key: ValueKey('$_selectedPerusahaan-$_selectedDepartemen'),
-              width: constraints.maxWidth,
-              enableSearch: true,
-              enableFilter: true,
-              requestFocusOnTap: true,
-              initialSelection: _selectedTagOrang,
-              hintText: 'Pilih / Cari Orang',
-              inputDecorationTheme: _dropdownTheme(),
-              onSelected: (v) => setState(() => _selectedTagOrang = v),
-              dropdownMenuEntries: _filteredPjaList
-                  .map((e) => DropdownMenuEntry(value: e, label: e))
-                  .toList(),
-            ),
-          ),
+          _picDropdownField(),
         ],
       ),
     );
@@ -560,14 +589,14 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           Row(
             children: [
               ReportSeverity.low,
-              ReportSeverity.high,
-              ReportSeverity.critical
+              ReportSeverity.medium,
+              ReportSeverity.high
             ].map((s) {
               final isSelected = _selectedSeverity == s;
               final colors = {
                 ReportSeverity.low: Colors.green,
-                ReportSeverity.high: Colors.orange,
-                ReportSeverity.critical: Colors.red,
+                ReportSeverity.medium: Colors.orange,
+                ReportSeverity.high: Colors.red,
               };
               return Expanded(
                 child: GestureDetector(
@@ -603,11 +632,16 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             decoration: _inputDeco(hint: 'Jelaskan kronologi...'),
           ),
           const SizedBox(height: 14),
-          _label('Deskripsi Saran *'),
+          _label('Pelaku Pelanggaran (Opsional)'),
+          TextFormField(
+            controller: _pelakuCtrl,
+            decoration: _inputDeco(hint: 'Siapa yang melakukan pelanggaran?'),
+          ),
+          const SizedBox(height: 14),
+          _label('Deskripsi Saran (Opsional)'),
           TextFormField(
             controller: _saranCtrl,
             maxLines: 3,
-            validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
             decoration: _inputDeco(hint: 'Saran perbaikan...'),
           ),
           const SizedBox(height: 14),
@@ -725,13 +759,15 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               _previewItem(
                   'Kategori', '$_selectedKategori - $_selectedSubkategori'),
               _previewItem('Perusahaan', '$_selectedPerusahaan'),
-              _previewItem('Departemen', '$_selectedDepartemen'),
-              _previewItem('PJA', '$_selectedTagOrang'),
+              _previewItem('PIC', _selectedPIC.join(', ')),
               _previewItem('Judul', _titleCtrl.text),
               _previewItem(
                   'Resiko', _selectedSeverity?.name.toUpperCase() ?? '-'),
               _previewItem('Kronologi', _kronologiCtrl.text),
-              _previewItem('Saran', _saranCtrl.text),
+              if (_pelakuCtrl.text.trim().isNotEmpty)
+                _previewItem('Pelaku Pelanggaran', _pelakuCtrl.text),
+              if (_saranCtrl.text.trim().isNotEmpty)
+                _previewItem('Saran', _saranCtrl.text),
               _previewItem('Lokasi', _locationCtrl.text),
               if (_photoFiles.isNotEmpty) ...[
                 const SizedBox(height: 8),
