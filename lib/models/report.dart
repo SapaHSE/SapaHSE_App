@@ -40,10 +40,16 @@ class Report {
   final String description;
   final ReportType type;
   final HazardCategory? category;
+  final String? subkategori;       // Subkategori hazard (TTA/KTA)
   final ReportSeverity severity;
   final ReportStatus status;
   final ReportSubStatus? subStatus;
-  final String location;
+  final String location;           // Deskripsi lokasi kejadian
+  final String? kejadianLocation;  // Koordinat pinpoint lokasi kejadian
+  final String? saran;             // Saran perbaikan
+  final String? perusahaan;        // Perusahaan pelapor
+  final String? departemen;        // Departemen pelapor
+  final String? tagOrang;          // PJA (Penanggung Jawab Area)
   final DateTime createdAt;
   final String reportedBy;
   final String imageUrl;
@@ -54,10 +60,16 @@ class Report {
     required this.description,
     required this.type,
     this.category,
+    this.subkategori,
     required this.severity,
     required this.status,
     this.subStatus,
     required this.location,
+    this.kejadianLocation,
+    this.saran,
+    this.perusahaan,
+    this.departemen,
+    this.tagOrang,
     required this.createdAt,
     required this.reportedBy,
     required this.imageUrl,

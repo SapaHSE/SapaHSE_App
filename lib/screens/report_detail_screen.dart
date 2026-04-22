@@ -325,11 +325,58 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         icon: Icons.description_outlined,
                         label: 'Deskripsi',
                         value: _report.description),
+                    if (_report.saran != null && _report.saran!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.lightbulb_outline,
+                          label: 'Saran Perbaikan',
+                          value: _report.saran!),
+                    ],
+                    const SizedBox(height: 12),
+                    _DetailRow(
+                        icon: Icons.category_outlined,
+                        label: 'Kategori',
+                        value: _report.category?.label ?? _report.type.label),
+                    if (_report.subkategori != null && _report.subkategori!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.subdirectory_arrow_right,
+                          label: 'Subkategori',
+                          value: _report.subkategori!),
+                    ],
                     const SizedBox(height: 12),
                     _DetailRow(
                         icon: Icons.location_on_outlined,
-                        label: 'Lokasi',
+                        label: 'Lokasi Kejadian',
                         value: _report.location),
+                    if (_report.kejadianLocation != null && _report.kejadianLocation!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.place_outlined,
+                          label: 'Koordinat Kejadian',
+                          value: _report.kejadianLocation!),
+                    ],
+                    if (_report.perusahaan != null && _report.perusahaan!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.business_outlined,
+                          label: 'Perusahaan',
+                          value: _report.perusahaan!),
+                    ],
+                    if (_report.departemen != null && _report.departemen!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.apartment_outlined,
+                          label: 'Departemen',
+                          value: _report.departemen!),
+                    ],
+                    if (_report.tagOrang != null && _report.tagOrang!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.manage_accounts_outlined,
+                          label: 'PJA (Penanggung Jawab Area)',
+                          value: _report.tagOrang!),
+                    ],
                     const SizedBox(height: 12),
                     _DetailRow(
                         icon: Icons.person_outline,
@@ -340,11 +387,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         icon: Icons.access_time,
                         label: 'Waktu Laporan',
                         value: _formatDate(_report.createdAt)),
-                    const SizedBox(height: 12),
-                    _DetailRow(
-                        icon: Icons.category_outlined,
-                        label: 'Kategori',
-                        value: _report.category?.label ?? _report.type.label),
                     const SizedBox(height: 12),
                     _DetailRow(
                         icon: Icons.confirmation_number_outlined,
