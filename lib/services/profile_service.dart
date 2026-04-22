@@ -26,7 +26,8 @@ class ProfileService {
   static Future<LicensesResult> getLicenses() async {
     final response = await ApiService.get('/profile');
     if (!response.success) {
-      return LicensesResult.error(response.errorMessage ?? 'Gagal memuat lisensi.');
+      return LicensesResult.error(
+          response.errorMessage ?? 'Gagal memuat lisensi.');
     }
     final userData = response.data['data'] as Map<String, dynamic>?;
     if (userData == null) {
@@ -43,7 +44,8 @@ class ProfileService {
   static Future<CertificationsResult> getCertifications() async {
     final response = await ApiService.get('/profile');
     if (!response.success) {
-      return CertificationsResult.error(response.errorMessage ?? 'Gagal memuat sertifikasi.');
+      return CertificationsResult.error(
+          response.errorMessage ?? 'Gagal memuat sertifikasi.');
     }
     final userData = response.data['data'] as Map<String, dynamic>?;
     if (userData == null) {
@@ -60,7 +62,8 @@ class ProfileService {
   static Future<MedicalsResult> getMedicals() async {
     final response = await ApiService.get('/profile');
     if (!response.success) {
-      return MedicalsResult.error(response.errorMessage ?? 'Gagal memuat data medis.');
+      return MedicalsResult.error(
+          response.errorMessage ?? 'Gagal memuat data medis.');
     }
     final userData = response.data['data'] as Map<String, dynamic>?;
     if (userData == null) {
@@ -144,13 +147,15 @@ class ProfileResult {
   final String? errorMessage;
   final int? statusCode;
 
-  ProfileResult._({required this.success, this.data, this.errorMessage, this.statusCode});
+  ProfileResult._(
+      {required this.success, this.data, this.errorMessage, this.statusCode});
 
   factory ProfileResult.success(ProfileData data) =>
       ProfileResult._(success: true, data: data);
 
   factory ProfileResult.error(String message, {int? statusCode}) =>
-      ProfileResult._(success: false, errorMessage: message, statusCode: statusCode);
+      ProfileResult._(
+          success: false, errorMessage: message, statusCode: statusCode);
 }
 
 class LicensesResult {
@@ -158,7 +163,8 @@ class LicensesResult {
   final List<UserLicense> licenses;
   final String? errorMessage;
 
-  LicensesResult._({required this.success, this.licenses = const [], this.errorMessage});
+  LicensesResult._(
+      {required this.success, this.licenses = const [], this.errorMessage});
 
   factory LicensesResult.success(List<UserLicense> licenses) =>
       LicensesResult._(success: true, licenses: licenses);
@@ -172,9 +178,13 @@ class CertificationsResult {
   final List<UserCertification> certifications;
   final String? errorMessage;
 
-  CertificationsResult._({required this.success, this.certifications = const [], this.errorMessage});
+  CertificationsResult._(
+      {required this.success,
+      this.certifications = const [],
+      this.errorMessage});
 
-  factory CertificationsResult.success(List<UserCertification> certifications) =>
+  factory CertificationsResult.success(
+          List<UserCertification> certifications) =>
       CertificationsResult._(success: true, certifications: certifications);
 
   factory CertificationsResult.error(String message) =>
@@ -186,7 +196,8 @@ class MedicalsResult {
   final List<UserMedical> medicals;
   final String? errorMessage;
 
-  MedicalsResult._({required this.success, this.medicals = const [], this.errorMessage});
+  MedicalsResult._(
+      {required this.success, this.medicals = const [], this.errorMessage});
 
   factory MedicalsResult.success(List<UserMedical> medicals) =>
       MedicalsResult._(success: true, medicals: medicals);

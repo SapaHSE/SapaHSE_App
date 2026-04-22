@@ -10,7 +10,8 @@ import '../data/report_store.dart';
 class ReportDetailScreen extends StatefulWidget {
   final Report report;
   final bool isDialog;
-  const ReportDetailScreen({super.key, required this.report, this.isDialog = false});
+  const ReportDetailScreen(
+      {super.key, required this.report, this.isDialog = false});
 
   @override
   State<ReportDetailScreen> createState() => _ReportDetailScreenState();

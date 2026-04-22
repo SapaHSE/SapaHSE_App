@@ -122,18 +122,20 @@ class ApiService {
     bool auth = true,
   }) async {
     try {
-      final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint'));
+      final request =
+          http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint'));
       request.headers.addAll(await _headers(auth: auth));
-      
+
       // Add fields
       fields.forEach((key, value) {
         request.fields[key] = value?.toString() ?? '';
       });
-      
+
       // Add files
       request.files.addAll(files);
-      
-      final streamedResponse = await request.send().timeout(const Duration(seconds: 60));
+
+      final streamedResponse =
+          await request.send().timeout(const Duration(seconds: 60));
       final response = await http.Response.fromStream(streamedResponse);
       return await _handleResponse(response);
     } on SocketException {
@@ -152,16 +154,18 @@ class ApiService {
   }) async {
     try {
       // Laravel often requires _method=PUT for multipart updates
-      final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint'));
+      final request =
+          http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint'));
       request.headers.addAll(await _headers(auth: auth));
-      
+
       request.fields['_method'] = 'PUT';
       fields.forEach((key, value) {
         request.fields[key] = value?.toString() ?? '';
       });
       request.files.addAll(files);
-      
-      final streamedResponse = await request.send().timeout(const Duration(seconds: 60));
+
+      final streamedResponse =
+          await request.send().timeout(const Duration(seconds: 60));
       final response = await http.Response.fromStream(streamedResponse);
       return await _handleResponse(response);
     } on SocketException {

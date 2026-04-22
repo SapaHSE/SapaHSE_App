@@ -55,7 +55,8 @@ class ProfileData {
               .toList() ??
           [],
       certifications: (json['certifications'] as List<dynamic>?)
-              ?.map((c) => UserCertification.fromJson(c as Map<String, dynamic>))
+              ?.map(
+                  (c) => UserCertification.fromJson(c as Map<String, dynamic>))
               .toList() ??
           [],
       medicals: (json['medicals'] as List<dynamic>?)
@@ -188,13 +189,18 @@ class UserMedical {
   static List<MedicalChecklistItem> _parseChecklistItems(dynamic data) {
     if (data == null) return [];
     if (data is List) {
-      return data.map((i) => MedicalChecklistItem.fromJson(i as Map<String, dynamic>)).toList();
+      return data
+          .map((i) => MedicalChecklistItem.fromJson(i as Map<String, dynamic>))
+          .toList();
     }
     if (data is String && data.isNotEmpty) {
       try {
         final decoded = _jsonDecode(data);
         if (decoded is List) {
-          return decoded.map((i) => MedicalChecklistItem.fromJson(i as Map<String, dynamic>)).toList();
+          return decoded
+              .map((i) =>
+                  MedicalChecklistItem.fromJson(i as Map<String, dynamic>))
+              .toList();
         }
       } catch (_) {}
     }

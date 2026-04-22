@@ -54,7 +54,7 @@ class CloudSaveService {
       if (results.contains(ConnectivityResult.none) && results.length == 1) {
         return false;
       }
-      
+
       // Verification: Try to lookup a reliable host
       final result = await InternetAddress.lookup('google.com')
           .timeout(const Duration(seconds: 3));

@@ -14,15 +14,7 @@ const _perusahaanList = [
   'PT. Khotai Makmur Insan Abadi',
 ];
 
-const _departemenList = [
-  'HSE',
-  'Produksi',
-  'Maintenance',
-  'Engineering',
-  'HRD',
-  'Logistik',
-  'Security',
-];
+// Removed unused _departemenList
 
 class PjaData {
   final String nama;
@@ -94,7 +86,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   String? _selectedKategori;
   String? _selectedSubkategori;
   String? _selectedPerusahaan;
-  List<String> _selectedPIC = [];
+  final List<String> _selectedPIC = [];
   final _picSearchCtrl = TextEditingController();
 
   // Step 2

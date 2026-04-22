@@ -212,7 +212,7 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
                       final res = await ApiService.put('$path/${r.id}', data);
 
                       if (res.success && mounted) {
-                        Navigator.pop(ctx);
+                        if (ctx.mounted) Navigator.pop(ctx);
                         _fetchReports(page: _currentPage);
                         showDialog(
                           context: context,
