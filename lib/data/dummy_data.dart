@@ -11,7 +11,7 @@ final List<Report> dummyReports = [
     severity: ReportSeverity.medium,
     status: ReportStatus.inProgress,
     location: 'Jalan Hauling, Area Tambang Sektor A',
-    kejadianLocation: '-0.5234, 117.1432',
+    kejadianLocation: '-20.626418, 166.305487',
     saran: 'Segera bersihkan rambu dan pasang proteksi cover anti-debu. Jadwalkan pembersihan rutin setiap minggu.',
     perusahaan: 'PT. Bukit Baiduri Energi',
     departemen: 'HSE',

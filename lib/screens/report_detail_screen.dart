@@ -372,8 +372,31 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                             child: IconButton(
                               icon: const Icon(Icons.map_outlined, color: Color(0xFF1A56C4), size: 20),
                               onPressed: () async {
-                                final query = Uri.encodeComponent(_report.kejadianLocation!);
-                                final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+                                final coords = _report.kejadianLocation!.split(',');
+                                if (coords.length != 2) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Format koordinat tidak valid')),
+                                    );
+                                  }
+                                  return;
+                                }
+                                
+                                final lat = double.tryParse(coords[0].trim());
+                                final lng = double.tryParse(coords[1].trim());
+
+                                if (lat == null || lng == null) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Format koordinat tidak valid')),
+                                    );
+                                  }
+                                  return;
+                                }
+
+                                final query = Uri.encodeComponent('$lat,$lng');
+                                final url = Uri.parse('geo:0,0?q=$query');
+
                                 if (await canLaunchUrl(url)) {
                                   await launchUrl(url, mode: LaunchMode.externalApplication);
                                 } else {
