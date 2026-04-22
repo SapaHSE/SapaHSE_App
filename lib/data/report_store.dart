@@ -171,18 +171,24 @@ class ReportStore {
 
     final old = list[idx];
     final updated = Report(
-      id:          old.id,
-      title:       old.title,
-      description: old.description,
-      type:        old.type,
-      category:    old.category,
-      severity:    old.severity,
-      status:      newStatus,
-      subStatus:   newSubStatus,
-      location:    old.location,
-      createdAt:   old.createdAt,
-      reportedBy:  old.reportedBy,
-      imageUrl:    old.imageUrl,
+      id:               old.id,
+      title:            old.title,
+      description:      old.description,
+      type:             old.type,
+      category:         old.category,
+      subkategori:      old.subkategori,
+      severity:         old.severity,
+      status:           newStatus,
+      subStatus:        newSubStatus,
+      location:         old.location,
+      kejadianLocation: old.kejadianLocation,
+      saran:            old.saran,
+      perusahaan:       old.perusahaan,
+      departemen:       old.departemen,
+      tagOrang:         old.tagOrang,
+      createdAt:        old.createdAt,
+      reportedBy:       old.reportedBy,
+      imageUrl:         old.imageUrl,
     );
     list[idx] = updated;
     reports.value = list;
