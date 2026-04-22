@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/report.dart';
 import '../data/report_store.dart';
 
@@ -332,7 +333,15 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                           label: 'Saran Perbaikan',
                           value: _report.saran!),
                     ],
-                    const SizedBox(height: 12),
+                  ]),
+            ),
+
+            // ── Info card (Detail Lanjutan) ────────────────────────────────
+            _card(
+              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     _DetailRow(
                         icon: Icons.category_outlined,
                         label: 'Kategori',
@@ -354,7 +363,30 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       _DetailRow(
                           icon: Icons.place_outlined,
                           label: 'Koordinat Kejadian',
-                          value: _report.kejadianLocation!),
+                          value: _report.kejadianLocation!,
+                          trailing: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF4FF),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.map_outlined, color: Color(0xFF1A56C4), size: 20),
+                              onPressed: () async {
+                                final query = Uri.encodeComponent(_report.kejadianLocation!);
+                                final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+                                if (await canLaunchUrl(url)) {
+                                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                                } else {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Tidak dapat membuka aplikasi peta')),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ),
+                      ),
                     ],
                     if (_report.perusahaan != null && _report.perusahaan!.isNotEmpty) ...[
                       const SizedBox(height: 12),
@@ -889,8 +921,9 @@ class _DetailRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final Widget? trailing;
   const _DetailRow(
-      {required this.icon, required this.label, required this.value});
+      {required this.icon, required this.label, required this.value, this.trailing});
 
   @override
   Widget build(BuildContext context) => Row(
@@ -909,6 +942,10 @@ class _DetailRow extends StatelessWidget {
                       fontSize: 14, fontWeight: FontWeight.w500)),
             ]),
           ),
+          if (trailing != null) ...[
+            const SizedBox(width: 8),
+            trailing!,
+          ],
         ],
       );
 }
