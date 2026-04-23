@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Aplikasi memerlukan akses kamera untuk mengambil foto hazard.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Aplikasi memerlukan akses galeri untuk memilih foto hazard.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Aplikasi memerlukan akses lokasi untuk menentukan titik koordinat hazard.</string>
 </dict>
 </plist>

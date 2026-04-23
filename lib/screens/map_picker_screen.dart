@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -93,9 +94,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             children: [
               TileLayer(
                 urlTemplate: _isSatellite
-                    ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    ? 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'
+                    : 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.sapahse.app',
+                subdomains: _isSatellite ? const [] : const ['a', 'b', 'c'],
                 maxZoom: 19,
               ),
               if (_selectedLocation != null)
@@ -144,7 +146,13 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                   },
                   child: Transform.rotate(
                     angle: -_mapRotation * (math.pi / 180),
-                    child: const Icon(Icons.explore, color: Colors.red),
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CustomPaint(
+                        painter: _CompassNeedlePainter(),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -237,4 +245,34 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       ),
     );
   }
+}
+
+class _CompassNeedlePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint redPaint = Paint()
+      ..color = Colors.red
+      ..style = PaintingStyle.fill;
+    final Paint greyPaint = Paint()
+      ..color = Colors.grey.shade400
+      ..style = PaintingStyle.fill;
+
+    final ui.Path northPath = ui.Path()
+      ..moveTo(size.width / 2, 0)
+      ..lineTo(size.width * 0.2, size.height / 2)
+      ..lineTo(size.width * 0.8, size.height / 2)
+      ..close();
+
+    final ui.Path southPath = ui.Path()
+      ..moveTo(size.width / 2, size.height)
+      ..lineTo(size.width * 0.2, size.height / 2)
+      ..lineTo(size.width * 0.8, size.height / 2)
+      ..close();
+
+    canvas.drawPath(northPath, redPaint);
+    canvas.drawPath(southPath, greyPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -62,6 +62,20 @@ const _subkategoriKTA = [
   'Kebisingan Berlebihan',
   'Instalasi Listrik Tidak Aman',
   'Ventilasi Tidak Memadai',
+  'Instalasi Listrik Tidak Aman',
+  'Ventilasi Tidak Memadai',
+];
+
+const _lokasiList = [
+  'Area Pit A',
+  'Area Pit B',
+  'Workshop Utama',
+  'Mess Karyawan',
+  'Jalan Hauling KM 10',
+  'Jalan Hauling KM 15',
+  'Pelabuhan (Jetty)',
+  'Office Utama',
+  'Gudang Logistik',
 ];
 
 class CreateHazardScreen extends StatefulWidget {
@@ -81,23 +95,23 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   // Forms
   final _formKey1 = GlobalKey<FormState>();
   final _formKey2 = GlobalKey<FormState>();
+  final _step1Key = GlobalKey();
+  final _step2Key = GlobalKey();
+  final _step3Key = GlobalKey();
 
   // Step 1
   String? _selectedKategori;
   String? _selectedSubkategori;
   String? _selectedPerusahaan;
   final List<String> _selectedPIC = [];
-  final _picSearchCtrl = TextEditingController();
-  String _step1SearchQuery = '';
-  final _step3TagCtrl = TextEditingController();
-  String _step3SearchQuery = '';
 
   // Step 2
   final _titleCtrl = TextEditingController();
   ReportSeverity? _selectedSeverity;
   final _kronologiCtrl = TextEditingController();
-  final _pelakuCtrl = TextEditingController();
+  final List<String> _selectedPelaku = [];
   final _saranCtrl = TextEditingController();
+  String? _selectedLokasi;
   final _locationCtrl = TextEditingController();
   final _pelaporLocationCtrl = TextEditingController();
   final _kejadianLocationCtrl = TextEditingController();
@@ -130,7 +144,11 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             locationSettings:
                 const LocationSettings(accuracy: LocationAccuracy.medium));
         if (mounted) {
-          _pelaporLocationCtrl.text = '${pos.latitude}, ${pos.longitude}';
+          final loc = '${pos.latitude}, ${pos.longitude}';
+          _pelaporLocationCtrl.text = loc;
+          if (_kejadianLocationCtrl.text.isEmpty) {
+            _kejadianLocationCtrl.text = loc;
+          }
         }
       }
     } catch (e) {
@@ -140,11 +158,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
 
   @override
   void dispose() {
-    _picSearchCtrl.dispose();
-    _step3TagCtrl.dispose();
     _titleCtrl.dispose();
     _kronologiCtrl.dispose();
-    _pelakuCtrl.dispose();
     _saranCtrl.dispose();
     _locationCtrl.dispose();
     _pelaporLocationCtrl.dispose();
@@ -206,55 +221,6 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     }
   }
 
-  Future<void> _getCurrentLocation(TextEditingController ctrl) async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Layanan lokasi tidak aktif.')));
-      }
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Izin lokasi ditolak.')));
-        }
-        return;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Izin lokasi ditolak permanen.')));
-      }
-      return;
-    }
-
-    try {
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.high),
-      );
-      setState(() {
-        ctrl.text = '${position.latitude}, ${position.longitude}';
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal mendapatkan lokasi: $e')));
-      }
-    }
-  }
-
   // ── Actions ───────────────────────────────────────────────────────────────
   Future<void> _pickPhoto(ImageSource source) async {
     try {
@@ -293,6 +259,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
         return;
       }
       setState(() => _currentStep++);
+      _scrollToTop();
     } else if (_currentStep == 1) {
       if (!_formKey2.currentState!.validate()) return;
       if (_selectedSeverity == null) {
@@ -303,6 +270,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
         return;
       }
       setState(() => _currentStep++);
+      _scrollToTop();
     } else {
       _submitReport();
     }
@@ -311,7 +279,25 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   void _prevStep() {
     if (_currentStep > 0) {
       setState(() => _currentStep--);
+      _scrollToTop();
     }
+  }
+
+  void _scrollToTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final key = _currentStep == 0
+          ? _step1Key
+          : _currentStep == 1
+              ? _step2Key
+              : _step3Key;
+      if (key.currentContext != null) {
+        Scrollable.ensureVisible(
+          key.currentContext!,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   Future<void> _submitReport() async {
@@ -321,7 +307,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     final data = {
       'title': _titleCtrl.text.trim(),
       'kronologi': _kronologiCtrl.text.trim(),
-      'pelakuPelanggaran': _pelakuCtrl.text.trim(),
+      'pelakuPelanggaran': _selectedPelaku.join(', '),
       'saran': _saranCtrl.text.trim(),
       'location': _locationCtrl.text.trim(),
       'pelaporLocation': _pelaporLocationCtrl.text.trim(),
@@ -451,7 +437,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     );
   }
 
-  Widget _label(String text) => Padding(
+  Widget _label(String text, {Key? key}) => Padding(
+        key: key,
         padding: const EdgeInsets.only(bottom: 6),
         child: Text(text,
             style: const TextStyle(
@@ -460,52 +447,71 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 color: Colors.black87)),
       );
 
-  Widget _picDropdownField() {
+
+  // ── FULLSCREEN PERSON PICKER ──────────────────────────────────────────────
+  Future<String?> _showPersonPicker({
+    required String title,
+    required List<String> options,
+    String? hint,
+  }) async {
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _PersonPickerContent(
+        title: title,
+        options: options,
+        hint: hint ?? 'Cari...',
+      ),
+    );
+  }
+
+  Widget _picTagField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label('PIC / Departemen (Penanggung Jawab) *'),
-        TextField(
-          controller: _picSearchCtrl,
-          onChanged: (v) => setState(() => _step1SearchQuery = v),
-          decoration: _inputDeco(
-            hint: 'Cari Nama atau Departemen (min. 3 huruf)...',
-            icon: Icons.search,
+        _label('PIC / Departemen Terkait *'),
+        GestureDetector(
+          onTap: () async {
+            final result = await _showPersonPicker(
+              title: 'Tag PIC / Departemen',
+              options: _picOptions,
+            );
+            if (result != null) {
+              setState(() {
+                if (!_selectedPIC.contains(result)) {
+                  _selectedPIC.add(result);
+                }
+              });
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FF),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.person_add_outlined,
+                    size: 20, color: Colors.grey),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Ketuk untuk tag orang atau departemen',
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios,
+                    size: 14, color: Colors.grey.shade400),
+              ],
+            ),
           ),
         ),
-        if (_step1SearchQuery.length >= 3) ...[
-          const SizedBox(height: 8),
-          Container(
-            constraints: const BoxConstraints(maxHeight: 200),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: ListView(
-              shrinkWrap: true,
-              padding: EdgeInsets.zero,
-              children: _picOptions
-                  .where((opt) => opt
-                      .toLowerCase()
-                      .contains(_step1SearchQuery.toLowerCase()))
-                  .map((opt) => ListTile(
-                        title:
-                            Text(opt, style: const TextStyle(fontSize: 13)),
-                        onTap: () {
-                          setState(() {
-                            if (!_selectedPIC.contains(opt)) {
-                              _selectedPIC.add(opt);
-                            }
-                            _picSearchCtrl.clear();
-                            _step1SearchQuery = '';
-                          });
-                        },
-                      ))
-                  .toList(),
-            ),
-          ),
-        ],
         if (_selectedPIC.isNotEmpty) ...[
           const SizedBox(height: 10),
           Wrap(
@@ -528,6 +534,72 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     );
   }
 
+  Widget _pelakuTagField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label('Pelaku Pelanggaran (Opsional)'),
+        GestureDetector(
+          onTap: () async {
+            final options = _pjaList.map((p) => p.nama).toList();
+            final result = await _showPersonPicker(
+              title: 'Tag Pelaku Pelanggaran',
+              options: options,
+            );
+            if (result != null) {
+              setState(() {
+                if (!_selectedPelaku.contains(result)) {
+                  _selectedPelaku.add(result);
+                }
+              });
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FF),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.person_add_outlined,
+                    size: 20, color: Colors.grey),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Ketuk untuk tag pelaku',
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios,
+                    size: 14, color: Colors.grey.shade400),
+              ],
+            ),
+          ),
+        ),
+        if (_selectedPelaku.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: _selectedPelaku
+                .map((e) => Chip(
+                      label: Text(e, style: const TextStyle(fontSize: 12)),
+                      padding: EdgeInsets.zero,
+                      onDeleted: () {
+                        setState(() {
+                          _selectedPelaku.remove(e);
+                        });
+                      },
+                    ))
+                .toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
   // ── Step 1 ────────────────────────────────────────────────────────────────
   Widget _buildStep1() {
     return Form(
@@ -535,7 +607,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _label('Kategori Hazard *'),
+          _label('Kategori Hazard *', key: _step1Key),
           DropdownButtonFormField<String>(
             initialValue: _selectedKategori,
             validator: (v) => v == null ? 'Wajib dipilih' : null,
@@ -585,7 +657,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          _picDropdownField(),
+          _picTagField(),
         ],
       ),
     );
@@ -598,7 +670,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _label('Judul Laporan *'),
+          _label('Judul Laporan *', key: _step2Key),
           TextFormField(
             controller: _titleCtrl,
             validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
@@ -652,12 +724,6 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             decoration: _inputDeco(hint: 'Jelaskan kronologi...'),
           ),
           const SizedBox(height: 14),
-          _label('Pelaku Pelanggaran (Opsional)'),
-          TextFormField(
-            controller: _pelakuCtrl,
-            decoration: _inputDeco(hint: 'Siapa yang melakukan pelanggaran?'),
-          ),
-          const SizedBox(height: 14),
           _label('Deskripsi Saran (Opsional)'),
           TextFormField(
             controller: _saranCtrl,
@@ -665,11 +731,18 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             decoration: _inputDeco(hint: 'Saran perbaikan...'),
           ),
           const SizedBox(height: 14),
+          _pelakuTagField(),
+          const SizedBox(height: 14),
           _label('Lokasi Kejadian *'),
-          TextFormField(
-            controller: _locationCtrl,
-            validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
-            decoration: _inputDeco(hint: 'Detail lokasi kejadian'),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedLokasi,
+            validator: (v) => v == null ? 'Wajib dipilih' : null,
+            decoration: _inputDeco(
+                hint: 'Pilih Lokasi Kejadian', icon: Icons.location_city),
+            items: _lokasiList
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .toList(),
+            onChanged: (v) => setState(() => _selectedLokasi = v),
           ),
           const SizedBox(height: 14),
           _label('Pinpoint Lokasi Kejadian *'),
@@ -681,24 +754,14 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               hint: 'Koordinat Kejadian',
               icon: Icons.place,
             ).copyWith(
-              suffixIcon: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.gps_fixed),
-                    onPressed: () => _getCurrentLocation(_kejadianLocationCtrl),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.map_outlined),
-                    onPressed: () =>
-                        _pickLocationFromMap(_kejadianLocationCtrl),
-                  ),
-                ],
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.map_outlined),
+                onPressed: () => _pickLocationFromMap(_kejadianLocationCtrl),
               ),
             ),
           ),
           const SizedBox(height: 14),
-          _label('Foto *'),
+          _label('Foto (Opsional)'),
           if (_photoFiles.isNotEmpty)
             SizedBox(
               height: 120,
@@ -776,22 +839,22 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Review Laporan Akhir',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text('Review Laporan Akhir',
+                  key: _step3Key,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const Divider(),
-              _previewItem(
-                  'Kategori', '$_selectedKategori - $_selectedSubkategori'),
+              _previewItem('Kategori', '$_selectedKategori - $_selectedSubkategori'),
               _previewItem('Perusahaan', '$_selectedPerusahaan'),
               _previewItem('PIC', _selectedPIC.join(', ')),
               _previewItem('Judul', _titleCtrl.text),
               _previewItem(
                   'Resiko', _selectedSeverity?.name.toUpperCase() ?? '-'),
               _previewItem('Kronologi', _kronologiCtrl.text),
-              if (_pelakuCtrl.text.trim().isNotEmpty)
-                _previewItem('Pelaku Pelanggaran', _pelakuCtrl.text),
               if (_saranCtrl.text.trim().isNotEmpty)
                 _previewItem('Saran', _saranCtrl.text),
-              _previewItem('Lokasi', _locationCtrl.text),
+              if (_selectedPelaku.isNotEmpty)
+                _previewItem('Pelaku Pelanggaran', _selectedPelaku.join(', ')),
+              _previewItem('Lokasi', _selectedLokasi ?? '-'),
               if (_photoFiles.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 const Text('Foto:',
@@ -872,85 +935,85 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 20),
-        const Text('Tag Departemen / PIC',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: _step3TagCtrl,
-                onChanged: (v) => setState(() => _step3SearchQuery = v),
-                decoration: _inputDeco(
-                  hint: 'Cari Departemen atau PIC (min. 3 huruf)...',
-                  icon: Icons.search,
-                ),
-              ),
-              if (_step3SearchQuery.length >= 3) ...[
-                const SizedBox(height: 8),
-                Container(
-                  constraints: const BoxConstraints(maxHeight: 200),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade200),
+        if (!_isPublic) ...[
+          const SizedBox(height: 20),
+          const Text('Tambah Departemen / PIC',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    final result = await _showPersonPicker(
+                      title: 'Tag PIC / Departemen',
+                      options: _picOptions,
+                    );
+                    if (result != null) {
+                      setState(() {
+                        if (!_selectedPIC.contains(result)) {
+                          _selectedPIC.add(result);
+                        }
+                      });
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 13),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F9FF),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.person_add_outlined,
+                            size: 20, color: Colors.grey),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Ketuk untuk tag orang atau departemen',
+                            style: TextStyle(color: Colors.grey, fontSize: 13),
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios,
+                            size: 14, color: Colors.grey.shade400),
+                      ],
+                    ),
                   ),
-                  child: ListView(
-                    shrinkWrap: true,
-                    padding: EdgeInsets.zero,
-                    children: _picOptions
-                        .where((opt) => opt
-                            .toLowerCase()
-                            .contains(_step3SearchQuery.toLowerCase()))
-                        .map((opt) => ListTile(
-                              title: Text(opt,
-                                  style: const TextStyle(fontSize: 13)),
-                              onTap: () {
+                ),
+                if (_selectedPIC.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: _selectedPIC
+                        .map((e) => Chip(
+                              label:
+                                  Text(e, style: const TextStyle(fontSize: 11)),
+                              padding: EdgeInsets.zero,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              onDeleted: () {
                                 setState(() {
-                                  if (!_selectedPIC.contains(opt)) {
-                                    _selectedPIC.add(opt);
-                                  }
-                                  _step3TagCtrl.clear();
-                                  _step3SearchQuery = '';
+                                  _selectedPIC.remove(e);
                                 });
                               },
                             ))
                         .toList(),
                   ),
-                ),
+                ],
               ],
-              if (_selectedPIC.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: _selectedPIC
-                      .map((e) => Chip(
-                            label:
-                                Text(e, style: const TextStyle(fontSize: 11)),
-                            padding: EdgeInsets.zero,
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                            onDeleted: () {
-                              setState(() {
-                                _selectedPIC.remove(e);
-                              });
-                            },
-                          ))
-                      .toList(),
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -1091,6 +1154,118 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             isActive: _currentStep >= 2,
             title: const Text('Review', style: TextStyle(fontSize: 12)),
             content: _buildStep3(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── PICKER CONTENT WIDGET ──────────────────────────────────────────────────
+class _PersonPickerContent extends StatefulWidget {
+  final String title;
+  final List<String> options;
+  final String hint;
+
+  const _PersonPickerContent({
+    required this.title,
+    required this.options,
+    required this.hint,
+  });
+
+  @override
+  State<_PersonPickerContent> createState() => _PersonPickerContentState();
+}
+
+class _PersonPickerContentState extends State<_PersonPickerContent> {
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = widget.options
+        .where((opt) => opt.toLowerCase().contains(_query.toLowerCase()))
+        .toList();
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Column(
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                widget.title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A56C4),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Search Field
+          TextField(
+            controller: _searchCtrl,
+            autofocus: true,
+            onChanged: (v) => setState(() => _query = v),
+            decoration: InputDecoration(
+              hintText: widget.hint,
+              prefixIcon: const Icon(Icons.search, color: Colors.grey),
+              filled: true,
+              fillColor: Colors.grey.shade100,
+              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // List
+          Expanded(
+            child: filtered.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.search_off,
+                            size: 48, color: Colors.grey.shade300),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Tidak menemukan hasil',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final opt = filtered[index];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(opt, style: const TextStyle(fontSize: 14)),
+                        trailing: const Icon(Icons.add_circle_outline,
+                            size: 20, color: Color(0xFF1A56C4)),
+                        onTap: () => Navigator.pop(context, opt),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
