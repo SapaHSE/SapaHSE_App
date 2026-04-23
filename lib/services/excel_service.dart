@@ -5,7 +5,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:syncfusion_flutter_xlsio/xlsio.dart';
 import '../models/report.dart';
 import 'package:intl/intl.dart';
-import 'dart:html' as html;
+import 'excel_mobile_helper.dart' if (dart.library.html) 'excel_web_helper.dart';
 
 class ExcelService {
   static Future<void> exportReports({
@@ -123,12 +123,6 @@ class ExcelService {
   }
 
   static void _triggerWebDownload(List<int> bytes, String fileName) {
-    final blob = html.Blob([bytes],
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    html.AnchorElement(href: url)
-      ..setAttribute('download', fileName)
-      ..click();
-    html.Url.revokeObjectUrl(url);
+    WebDownloadHelper.download(bytes, fileName);
   }
 }

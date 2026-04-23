@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   String _selectedType = 'All Report';
-  String _statusFilter = 'Semua';
+  String _statusFilter = 'Aktif';
 
   int _displayedCount = 5;
   bool _isLoadingMore = false;
@@ -473,22 +473,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'STATUS',
-            style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Colors.grey,
-                letterSpacing: 0.6),
-          ),
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildStatusChip('Semua'),
-              const SizedBox(width: 8),
-              _buildStatusChip('Aktif'),
-              const SizedBox(width: 8),
-              _buildStatusChip('Selesai'),
+              Expanded(child: _buildStatusChip('Aktif')),
+              const SizedBox(width: 12),
+              Expanded(child: _buildStatusChip('Selesai')),
             ],
           ),
         ],
@@ -525,7 +515,8 @@ class _HomeScreenState extends State<HomeScreen> {
               : [],
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.max,
           children: [
             Text(
               label,

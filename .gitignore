@@ -50,3 +50,6 @@ obj/
 /android/app/release
 **/ios/Flutter/.last_build_id
 **/ios/**/Pods/      # Penting jika Anda bekerja dengan iOS/CocoaPods
+linux/flutter
+macos/flutter
+windows/flutter

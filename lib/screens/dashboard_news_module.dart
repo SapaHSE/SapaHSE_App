@@ -57,13 +57,15 @@ class _DashboardNewsModuleState extends State<DashboardNewsModule> {
               .map((n) => NewsModel.fromJson(n))
               .toList();
           total = int.tryParse(rawData['last_page']?.toString() ?? '1') ?? 1;
-          current = int.tryParse(rawData['current_page']?.toString() ?? '1') ?? 1;
+          current =
+              int.tryParse(rawData['current_page']?.toString() ?? '1') ?? 1;
         } else if (rawData is List) {
           parsedNews = rawData.map((n) => NewsModel.fromJson(n)).toList();
           if (dataObj is Map) {
             final meta = dataObj['meta'];
             total = int.tryParse(meta?['last_page']?.toString() ?? '1') ?? 1;
-            current = int.tryParse(meta?['current_page']?.toString() ?? '1') ?? 1;
+            current =
+                int.tryParse(meta?['current_page']?.toString() ?? '1') ?? 1;
           }
         }
 
@@ -187,18 +189,21 @@ class _DashboardNewsModuleState extends State<DashboardNewsModule> {
                       } else {
                         res = await ApiService.post('/news', payload);
                       }
-                      if (res.success && mounted) {
-                        Navigator.pop(ctx);
+                      if (!context.mounted) return;
+                      if (res.success) {
+                        if (ctx.mounted) Navigator.pop(ctx);
                         _fetchNews(page: 1);
-                        showDialog(
-                          context: context,
-                          builder: (ctx) => const DashboardSuccessDialog(
-                            title: 'Berhasil!',
-                            message:
-                                'Berita baru telah berhasil dipublikasikan.',
-                          ),
-                        );
-                      } else if (mounted) {
+                        if (context.mounted) {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => const DashboardSuccessDialog(
+                              title: 'Berhasil!',
+                              message:
+                                  'Berita baru telah berhasil dipublikasikan.',
+                            ),
+                          );
+                        }
+                      } else {
                         setModalState(() => isLoading = false);
                       }
                     },
@@ -231,6 +236,7 @@ class _DashboardNewsModuleState extends State<DashboardNewsModule> {
     XFile? pickedImage;
     bool isLoading = false;
 
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -353,24 +359,30 @@ class _DashboardNewsModuleState extends State<DashboardNewsModule> {
                         res = await ApiService.put('/news/${n.id}', fields);
                       }
 
-                      if (res.success && mounted) {
-                        Navigator.pop(ctx);
+                      if (!context.mounted) return;
+                      if (res.success) {
+                        if (ctx.mounted) Navigator.pop(ctx);
                         _fetchNews(page: _currentNewsPage);
-                        showDialog(
-                          context: context,
-                          builder: (ctx) => const DashboardSuccessDialog(
-                            title: 'Berhasil!',
-                            message:
-                                'Berita berhasil diperbarui dengan data terbaru.',
-                          ),
-                        );
-                      } else if (mounted) {
+                        if (context.mounted) {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => const DashboardSuccessDialog(
+                              title: 'Berhasil!',
+                              message:
+                                  'Berita berhasil diperbarui dengan data terbaru.',
+                            ),
+                          );
+                        }
+                      } else {
                         setModalState(() => isLoading = false);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text(res.errorMessage ?? 'Gagal update'),
-                              backgroundColor: Colors.red),
-                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content:
+                                    Text(res.errorMessage ?? 'Gagal update'),
+                                backgroundColor: Colors.red),
+                          );
+                        }
                       }
                     },
               style: ElevatedButton.styleFrom(
@@ -494,24 +506,30 @@ class _DashboardNewsModuleState extends State<DashboardNewsModule> {
                         'Apakah Anda yakin ingin menghapus "${n.title}"? Tindakan ini tidak dapat dibatalkan.',
                   ),
                 );
-                if (confirm == true && mounted) {
+                if (confirm == true && context.mounted) {
                   final res = await ApiService.delete('/news/${n.id}');
-                  if (res.success && mounted) {
+                  if (!context.mounted) return;
+                  if (res.success) {
                     _fetchNews(page: _currentNewsPage);
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => const DashboardSuccessDialog(
-                        title: 'Dihapus!',
-                        message: 'Berita telah berhasil dihapus dari sistem.',
-                      ),
-                    );
-                  } else if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(res.errorMessage ?? 'Gagal menghapus berita'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
+                    if (context.mounted) {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => const DashboardSuccessDialog(
+                          title: 'Dihapus!',
+                          message: 'Berita telah berhasil dihapus dari sistem.',
+                        ),
+                      );
+                    }
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              res.errorMessage ?? 'Gagal menghapus berita'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   }
                 }
               },

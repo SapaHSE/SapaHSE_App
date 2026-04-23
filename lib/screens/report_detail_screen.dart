@@ -1,4 +1,4 @@
-import 'dart:io' show File;
+import 'dart:io' show File, Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -382,59 +382,64 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         icon: Icons.place_outlined,
                         label: 'Koordinat Kejadian',
                         value: _report.kejadianLocation!,
+                        onTap: () async {
+                          final coords = _report.kejadianLocation!.split(',');
+                          if (coords.length != 2) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content:
+                                        Text('Format koordinat tidak valid')),
+                              );
+                            }
+                            return;
+                          }
+
+                          final lat = double.tryParse(coords[0].trim());
+                          final lng = double.tryParse(coords[1].trim());
+
+                          if (lat == null || lng == null) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content:
+                                        Text('Format koordinat tidak valid')),
+                              );
+                            }
+                            return;
+                          }
+
+                          // Google Maps URL is more reliable across platforms
+                          final googleMapsUrl = Uri.parse(
+                              'https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+                          final appleMapsUrl =
+                              Uri.parse('apple:0,0?q=$lat,$lng');
+
+                          if (await canLaunchUrl(googleMapsUrl)) {
+                            await launchUrl(googleMapsUrl,
+                                mode: LaunchMode.externalApplication);
+                          } else if (!kIsWeb &&
+                              Platform.isIOS &&
+                              await canLaunchUrl(appleMapsUrl)) {
+                            await launchUrl(appleMapsUrl);
+                          } else {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text(
+                                        'Tidak dapat membuka aplikasi peta')),
+                              );
+                            }
+                          }
+                        },
                         trailing: Container(
+                          padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: const Color(0xFFEFF4FF),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: IconButton(
-                            icon: const Icon(Icons.map_outlined,
-                                color: Color(0xFF1A56C4), size: 20),
-                            onPressed: () async {
-                              final coords =
-                                  _report.kejadianLocation!.split(',');
-                              if (coords.length != 2) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text(
-                                            'Format koordinat tidak valid')),
-                                  );
-                                }
-                                return;
-                              }
-
-                              final lat = double.tryParse(coords[0].trim());
-                              final lng = double.tryParse(coords[1].trim());
-
-                              if (lat == null || lng == null) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text(
-                                            'Format koordinat tidak valid')),
-                                  );
-                                }
-                                return;
-                              }
-
-                              final query = Uri.encodeComponent('$lat,$lng');
-                              final url = Uri.parse('geo:0,0?q=$query');
-
-                              if (await canLaunchUrl(url)) {
-                                await launchUrl(url,
-                                    mode: LaunchMode.externalApplication);
-                              } else {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text(
-                                            'Tidak dapat membuka aplikasi peta')),
-                                  );
-                                }
-                              }
-                            },
-                          ),
+                          child: const Icon(Icons.map_outlined,
+                              color: Color(0xFF1A56C4), size: 18),
                         ),
                       ),
                     ],
@@ -975,35 +980,58 @@ class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
   final Widget? trailing;
-  const _DetailRow(
-      {required this.icon,
-      required this.label,
-      required this.value,
-      this.trailing});
+  final VoidCallback? onTap;
+
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.trailing,
+    this.onTap,
+  });
 
   @override
-  Widget build(BuildContext context) => Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: Colors.grey),
-          const SizedBox(width: 8),
-          Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  Widget build(BuildContext context) {
+    final content = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF1A56C4).withValues(alpha: 0.7)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(label,
                   style: const TextStyle(fontSize: 11, color: Colors.grey)),
               const SizedBox(height: 2),
               Text(value,
                   style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w500)),
-            ]),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87)),
+            ],
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: 8),
-            trailing!,
-          ],
+        ),
+        if (trailing != null) ...[
+          const SizedBox(width: 8),
+          trailing!,
         ],
+      ],
+    );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: content,
+        ),
       );
+    }
+
+    return content;
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

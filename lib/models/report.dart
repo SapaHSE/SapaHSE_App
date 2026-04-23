@@ -38,43 +38,39 @@ enum ReportSubStatus {
 
 class Report {
   final String id;
-  final String ticketNumber;
+  final String? ticketNumber;
   final String title;
   final String description;
   final ReportType type;
   final HazardCategory? category;
-  final String? hazardSubcategory; // English version
-  final String? subkategori;       // Indonesian version (compat)
+  final String? subkategori;
   final ReportSeverity severity;
   final ReportStatus status;
   final ReportSubStatus? subStatus;
-  final String location;           // Deskripsi lokasi kejadian
-  final String? kejadianLocation;  // Koordinat pinpoint lokasi kejadian
-  final String? saran;             // Saran perbaikan
-  final String? perusahaan;        // Perusahaan pelapor
-  final String? departemen;        // Departemen pelapor
-  final String? tagOrang;          // PJA (Penanggung Jawab Area)
+  final String location;
+  final String? kejadianLocation;
+  final String? saran;
+  final String? perusahaan;
+  final String? departemen;
+  final String? tagOrang;
   final DateTime createdAt;
   final String reportedBy;
+  final String? reporterId;
   final String imageUrl;
 
   // Additional Backend Fields
-  final String? pja;
-  final String? department;
-  final String? suggestion;
-  final String? area; // Untuk Inspection
+  final String? area;
   final String? inspector;
   final String? notes;
   final String? result;
 
   const Report({
     required this.id,
-    this.ticketNumber = '',
+    this.ticketNumber,
     required this.title,
     required this.description,
     required this.type,
     this.category,
-    this.hazardSubcategory,
     this.subkategori,
     required this.severity,
     required this.status,
@@ -87,10 +83,8 @@ class Report {
     this.tagOrang,
     required this.createdAt,
     required this.reportedBy,
+    this.reporterId,
     required this.imageUrl,
-    this.pja,
-    this.department,
-    this.suggestion,
     this.area,
     this.inspector,
     this.notes,
@@ -103,34 +97,37 @@ class Report {
         json.containsKey('name_inspector') ||
         json['type'] == 'inspection';
 
+    final reportedByMap = json['reported_by'];
+    String? rId;
+    if (reportedByMap is Map) {
+      rId = reportedByMap['id']?.toString();
+    }
+
     return Report(
       id: json['id']?.toString() ?? '',
-      ticketNumber: json['ticket_number']?.toString() ?? '',
+      ticketNumber: json['ticket_number']?.toString(),
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       type: isInspection ? ReportType.inspection : ReportType.hazard,
       category: _mapCategory(json['hazard_category']),
-      hazardSubcategory: json['hazard_subcategory']?.toString() ?? json['subkategori']?.toString(),
-      subkategori: json['subkategori']?.toString() ?? json['hazard_subcategory']?.toString(),
+      subkategori: json['hazard_subcategory']?.toString() ?? json['subkategori']?.toString(),
       severity: _mapSeverity(json['severity']),
       status: _mapStatus(json['status']),
       subStatus: _mapSubStatus(json['sub_status']),
       location: json['location']?.toString() ?? json['kejadian_location']?.toString() ?? '',
       kejadianLocation: json['kejadian_location']?.toString() ?? json['location']?.toString(),
-      saran: json['saran']?.toString() ?? json['suggestion']?.toString(),
+      saran: json['suggestion']?.toString() ?? json['saran']?.toString(),
       perusahaan: json['perusahaan']?.toString(),
-      departemen: json['departemen']?.toString() ?? json['reported_department']?.toString(),
-      tagOrang: json['tag_orang']?.toString() ?? json['name_pja']?.toString(),
+      departemen: json['reported_department']?.toString() ?? json['departemen']?.toString(),
+      tagOrang: json['name_pja']?.toString() ?? json['tag_orang']?.toString(),
       createdAt: json['created_at'] != null
           ? (json['created_at'] is String
               ? DateTime.parse(json['created_at'])
               : DateTime.now())
           : DateTime.now(),
       reportedBy: _mapReportedBy(json),
+      reporterId: rId,
       imageUrl: json['image_url']?.toString() ?? '',
-      pja: json['name_pja']?.toString() ?? json['tag_orang']?.toString(),
-      department: json['reported_department']?.toString() ?? json['departemen']?.toString(),
-      suggestion: json['suggestion']?.toString() ?? json['saran']?.toString(),
       area: json['area']?.toString(),
       inspector: json['name_inspector']?.toString(),
       notes: json['notes']?.toString(),

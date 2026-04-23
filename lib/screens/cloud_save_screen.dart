@@ -54,11 +54,12 @@ class _CloudSaveScreenState extends State<CloudSaveScreen>
 
   Future<void> _loadDrafts() async {
     final drafts = await CloudSaveService.instance.getDrafts();
-    if (mounted)
+    if (mounted) {
       setState(() {
         _drafts = drafts;
         _isLoading = false;
       });
+    }
   }
 
   @override

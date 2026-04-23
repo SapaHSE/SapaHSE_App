@@ -88,6 +88,9 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   String? _selectedPerusahaan;
   final List<String> _selectedPIC = [];
   final _picSearchCtrl = TextEditingController();
+  String _step1SearchQuery = '';
+  final _step3TagCtrl = TextEditingController();
+  String _step3SearchQuery = '';
 
   // Step 2
   final _titleCtrl = TextEditingController();
@@ -138,6 +141,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   @override
   void dispose() {
     _picSearchCtrl.dispose();
+    _step3TagCtrl.dispose();
     _titleCtrl.dispose();
     _kronologiCtrl.dispose();
     _pelakuCtrl.dispose();
@@ -461,32 +465,47 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _label('PIC / Departemen (Penanggung Jawab) *'),
-        LayoutBuilder(
-          builder: (context, constraints) => DropdownMenu<String>(
-            key: ValueKey(_selectedPerusahaan),
-            controller: _picSearchCtrl,
-            width: constraints.maxWidth,
-            enableSearch: true,
-            enableFilter: true,
-            requestFocusOnTap: true,
-            hintText: 'Cari Nama atau Departemen...',
-            inputDecorationTheme: _dropdownTheme(),
-            onSelected: (v) {
-              if (v != null && v.isNotEmpty) {
-                setState(() {
-                  if (!_selectedPIC.contains(v)) {
-                    _selectedPIC.add(v);
-                  }
-                  // Clear search text so they can search again
-                  _picSearchCtrl.clear();
-                });
-              }
-            },
-            dropdownMenuEntries: _picOptions
-                .map((e) => DropdownMenuEntry(value: e, label: e))
-                .toList(),
+        TextField(
+          controller: _picSearchCtrl,
+          onChanged: (v) => setState(() => _step1SearchQuery = v),
+          decoration: _inputDeco(
+            hint: 'Cari Nama atau Departemen (min. 3 huruf)...',
+            icon: Icons.search,
           ),
         ),
+        if (_step1SearchQuery.length >= 3) ...[
+          const SizedBox(height: 8),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 200),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: ListView(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              children: _picOptions
+                  .where((opt) => opt
+                      .toLowerCase()
+                      .contains(_step1SearchQuery.toLowerCase()))
+                  .map((opt) => ListTile(
+                        title:
+                            Text(opt, style: const TextStyle(fontSize: 13)),
+                        onTap: () {
+                          setState(() {
+                            if (!_selectedPIC.contains(opt)) {
+                              _selectedPIC.add(opt);
+                            }
+                            _picSearchCtrl.clear();
+                            _step1SearchQuery = '';
+                          });
+                        },
+                      ))
+                  .toList(),
+            ),
+          ),
+        ],
         if (_selectedPIC.isNotEmpty) ...[
           const SizedBox(height: 10),
           Wrap(
@@ -757,7 +776,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Preview Laporan Akhir',
+              const Text('Review Laporan Akhir',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const Divider(),
               _previewItem(
@@ -850,6 +869,85 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 // ignore: deprecated_member_use
                 onChanged: (v) => setState(() => _isPublic = v!),
               ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text('Tag Departemen / PIC',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _step3TagCtrl,
+                onChanged: (v) => setState(() => _step3SearchQuery = v),
+                decoration: _inputDeco(
+                  hint: 'Cari Departemen atau PIC (min. 3 huruf)...',
+                  icon: Icons.search,
+                ),
+              ),
+              if (_step3SearchQuery.length >= 3) ...[
+                const SizedBox(height: 8),
+                Container(
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: ListView(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    children: _picOptions
+                        .where((opt) => opt
+                            .toLowerCase()
+                            .contains(_step3SearchQuery.toLowerCase()))
+                        .map((opt) => ListTile(
+                              title: Text(opt,
+                                  style: const TextStyle(fontSize: 13)),
+                              onTap: () {
+                                setState(() {
+                                  if (!_selectedPIC.contains(opt)) {
+                                    _selectedPIC.add(opt);
+                                  }
+                                  _step3TagCtrl.clear();
+                                  _step3SearchQuery = '';
+                                });
+                              },
+                            ))
+                        .toList(),
+                  ),
+                ),
+              ],
+              if (_selectedPIC.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: _selectedPIC
+                      .map((e) => Chip(
+                            label:
+                                Text(e, style: const TextStyle(fontSize: 11)),
+                            padding: EdgeInsets.zero,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            onDeleted: () {
+                              setState(() {
+                                _selectedPIC.remove(e);
+                              });
+                            },
+                          ))
+                      .toList(),
+                ),
+              ],
             ],
           ),
         ),
@@ -991,7 +1089,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           ),
           Step(
             isActive: _currentStep >= 2,
-            title: const Text('Preview', style: TextStyle(fontSize: 12)),
+            title: const Text('Review', style: TextStyle(fontSize: 12)),
             content: _buildStep3(),
           ),
         ],

@@ -474,17 +474,16 @@ class _DashboardUsersModuleState extends State<DashboardUsersModule> {
 
     if (confirm == true) {
       final res = await ApiService.delete('/admin/users/${u.id}');
-      if (res.success && context.mounted) {
+      if (!mounted) return;
+      if (res.success) {
         _fetchUsers(page: _currentUserPage);
-        if (context.mounted) {
-          showDialog(
-            context: context,
-            builder: (ctx) => const DashboardSuccessDialog(
-              title: 'Dihapus!',
-              message: 'Akun pengguna telah berhasil dihapus dari sistem.',
-            ),
-          );
-        }
+        showDialog(
+          context: context,
+          builder: (ctx) => const DashboardSuccessDialog(
+            title: 'Dihapus!',
+            message: 'Akun pengguna telah berhasil dihapus dari sistem.',
+          ),
+        );
       }
     }
   }

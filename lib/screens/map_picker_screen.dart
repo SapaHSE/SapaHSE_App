@@ -68,15 +68,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
-        actions: [
-          if (_selectedLocation != null)
-            TextButton(
-              onPressed: () => Navigator.pop(context, _selectedLocation),
-              child: const Text('Simpan',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: Color(0xFF1A56C4))),
-            ),
-        ],
+        actions: const [],
       ),
       body: Stack(
         children: [
@@ -169,37 +161,80 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                 try {
                   bool serviceEnabled =
                       await Geolocator.isLocationServiceEnabled();
-                  if (!serviceEnabled) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text('Layanan lokasi belum diaktifkan')));
-                    return;
-                  }
+                  if (!mounted) return;
+                  if (serviceEnabled) {
+                    LocationPermission permission =
+                        await Geolocator.checkPermission();
+                    if (!mounted) return;
+                    if (permission == LocationPermission.denied) {
+                      permission = await Geolocator.requestPermission();
+                    }
 
-                  LocationPermission permission =
-                      await Geolocator.checkPermission();
-                  if (permission == LocationPermission.denied) {
-                    permission = await Geolocator.requestPermission();
-                  }
-
-                  if (permission == LocationPermission.always ||
-                      permission == LocationPermission.whileInUse) {
-                    final position = await Geolocator.getCurrentPosition();
-                    final currentLatLng =
-                        LatLng(position.latitude, position.longitude);
-                    setState(() {
-                      _selectedLocation = currentLatLng;
-                    });
-                    _mapController.move(currentLatLng, 15.0);
+                    if (!mounted) return;
+                    if (permission == LocationPermission.always ||
+                        permission == LocationPermission.whileInUse) {
+                      final position = await Geolocator.getCurrentPosition();
+                      final currentLatLng =
+                          LatLng(position.latitude, position.longitude);
+                      if (!mounted) return;
+                      setState(() {
+                        _selectedLocation = currentLatLng;
+                      });
+                      _mapController.move(currentLatLng, 15.0);
+                    }
+                  } else {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('Layanan lokasi belum diaktifkan')));
+                    }
                   }
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Gagal mendapatkan lokasi saat ini')));
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('Gagal mendapatkan lokasi saat ini')));
+                  }
                 }
               },
               backgroundColor: Colors.white,
               child: const Icon(Icons.my_location, color: Color(0xFF1A56C4)),
             ),
-          )
+          ),
+          // Save Location Button
+          if (_selectedLocation != null)
+            Positioned(
+              bottom: 20,
+              left: 20,
+              right: 90, // Give space for My Location button
+              child: SizedBox(
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context, _selectedLocation),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1A56C4),
+                    foregroundColor: Colors.white,
+                    elevation: 5,
+                    shadowColor: Colors.black.withValues(alpha: 0.3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.check_circle_outline, size: 20),
+                      SizedBox(width: 10),
+                      Text(
+                        'Simpan Lokasi',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
