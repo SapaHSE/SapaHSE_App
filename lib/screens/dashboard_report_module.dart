@@ -635,7 +635,7 @@ class _DashboardReportModuleState extends State<DashboardReportModule> {
           ],
           rows: _reports.map((r) {
             return DataRow(cells: [
-              DataCell(Text(r.ticketNumber,
+              DataCell(Text(r.ticketNumber ?? '-',
                   style: const TextStyle(
                       fontWeight: FontWeight.w700, color: Color(0xFF1E293B)))),
               DataCell(ConstrainedBox(
