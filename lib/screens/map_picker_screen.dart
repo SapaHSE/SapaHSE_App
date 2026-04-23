@@ -183,16 +183,14 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                       _mapController.move(currentLatLng, 15.0);
                     }
                   } else {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('Layanan lokasi belum diaktifkan')));
-                    }
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('Layanan lokasi belum diaktifkan')));
                   }
                 } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text('Gagal mendapatkan lokasi saat ini')));
-                  }
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Gagal mendapatkan lokasi saat ini')));
                 }
               },
               backgroundColor: Colors.white,
