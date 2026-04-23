@@ -51,5 +51,5 @@ obj/
 **/ios/Flutter/.last_build_id
 **/ios/**/Pods/      # Penting jika Anda bekerja dengan iOS/CocoaPods
 linux/flutter
-macos/flutter
+macos/Flutter
 windows/flutter

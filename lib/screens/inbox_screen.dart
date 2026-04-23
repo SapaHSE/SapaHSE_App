@@ -577,7 +577,7 @@ class _InboxScreenState extends State<InboxScreen>
         if (isAnnouncement) {
           return _AnnouncementCard(
             item: item,
-            formatDate: _formatDate,
+            formatDate: (dt) => _formatDate(dt),
             onTap: () {
               _markItemRead(item);
               _showAnnouncementDetail(context, item);
@@ -586,11 +586,11 @@ class _InboxScreenState extends State<InboxScreen>
         }
         return _InboxCard(
           item: item,
-          formatDate: _formatDate,
-          levelResiko: _levelResiko,
-          statusColor: _statusColor,
-          statusLabel: _statusLabel,
-          severityColor: _severityColor,
+          formatDate: (dt) => _formatDate(dt),
+          levelResiko: (s) => _levelResiko(s),
+          statusColor: (s) => _statusColor(s),
+          statusLabel: (s) => _statusLabel(s),
+          severityColor: (s) => _severityColor(s),
           onDetail: () {
             _markItemRead(item);
             Navigator.push(
