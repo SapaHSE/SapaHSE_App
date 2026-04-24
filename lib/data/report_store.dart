@@ -166,6 +166,8 @@ class ReportStore {
     String actor = 'User',
     String? note,
     String? photoPath,
+    String? departemen,
+    String? tagOrang,
   }) {
     final list = List<Report>.from(reports.value);
     final idx = list.indexWhere((r) => r.id == id);
@@ -186,8 +188,8 @@ class ReportStore {
       kejadianLocation: old.kejadianLocation,
       saran: old.saran,
       perusahaan: old.perusahaan,
-      departemen: old.departemen,
-      tagOrang: old.tagOrang,
+      departemen: departemen ?? old.departemen,
+      tagOrang: tagOrang ?? old.tagOrang,
       createdAt: old.createdAt,
       reportedBy: old.reportedBy,
       imageUrl: old.imageUrl,

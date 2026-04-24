@@ -1193,6 +1193,10 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
         .where((opt) => opt.toLowerCase().contains(_query.toLowerCase()))
         .toList();
 
+    // Grouping logic
+    final depts = filtered.where((o) => o.startsWith('Departemen')).toList();
+    final pjas = filtered.where((o) => !o.startsWith('Departemen')).toList();
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -1234,7 +1238,7 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
           // List
           Expanded(
             child: filtered.isEmpty
@@ -1252,19 +1256,43 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
                       ],
                     ),
                   )
-                : ListView.separated(
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final opt = filtered[index];
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(opt, style: const TextStyle(fontSize: 14)),
-                        trailing: const Icon(Icons.add_circle_outline,
-                            size: 20, color: Color(0xFF1A56C4)),
-                        onTap: () => Navigator.pop(context, opt),
-                      );
-                    },
+                : ListView(
+                    children: [
+                      if (depts.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(0, 16, 0, 8),
+                          child: Text('DEPARTEMEN', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
+                        ),
+                        ...depts.map((opt) => Column(
+                              children: [
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(opt, style: const TextStyle(fontSize: 14)),
+                                  trailing: const Icon(Icons.add_circle_outline, size: 20, color: Color(0xFF1A56C4)),
+                                  onTap: () => Navigator.pop(context, opt),
+                                ),
+                                const Divider(height: 1),
+                              ],
+                            )),
+                      ],
+                      if (pjas.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(0, 16, 0, 8),
+                          child: Text('PIC / PJA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
+                        ),
+                        ...pjas.map((opt) => Column(
+                              children: [
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(opt, style: const TextStyle(fontSize: 14)),
+                                  trailing: const Icon(Icons.add_circle_outline, size: 20, color: Color(0xFF1A56C4)),
+                                  onTap: () => Navigator.pop(context, opt),
+                                ),
+                                const Divider(height: 1),
+                              ],
+                            )),
+                      ],
+                    ],
                   ),
           ),
         ],

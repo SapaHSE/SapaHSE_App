@@ -1076,7 +1076,7 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
   }
 
   void _showUnifiedPicker() {
-    final allOptions = [
+    final depts = [
       'Departemen HSE',
       'Departemen Produksi',
       'Departemen Maintenance',
@@ -1084,6 +1084,8 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
       'Departemen HRD',
       'Departemen Logistik',
       'Departemen Security',
+    ];
+    final pjas = [
       'Budi Santoso (PJA)',
       'Ahmad Fauzi (PJA)',
       'Riko Pratama (PJA)',
@@ -1101,12 +1103,15 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setSheetState) {
-          final filtered = allOptions
+          final filteredDepts = depts
+              .where((o) => o.toLowerCase().contains(query.toLowerCase()))
+              .toList();
+          final filteredPjas = pjas
               .where((o) => o.toLowerCase().contains(query.toLowerCase()))
               .toList();
 
           return Container(
-            height: MediaQuery.of(context).size.height * 0.7,
+            height: MediaQuery.of(context).size.height * 0.75,
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -1131,24 +1136,52 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                     onChanged: (v) => setSheetState(() => query = v),
                   ),
                 ),
+                const SizedBox(height: 10),
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: filtered.length,
-                    itemBuilder: (context, i) {
-                      final opt = filtered[i];
-                      final isSelected = _taggedItems.contains(opt);
-                      return ListTile(
-                        title: Text(opt, style: const TextStyle(fontSize: 14)),
-                        trailing: Icon(isSelected ? Icons.check_circle : Icons.add_circle_outline, color: isSelected ? _blue : Colors.grey),
-                        onTap: () {
-                          setState(() {
-                            if (isSelected) _taggedItems.remove(opt);
-                            else _taggedItems.add(opt);
-                          });
-                          setSheetState(() {});
-                        },
-                      );
-                    },
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    children: [
+                      if (filteredDepts.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(12, 16, 12, 8),
+                          child: Text('DEPARTEMEN', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
+                        ),
+                        ...filteredDepts.map((opt) {
+                          final isSelected = _taggedItems.contains(opt);
+                          return ListTile(
+                            title: Text(opt, style: const TextStyle(fontSize: 14)),
+                            trailing: Icon(isSelected ? Icons.check_circle : Icons.add_circle_outline, color: isSelected ? _blue : Colors.grey),
+                            onTap: () {
+                              setState(() {
+                                if (isSelected) _taggedItems.remove(opt);
+                                else _taggedItems.add(opt);
+                              });
+                              setSheetState(() {});
+                            },
+                          );
+                        }),
+                      ],
+                      if (filteredPjas.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(12, 16, 12, 8),
+                          child: Text('PIC / PJA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
+                        ),
+                        ...filteredPjas.map((opt) {
+                          final isSelected = _taggedItems.contains(opt);
+                          return ListTile(
+                            title: Text(opt, style: const TextStyle(fontSize: 14)),
+                            trailing: Icon(isSelected ? Icons.check_circle : Icons.add_circle_outline, color: isSelected ? _blue : Colors.grey),
+                            onTap: () {
+                              setState(() {
+                                if (isSelected) _taggedItems.remove(opt);
+                                else _taggedItems.add(opt);
+                              });
+                              setSheetState(() {});
+                            },
+                          );
+                        }),
+                      ],
+                    ],
                   ),
                 ),
                 Padding(
@@ -1175,6 +1208,7 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
     );
   }
 
+
   Future<void> _handleSave() async {
     if (_selectedSub == ReportSubStatus.reviewing && _attachedPhoto == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Foto bukti wajib dilampirkan!')));
@@ -1197,6 +1231,8 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
       actor: 'Noor Lintang Bhaskara',
       note: finalNote,
       photoPath: _attachedPhoto?.path,
+      departemen: deptList.isNotEmpty ? deptList.join(', ') : null,
+      tagOrang: pjaList.isNotEmpty ? pjaList.join(', ') : null,
     );
 
     if (mounted) {
@@ -1502,12 +1538,4 @@ class _DashedRectPainter extends CustomPainter {
   bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
-class _Label extends StatelessWidget {
-  final String text;
-  const _Label(this.text);
-  @override
-  Widget build(BuildContext context) {
-    return Text(text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54));
-  }
-}
 
