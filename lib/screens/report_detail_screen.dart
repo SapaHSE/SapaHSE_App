@@ -141,6 +141,20 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
+  void _showUpdateStatusModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _UpdateStatusSheet(
+        report: _report,
+        onUpdate: (updatedReport) {
+          setState(() => _report = updatedReport);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final timeline = ReportStore.instance.getTimeline(_report.id);
@@ -531,17 +545,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final result = await Navigator.push<Report>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => UpdateStatusPage(report: _report),
-                      ),
-                    );
-                    if (result != null) {
-                      setState(() => _report = result);
-                    }
-                  },
+                  onPressed: () => _showUpdateStatusModal(),
                   icon: const Icon(Icons.edit_outlined, size: 18),
                   label: const Text('Update Status'),
                   style: ElevatedButton.styleFrom(
@@ -1035,151 +1039,72 @@ class _DetailRow extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// UPDATE STATUS PAGE (FULLSCREEN)
+// UPDATE STATUS MODAL (COMPACT)
 // ══════════════════════════════════════════════════════════════════════════════
-class UpdateStatusPage extends StatefulWidget {
+
+class _UpdateStatusSheet extends StatefulWidget {
   final Report report;
-  const UpdateStatusPage({super.key, required this.report});
+  final Function(Report) onUpdate;
+
+  const _UpdateStatusSheet({required this.report, required this.onUpdate});
 
   @override
-  State<UpdateStatusPage> createState() => _UpdateStatusPageState();
+  State<_UpdateStatusSheet> createState() => _UpdateStatusSheetState();
 }
 
-// ── Data orang yang bisa di-tag ────────────────────────────────────────────
-const _allPeople = [
-  'Budi Santoso',
-  'Ahmad Fauzi',
-  'Riko Pratama',
-  'Hendra Wijaya',
-  'Siti Rahayu',
-  'Dian Permata',
-  'Eko Susilo',
-  'Novi Andriani',
-  'Wahyu Hidayat',
-  'Agus Setiawan',
-  'Bambang Purnomo',
-  'Lintang Bhaskara',
-  'Maya Putri',
-  'Reza Firmansyah',
-  'Dewi Kusuma',
-  'Rizki Fauzan',
-  'Rina Marlina',
-  'Kevin Alfarisi',
-  'Deni Setiawan',
-  'Putri Wulandari',
-  'Faisal Rahman',
-  'Guntur Prabowo',
-  'Yuli Astuti',
-];
-
-class _UpdateStatusPageState extends State<UpdateStatusPage> {
+class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
   late ReportStatus _selectedStatus;
   ReportSubStatus? _selectedSub;
   final _noteCtrl = TextEditingController();
-  final _deferredKeteranganCtrl = TextEditingController();
-  final Set<String> _taggedPeople = {};
-
-  final List<String> _departments = [
-    'HSE',
-    'Produksi',
-    'Maintenance',
-    'Engineering',
-    'HRD',
-    'Logistik',
-    'Security',
-  ];
-  String? _selectedDepartment;
-
+  final Set<String> _taggedItems = {}; // Combined Dept & PJA
   XFile? _attachedPhoto;
   bool _isSaving = false;
+
+  final _blue = const Color(0xFF1A56C4);
+  final _purple = const Color(0xFF9C27B0);
+  final _grey = const Color(0xFF757575);
 
   @override
   void initState() {
     super.initState();
     _selectedStatus = widget.report.status;
     _selectedSub = widget.report.subStatus;
-  }
-
-  @override
-  void dispose() {
-    _noteCtrl.dispose();
-    _deferredKeteranganCtrl.dispose();
-    super.dispose();
-  }
-
-  // Sequential logic: Open -> InProgress -> Closed
-  List<ReportStatus> get _allowedStatuses {
-    return ReportStatus.values;
-  }
-
-  Color _statusColor(ReportStatus s) => switch (s) {
-        ReportStatus.open => const Color(0xFF2196F3),
-        ReportStatus.inProgress => const Color(0xFF9C27B0),
-        ReportStatus.closed => const Color(0xFF757575),
-      };
-
-  Future<void> _pickPhoto(ImageSource source) async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: source, imageQuality: 70);
-    if (picked != null) {
-      setState(() => _attachedPhoto = picked);
+    if (widget.report.departemen != null) _taggedItems.add(widget.report.departemen!);
+    if (widget.report.tagOrang != null) {
+      _taggedItems.addAll(widget.report.tagOrang!.split(', ').where((s) => s.isNotEmpty));
     }
   }
 
-  void _showPhotoOptions() {
-    if (kIsWeb) {
-      _pickPhoto(ImageSource.gallery);
-      return;
-    }
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Pilih Sumber Foto',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.camera_alt, color: Color(0xFF1A56C4)),
-              title: const Text('Kamera'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickPhoto(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading:
-                  const Icon(Icons.photo_library, color: Color(0xFF1A56C4)),
-              title: const Text('Galeri'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickPhoto(ImageSource.gallery);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  void _showUnifiedPicker() {
+    final allOptions = [
+      'Departemen HSE',
+      'Departemen Produksi',
+      'Departemen Maintenance',
+      'Departemen Engineering',
+      'Departemen HRD',
+      'Departemen Logistik',
+      'Departemen Security',
+      'Budi Santoso (PJA)',
+      'Ahmad Fauzi (PJA)',
+      'Riko Pratama (PJA)',
+      'Hendra Wijaya (PJA)',
+      'Siti Rahayu (PJA)',
+      'Dian Permata (PJA)',
+      'Eko Susilo (PJA)',
+    ];
 
-  void _showTagPeopleSheet() {
     String query = '';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) {
-          final filteredPeople = _allPeople
-              .where((p) => p.toLowerCase().contains(query.toLowerCase()))
+        builder: (context, setSheetState) {
+          final filtered = allOptions
+              .where((o) => o.toLowerCase().contains(query.toLowerCase()))
               .toList();
+
           return Container(
             height: MediaQuery.of(context).size.height * 0.7,
             decoration: const BoxDecoration(
@@ -1189,66 +1114,36 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
             child: Column(
               children: [
                 const SizedBox(height: 12),
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+                const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text('Tag Departemen / PJA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
-                const SizedBox(height: 12),
-                const Text('Pilih Orang',
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: TextField(
                     decoration: InputDecoration(
-                      hintText: 'Cari nama...',
-                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 0),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.grey.shade300)),
-                      enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.grey.shade300)),
+                      hintText: 'Cari departemen atau nama...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: EdgeInsets.zero,
                     ),
-                    onChanged: (val) => setSheetState(() => query = val),
+                    onChanged: (v) => setSheetState(() => query = v),
                   ),
                 ),
                 Expanded(
                   child: ListView.builder(
-                    itemCount: filteredPeople.length,
-                    itemBuilder: (_, i) {
-                      final person = filteredPeople[i];
-                      final isTagged = _taggedPeople.contains(person);
+                    itemCount: filtered.length,
+                    itemBuilder: (context, i) {
+                      final opt = filtered[i];
+                      final isSelected = _taggedItems.contains(opt);
                       return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: const Color(0xFFEFF4FF),
-                          child: Text(
-                            person[0],
-                            style: const TextStyle(
-                                color: Color(0xFF1A56C4),
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        title:
-                            Text(person, style: const TextStyle(fontSize: 14)),
-                        trailing: isTagged
-                            ? const Icon(Icons.check_circle,
-                                color: Color(0xFF1A56C4))
-                            : const Icon(Icons.radio_button_unchecked,
-                                color: Colors.grey),
+                        title: Text(opt, style: const TextStyle(fontSize: 14)),
+                        trailing: Icon(isSelected ? Icons.check_circle : Icons.add_circle_outline, color: isSelected ? _blue : Colors.grey),
                         onTap: () {
                           setState(() {
-                            if (isTagged) {
-                              _taggedPeople.remove(person);
-                            } else {
-                              _taggedPeople.add(person);
-                            }
+                            if (isSelected) _taggedItems.remove(opt);
+                            else _taggedItems.add(opt);
                           });
                           setSheetState(() {});
                         },
@@ -1257,24 +1152,18 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  padding: const EdgeInsets.all(20),
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => Navigator.pop(ctx),
+                      onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1A56C4),
+                        backgroundColor: _blue,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: Text(
-                        _taggedPeople.isEmpty
-                            ? 'Tutup'
-                            : 'Selesai (${_taggedPeople.length} dipilih)',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      child: const Text('Selesai', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ),
@@ -1288,35 +1177,19 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
 
   Future<void> _handleSave() async {
     if (_selectedSub == ReportSubStatus.reviewing && _attachedPhoto == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Foto bukti wajib dilampirkan untuk tahap Reviewing!'),
-        backgroundColor: Colors.red,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Foto bukti wajib dilampirkan!')));
       return;
     }
 
     setState(() => _isSaving = true);
-    // Simulate network
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 600));
 
-    String? finalNote =
-        _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
-    if (_selectedSub == ReportSubStatus.assigned ||
-        _selectedSub == ReportSubStatus.deferred) {
-      final dept =
-          _selectedDepartment == null ? '' : 'Departemen: $_selectedDepartment';
-      final pjaTags =
-          _taggedPeople.isEmpty ? '' : 'PJA: ${_taggedPeople.join(', ')}';
-      final ket = _deferredKeteranganCtrl.text.trim().isEmpty
-          ? ''
-          : 'Keterangan: ${_deferredKeteranganCtrl.text.trim()}';
-      final addInfo =
-          [dept, pjaTags, ket].where((s) => s.isNotEmpty).join('\n');
-      if (addInfo.isNotEmpty) {
-        finalNote = finalNote == null ? addInfo : '$finalNote\n\n$addInfo';
-      }
-    }
+    // Process combined tags
+    final deptList = _taggedItems.where((t) => t.startsWith('Departemen')).map((t) => t.replaceFirst('Departemen ', '')).toList();
+    final pjaList = _taggedItems.where((t) => t.endsWith('(PJA)')).map((t) => t.replaceFirst(' (PJA)', '')).toList();
 
+    String? finalNote = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
+    
     final updated = ReportStore.instance.updateStatus(
       widget.report.id,
       _selectedStatus,
@@ -1327,381 +1200,256 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
     );
 
     if (mounted) {
-      Navigator.pop(context, updated);
+      widget.onUpdate(updated);
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Status berhasil diperbarui ke ${_selectedStatus.label}'),
-        backgroundColor: _statusColor(_selectedStatus),
+        backgroundColor: _selectedStatus == ReportStatus.open ? _blue : (_selectedStatus == ReportStatus.inProgress ? _purple : _grey),
       ));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Update Status Laporan',
-            style: TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.bold,
-                fontSize: 16)),
-        centerTitle: true,
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        top: 12,
+        left: 20,
+        right: 20,
+      ),
+      child: SingleChildScrollView(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Status Selection ──────────────────────────────────────────
-            const _Label('Status Utama (Berurutan)'),
-            const SizedBox(height: 8),
-            ..._allowedStatuses.map((s) {
-              final isSelected = _selectedStatus == s;
-              final color = _statusColor(s);
-              return GestureDetector(
-                onTap: () => setState(() {
-                  _selectedStatus = s;
-                  _selectedSub = null;
-                }),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(
-                        color: isSelected ? color : Colors.grey.shade300,
-                        width: isSelected ? 2 : 1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                          isSelected
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_off,
-                          color: color),
-                      const SizedBox(width: 12),
-                      Text(s.label,
-                          style: TextStyle(
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              fontSize: 15)),
-                      const Spacer(),
-                      if (isSelected)
-                        Icon(Icons.check_circle, color: color, size: 20),
-                    ],
-                  ),
-                ),
-              );
-            }),
-
+            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 20),
+            const Text('Perbarui Status Laporan', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 16),
-
-            // ── Sub Status List (Vertical) ───────────────────────────────
-            const _Label('Sub-Status'),
-            const SizedBox(height: 8),
-            Column(
-              children:
-                  ReportSubStatusInfo.forStatus(_selectedStatus).map((sub) {
-                final isSubSelected = _selectedSub == sub;
-                final color = _statusColor(_selectedStatus);
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedSub = sub),
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isSubSelected
-                          ? color.withValues(alpha: 0.1)
-                          : Colors.white,
-                      border: Border.all(
-                          color: isSubSelected ? color : Colors.grey.shade200),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.blue.shade100),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.history, size: 18, color: _blue),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(sub.label,
-                            style: TextStyle(
-                              color: isSubSelected ? color : Colors.black87,
-                              fontWeight: isSubSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            )),
-                        const Spacer(),
-                        if (isSubSelected)
-                          Icon(Icons.check, color: color, size: 18),
+                        const Text('STATUS SAAT INI', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blueGrey, letterSpacing: 0.5)),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${widget.report.status.label}${widget.report.subStatus != null ? ' → ${widget.report.subStatus!.label}' : ''}',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _blue),
+                        ),
                       ],
                     ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            const Text('STATUS UTAMA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _StatusBtn(label: 'Open', color: _blue, isSelected: _selectedStatus == ReportStatus.open, onTap: () => setState(() { _selectedStatus = ReportStatus.open; _selectedSub = null; })),
+                const SizedBox(width: 10),
+                _StatusBtn(label: 'In Progress', color: _purple, isSelected: _selectedStatus == ReportStatus.inProgress, onTap: () => setState(() { _selectedStatus = ReportStatus.inProgress; _selectedSub = null; })),
+                const SizedBox(width: 10),
+                _StatusBtn(label: 'Closed', color: _grey, isSelected: _selectedStatus == ReportStatus.closed, onTap: () => setState(() { _selectedStatus = ReportStatus.closed; _selectedSub = null; })),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            const Text('SUB-STATUS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.5)),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 10,
+              children: ReportSubStatusInfo.forStatus(_selectedStatus).map((sub) {
+                final isSelected = _selectedSub == sub;
+                final color = isSelected ? (_selectedStatus == ReportStatus.open ? _blue : (_selectedStatus == ReportStatus.inProgress ? _purple : _grey)) : Colors.grey.shade400;
+                return SizedBox(
+                  width: (MediaQuery.of(context).size.width - 66) / 3, // 3 equal columns
+                  child: ChoiceChip(
+                    label: Center(
+                      child: Text(sub.label, 
+                        style: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    selected: isSelected,
+                    onSelected: (val) => setState(() => _selectedSub = val ? sub : null),
+                    selectedColor: color,
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: isSelected ? color : Colors.grey.shade300)),
+                    showCheckmark: false,
+                    padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
                   ),
                 );
               }).toList(),
             ),
+            const SizedBox(height: 24),
 
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 16),
-
-            // ── Note ─────────────────────────────────────────────────────
-            const _Label('Catatan Perubahan'),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _noteCtrl,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Masukkan keterangan...',
-                fillColor: Colors.white,
-                filled: true,
-                border: OutlineInputBorder(
+            if (_selectedSub == ReportSubStatus.assigned || _selectedSub == ReportSubStatus.deferred) ...[
+              const Text('🏷️ TAG DEPARTEMEN / PJA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: _showUnifiedPicker,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300)),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300)),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ── Assigned/Deferred: Tag PJA & Keterangan ─────────────────────────
-            if (_selectedSub == ReportSubStatus.assigned ||
-                _selectedSub == ReportSubStatus.deferred) ...[
-              const _Label('Departemen'),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedDepartment,
-                    isExpanded: true,
-                    hint: const Text('Pilih departemen...',
-                        style: TextStyle(color: Colors.grey, fontSize: 14)),
-                    icon: const Icon(Icons.keyboard_arrow_down,
-                        color: Colors.grey),
-                    items: _departments
-                        .map((d) => DropdownMenuItem(value: d, child: Text(d)))
-                        .toList(),
-                    onChanged: (val) =>
-                        setState(() => _selectedDepartment = val),
+                    border: Border.all(color: Colors.grey.shade300),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const _Label('Tag PJA'),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (_taggedPeople.isNotEmpty) ...[
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        children: _taggedPeople
-                            .map((p) => Chip(
-                                  label: Text(p,
-                                      style: const TextStyle(fontSize: 12)),
-                                  deleteIcon: const Icon(Icons.close, size: 14),
-                                  onDeleted: () =>
-                                      setState(() => _taggedPeople.remove(p)),
-                                  backgroundColor: const Color(0xFFEFF4FF),
-                                  side: const BorderSide(
-                                      color: Color(0xFF1A56C4)),
-                                  labelStyle:
-                                      const TextStyle(color: Color(0xFF1A56C4)),
-                                  deleteIconColor: const Color(0xFF1A56C4),
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 4),
-                                ))
-                            .toList(),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    GestureDetector(
-                      onTap: () => _showTagPeopleSheet(),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF8F9FF),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.grey.shade300),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Icons.person_add_outlined,
-                                size: 18, color: Colors.grey),
-                            SizedBox(width: 8),
-                            Text('Tambah orang...',
-                                style: TextStyle(
-                                    color: Colors.grey, fontSize: 13)),
+                            const Icon(Icons.person_add_outlined, size: 20, color: Colors.grey),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'Ketuk untuk tag orang atau departemen',
+                                style: TextStyle(color: Colors.grey, fontSize: 13),
+                              ),
+                            ),
+                            Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
                           ],
                         ),
                       ),
-                    ),
-                  ],
+                      if (_taggedItems.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: _taggedItems.map((item) => Chip(
+                            label: Text(item, style: const TextStyle(fontSize: 11)),
+                            onDeleted: () => setState(() => _taggedItems.remove(item)),
+                            backgroundColor: _blue.withValues(alpha: 0.1),
+                            side: BorderSide.none,
+                            padding: EdgeInsets.zero,
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          )).toList(),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
-              const _Label('Keterangan Laporan'),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _deferredKeteranganCtrl,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Masukkan keterangan laporan...',
-                  fillColor: Colors.white,
-                  filled: true,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300)),
-                  enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300)),
-                ),
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
             ],
 
-            // ── Photo ────────────────────────────────────────────────────
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const _Label('Bukti Foto'),
+                const Text('📸 PHOTO EVIDENCE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
                 if (_selectedSub == ReportSubStatus.reviewing)
-                  const Text('* Wajib di tahap Reviewing',
-                      style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold)),
+                  const Text('* WAJIB UNTUK REVIEWING', style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () async {
+                final picker = ImagePicker();
+                final picked = await picker.pickImage(source: ImageSource.camera);
+                if (picked != null) setState(() => _attachedPhoto = picked);
+              },
+              child: Container(
+                height: 80,
+                width: double.infinity,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+                child: CustomPaint(
+                  painter: _DashedRectPainter(color: Colors.grey.shade300),
+                  child: Center(
+                    child: _attachedPhoto != null
+                      ? ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(File(_attachedPhoto!.path), height: 60, width: 60, fit: BoxFit.cover))
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.camera_alt, size: 20, color: Colors.grey),
+                            const SizedBox(width: 8),
+                            Text('Tambah foto bukti penyelesaian', style: TextStyle(color: Colors.grey.shade400, fontSize: 14)),
+                          ],
+                        ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            TextField(
+              controller: _noteCtrl,
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'Notes for reviewer...',
+                hintStyle: TextStyle(color: Colors.grey.shade400),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.all(16),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              ),
+            ),
+            const SizedBox(height: 24),
+
             Row(
               children: [
                 Expanded(
-                  child: GestureDetector(
-                    onTap: _showPhotoOptions,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 13),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.camera_alt_outlined,
-                              color: Colors.grey, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _attachedPhoto != null
-                                  ? _attachedPhoto!.name
-                                  : 'Pilih / Ambil Foto...',
-                              style: TextStyle(
-                                  color: _attachedPhoto != null
-                                      ? Colors.black87
-                                      : Colors.grey,
-                                  fontSize: 13),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (_attachedPhoto != null)
-                            GestureDetector(
-                              onTap: () =>
-                                  setState(() => _attachedPhoto = null),
-                              child: const Icon(Icons.close,
-                                  size: 18, color: Colors.red),
-                            )
-                        ],
-                      ),
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey.shade100,
+                      foregroundColor: Colors.black87,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
+                    child: const Text('Batal', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
-                if (_attachedPhoto != null) ...[
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => Scaffold(
-                                    backgroundColor: Colors.black,
-                                    appBar: AppBar(
-                                        backgroundColor: Colors.transparent,
-                                        elevation: 0,
-                                        iconTheme: const IconThemeData(
-                                            color: Colors.white)),
-                                    body: Center(
-                                        child: InteractiveViewer(
-                                            child: kIsWeb
-                                                ? Image.network(
-                                                    _attachedPhoto!.path)
-                                                : Image.file(File(
-                                                    _attachedPhoto!.path)))),
-                                  )));
-                    },
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: kIsWeb
-                          ? Image.network(_attachedPhoto!.path,
-                              width: 48, height: 48, fit: BoxFit.cover)
-                          : Image.file(File(_attachedPhoto!.path),
-                              width: 48, height: 48, fit: BoxFit.cover),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: _isSaving ? null : _handleSave,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _blue,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
+                    child: _isSaving
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text('Simpan Perubahan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
-                ],
+                ),
               ],
             ),
-
-            const SizedBox(height: 40),
-
-            // ── Save Button ──────────────────────────────────────────────
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isSaving ? null : _handleSave,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A56C4),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-                child: _isSaving
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Simpan Perubahan',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
-            ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -1709,13 +1457,57 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
   }
 }
 
+class _StatusBtn extends StatelessWidget {
+  final String label;
+  final Color color;
+  final bool isSelected;
+  final VoidCallback onTap;
+  const _StatusBtn({required this.label, required this.color, required this.isSelected, required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? color.withValues(alpha: 0.1) : Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: isSelected ? color : Colors.grey.shade300, width: isSelected ? 2 : 1),
+          ),
+          child: Center(
+            child: Text(label, style: TextStyle(color: isSelected ? color : Colors.black87, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 14)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashedRectPainter extends CustomPainter {
+  final Color color;
+  _DashedRectPainter({required this.color});
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()..color = color..strokeWidth = 1..style = PaintingStyle.stroke;
+    const double dashWidth = 5, dashSpace = 5;
+    final Path path = Path();
+    for (double i = 0; i < size.width; i += dashWidth + dashSpace) { path.moveTo(i, 0); path.lineTo(i + dashWidth, 0); }
+    for (double i = 0; i < size.height; i += dashWidth + dashSpace) { path.moveTo(size.width, i); path.lineTo(size.width, i + dashWidth); }
+    for (double i = size.width; i > 0; i -= dashWidth + dashSpace) { path.moveTo(i, size.height); path.lineTo(i - dashWidth, size.height); }
+    for (double i = size.height; i > 0; i -= dashWidth + dashSpace) { path.moveTo(0, i); path.lineTo(0, i - dashWidth); }
+    canvas.drawPath(path, paint);
+  }
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
 class _Label extends StatelessWidget {
   final String text;
   const _Label(this.text);
   @override
   Widget build(BuildContext context) {
-    return Text(text,
-        style: const TextStyle(
-            fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54));
+    return Text(text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54));
   }
 }
+
