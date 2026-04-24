@@ -267,7 +267,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       decoration: BoxDecoration(
                           color: const Color(0xFFE8F5E9),
                           borderRadius: BorderRadius.circular(12)),
-                      child: const Text('Aktif',
+                      child: const Text(' Karyawan Aktif',
                           style: TextStyle(
                               fontSize: 11,
                               color: Color(0xFF2E7D32),
