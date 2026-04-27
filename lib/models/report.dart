@@ -58,6 +58,13 @@ class Report {
   final String? reporterId;
   final String imageUrl;
 
+  // Additional undefined UI fields
+  final String? dueDate;
+  final int? sisaHari;
+  final String? pelakuPelanggaran;
+  final String? pelaporLocation;
+  final List<ChecklistItem>? checklistItems;
+
   // Additional Backend Fields
   final String? area;
   final String? inspector;
@@ -89,6 +96,11 @@ class Report {
     this.inspector,
     this.notes,
     this.result,
+    this.dueDate,
+    this.sisaHari,
+    this.pelakuPelanggaran,
+    this.pelaporLocation,
+    this.checklistItems,
   });
 
   factory Report.fromJson(Map<String, dynamic> json) {
@@ -132,6 +144,13 @@ class Report {
       inspector: json['name_inspector']?.toString(),
       notes: json['notes']?.toString(),
       result: json['result']?.toString(),
+      dueDate: json['due_date']?.toString(),
+      sisaHari: json['sisa_hari'] != null ? int.tryParse(json['sisa_hari'].toString()) : null,
+      pelakuPelanggaran: json['pelaku_pelanggaran']?.toString(),
+      pelaporLocation: json['pelapor_location']?.toString(),
+      checklistItems: json['checklist_items'] != null
+          ? (json['checklist_items'] as List).map((i) => ChecklistItem.fromJson(i)).toList()
+          : null,
     );
   }
 
@@ -284,5 +303,19 @@ extension ReportSubStatusInfo on ReportSubStatus {
       case ReportStatus.closed:
         return [ReportSubStatus.resolved, ReportSubStatus.rejected, ReportSubStatus.deferred];
     }
+  }
+}
+
+class ChecklistItem {
+  final String label;
+  final bool isChecked;
+
+  ChecklistItem({required this.label, this.isChecked = false});
+
+  factory ChecklistItem.fromJson(Map<String, dynamic> json) {
+    return ChecklistItem(
+      label: json['label']?.toString() ?? '',
+      isChecked: json['is_checked'] == true || json['is_checked'] == 'true',
+    );
   }
 }

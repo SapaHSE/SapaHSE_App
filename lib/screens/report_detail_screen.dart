@@ -38,7 +38,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     super.dispose();
   }
 
-  // ── Colors ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Colors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Color _severityColor(ReportSeverity s) => switch (s) {
         ReportSeverity.low => const Color(0xFF4CAF50),
         ReportSeverity.medium => const Color(0xFFFF9800),
@@ -95,9 +95,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return '${dt.day} ${m[dt.month - 1]} ${dt.year}';
   }
 
-  // ── Update Status logic replaced by UpdateStatusPage ───────────────────────
+  // â”€â”€ Update Status logic replaced by UpdateStatusPage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  // ── Image Preview ──────────────────────────────────────────────────────────
+  // â”€â”€ Image Preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   void _showImagePreview(BuildContext context, String imageUrl, int index) {
     Navigator.push(
       context,
@@ -186,7 +186,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Hero image ─────────────────────────────────────────────────
+            // â”€â”€ Hero image â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             SizedBox(
               width: double.infinity,
               height: 220,
@@ -336,7 +336,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               ]),
             ),
 
-            // ── Info card ──────────────────────────────────────────────────
+            // â”€â”€ Info card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             _card(
               margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Column(
@@ -366,35 +366,90 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   ]),
             ),
 
-            // ── Info card (Detail Lanjutan) ────────────────────────────────
-            _card(
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Column(
+            // â”€â”€ Card: Informasi Pelapor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+              _card(
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _DetailRow(
-                        icon: Icons.category_outlined,
-                        label: 'Kategori',
-                        value: _report.category?.label ?? _report.type.label),
-                    if (_report.subkategori != null &&
-                        _report.subkategori!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _DetailRow(
-                          icon: Icons.subdirectory_arrow_right,
-                          label: 'Subkategori',
-                          value: _report.subkategori!),
-                    ],
+                    const _SectionHeader(
+                        icon: Icons.person_outline, title: 'Informasi Pelapor'),
                     const SizedBox(height: 12),
                     _DetailRow(
-                        icon: Icons.location_on_outlined,
-                        label: 'Lokasi Kejadian',
-                        value: _report.location),
+                        icon: Icons.person_outline,
+                        label: 'Pelapor',
+                        value: _report.reportedBy),
+                    const SizedBox(height: 12),
+                    _DetailRow(
+                        icon: Icons.access_time,
+                        label: 'Waktu Laporan',
+                        value: _formatDate(_report.createdAt)),
+                    if (_report.dueDate != null &&
+                        _report.dueDate!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.event_available_outlined,
+                          label: 'Tenggat Waktu',
+                          value:
+                              '${_report.dueDate!} (${_report.sisaHari ?? 0} hari tersisa)'),
+                    ],
+                    if (_report.pelakuPelanggaran != null &&
+                        _report.pelakuPelanggaran!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.warning_amber_outlined,
+                          label: 'Tersangka Pelanggaran',
+                          value: _report.pelakuPelanggaran!),
+                    ],
+                  ],
+                ),
+              ),
+
+              // â”€â”€ Card: Penugasan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+              _card(
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SectionHeader(
+                        icon: Icons.assignment_ind_outlined,
+                        title: 'Penugasan'),
+                    const SizedBox(height: 12),
+                    if (_report.departemen != null &&
+                        _report.departemen!.isNotEmpty) ...[
+                      _DetailRow(
+                          icon: Icons.manage_accounts_outlined,
+                          label: 'Petugas Utama (PIC)',
+                          value: _report.departemen!),
+                    ],
+                    if (_report.tagOrang != null &&
+                        _report.tagOrang!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.group_outlined,
+                          label: 'Petugas Lainnya',
+                          value: _report.tagOrang!),
+                    ],
+                    if (_report.subStatus == ReportSubStatus.deferred) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.schedule_outlined,
+                          label: 'Penugasan Lanjutan',
+                          value: _report.subStatus!.label),
+                    ],
+                    if (_report.location.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.location_on_outlined,
+                          label: 'Lokasi Penugasan',
+                          value: _report.location),
+                    ],
                     if (_report.kejadianLocation != null &&
                         _report.kejadianLocation!.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       _DetailRow(
-                        icon: Icons.place_outlined,
-                        label: 'Koordinat Kejadian',
+                        icon: Icons.my_location_outlined,
+                        label: 'Koordinat Penugasan',
                         value: _report.kejadianLocation!,
                         onTap: () async {
                           final coords = _report.kejadianLocation!.split(',');
@@ -408,10 +463,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                             }
                             return;
                           }
-
                           final lat = double.tryParse(coords[0].trim());
                           final lng = double.tryParse(coords[1].trim());
-
                           if (lat == null || lng == null) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -422,13 +475,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                             }
                             return;
                           }
-
-                          // Google Maps URL is more reliable across platforms
                           final googleMapsUrl = Uri.parse(
                               'https://www.google.com/maps/search/?api=1&query=$lat,$lng');
                           final appleMapsUrl =
                               Uri.parse('apple:0,0?q=$lat,$lng');
-
                           if (await canLaunchUrl(googleMapsUrl)) {
                             await launchUrl(googleMapsUrl,
                                 mode: LaunchMode.externalApplication);
@@ -457,6 +507,31 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         ),
                       ),
                     ],
+                  ],
+                ),
+              ),
+
+              // â”€â”€ Card: Klasifikasi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+              _card(
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SectionHeader(
+                        icon: Icons.category_outlined, title: 'Klasifikasi'),
+                    const SizedBox(height: 12),
+                    _DetailRow(
+                        icon: Icons.category_outlined,
+                        label: 'Kategori',
+                        value: _report.category?.label ?? _report.type.label),
+                    if (_report.subkategori != null &&
+                        _report.subkategori!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.subdirectory_arrow_right,
+                          label: 'Sub-kategori',
+                          value: _report.subkategori!),
+                    ],
                     if (_report.perusahaan != null &&
                         _report.perusahaan!.isNotEmpty) ...[
                       const SizedBox(height: 12),
@@ -465,41 +540,127 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                           label: 'Perusahaan',
                           value: _report.perusahaan!),
                     ],
-                    if (_report.departemen != null &&
-                        _report.departemen!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _DetailRow(
-                          icon: Icons.apartment_outlined,
-                          label: 'Departemen',
-                          value: _report.departemen!),
-                    ],
-                    if (_report.tagOrang != null &&
-                        _report.tagOrang!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _DetailRow(
-                          icon: Icons.manage_accounts_outlined,
-                          label: 'PJA (Penanggung Jawab Area)',
-                          value: _report.tagOrang!),
-                    ],
-                    const SizedBox(height: 12),
-                    _DetailRow(
-                        icon: Icons.person_outline,
-                        label: 'Dilaporkan oleh',
-                        value: _report.reportedBy),
-                    const SizedBox(height: 12),
-                    _DetailRow(
-                        icon: Icons.access_time,
-                        label: 'Waktu Laporan',
-                        value: _formatDate(_report.createdAt)),
-                    const SizedBox(height: 12),
-                    _DetailRow(
-                        icon: Icons.confirmation_number_outlined,
-                        label: 'No. Tiket',
-                        value: '#TKT-${_report.id.padLeft(4, '0')}'),
-                  ]),
-            ),
+                  ],
+                ),
+              ),
 
-            // ── Progress Timeline ──────────────────────────────────────────
+              // â”€â”€ Card: Informasi Tambahan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+              if ((_report.pelaporLocation != null &&
+                      _report.pelaporLocation!.isNotEmpty) ||
+                  _report.id.isNotEmpty)
+                _card(
+                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _SectionHeader(
+                          icon: Icons.info_outline,
+                          title: 'Informasi Tambahan'),
+                      if (_report.pelaporLocation != null &&
+                          _report.pelaporLocation!.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        _DetailRow(
+                            icon: Icons.my_location_outlined,
+                            label: 'Koordinat Pelapor',
+                            value: _report.pelaporLocation!),
+                      ],
+                      if (_report.id.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        _DetailRow(
+                            icon: Icons.confirmation_number_outlined,
+                            label: 'No. Tiket',
+                            value: '#TKT-${_report.id.padLeft(4, '0')}'),
+                      ],
+                    ],
+                  ),
+                ),
+
+              // â”€â”€ Card: Informasi Inspeksi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+              if (_report.type == ReportType.inspection)
+                _card(
+                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _SectionHeader(
+                          icon: Icons.assignment_outlined,
+                          title: 'Informasi Inspeksi'),
+                      const SizedBox(height: 12),
+                      if (_report.inspector != null &&
+                          _report.inspector!.isNotEmpty) ...[
+                        _DetailRow(
+                            icon: Icons.person_search_outlined,
+                            label: 'Inspektur',
+                            value: _report.inspector!),
+                        const SizedBox(height: 12),
+                      ],
+                      if (_report.area != null && _report.area!.isNotEmpty) ...[
+                        _DetailRow(
+                            icon: Icons.area_chart_outlined,
+                            label: 'Area Inspeksi',
+                            value: _report.area!),
+                        const SizedBox(height: 12),
+                      ],
+                      if (_report.notes != null &&
+                          _report.notes!.isNotEmpty) ...[
+                        _DetailRow(
+                            icon: Icons.note_outlined,
+                            label: 'Catatan Inspeksi',
+                            value: _report.notes!),
+                      ],
+                    ],
+                  ),
+                ),
+
+              // â”€â”€ Card: Checklist Inspeksi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+              if (_report.type == ReportType.inspection &&
+                  _report.checklistItems != null &&
+                  _report.checklistItems!.isNotEmpty)
+                _card(
+                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _SectionHeader(
+                          icon: Icons.checklist_outlined,
+                          title: 'Checklist Inspeksi'),
+                      const SizedBox(height: 12),
+                      ..._report.checklistItems!.map((item) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  item.isChecked
+                                      ? Icons.check_box
+                                      : Icons.check_box_outline_blank,
+                                  color: item.isChecked
+                                      ? Colors.green
+                                      : Colors.grey,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    item.label,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: item.isChecked
+                                          ? Colors.black87
+                                          : Colors.black54,
+                                      decoration: item.isChecked
+                                          ? null
+                                          : TextDecoration.none,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        )),
+                  ],
+                ),
+              ),
+
+            // â”€â”€ Progress Timeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             _card(
               margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: Column(
@@ -539,7 +700,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   ]),
             ),
 
-            // ── Action buttons ─────────────────────────────────────────────
+            // â”€â”€ Action buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               child: SizedBox(
@@ -565,7 +726,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
-  // ── Build grouped timeline ──────────────────────────────────────────────────
+  // â”€â”€ Build grouped timeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   List<Widget> _buildGroupedTimeline(List<TimelineEvent> timeline) {
     final groups = <ReportStatus, List<TimelineEvent>>{};
     for (final e in timeline) {
@@ -644,7 +805,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return result;
   }
 
-  // ── Step bar (Open → In Progress → Closed) ─────────────────────────────────
+  // â”€â”€ Step bar (Open â†’ In Progress â†’ Closed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildStepBar() {
     final steps = [
       ReportStatus.open,
@@ -724,7 +885,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
+  // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _card({required Widget child, EdgeInsets margin = EdgeInsets.zero}) =>
       Container(
         margin: margin,
@@ -754,7 +915,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       );
 }
 
-// ── Timeline item ─────────────────────────────────────────────────────────────
+// â”€â”€ Timeline item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _TimelineItem extends StatelessWidget {
   final TimelineEvent event;
   final bool isLast;
@@ -780,7 +941,7 @@ class _TimelineItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Left column: dot + line ──────────────────────────────────
+          // â”€â”€ Left column: dot + line â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           SizedBox(
             width: 40,
             child: Column(
@@ -829,7 +990,7 @@ class _TimelineItem extends StatelessWidget {
 
           const SizedBox(width: 12),
 
-          // ── Right column: content ────────────────────────────────────
+          // â”€â”€ Right column: content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           Expanded(
             child: Padding(
               padding: EdgeInsets.only(bottom: isLast ? 0 : 20),
@@ -978,7 +1139,7 @@ class _TimelineItem extends StatelessWidget {
   }
 }
 
-// ── Detail row ────────────────────────────────────────────────────────────────
+// â”€â”€ Detail row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _DetailRow extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -1038,9 +1199,9 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // UPDATE STATUS MODAL (COMPACT)
-// ══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 class _UpdateStatusSheet extends StatefulWidget {
   final Report report;
@@ -1153,8 +1314,11 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                             trailing: Icon(isSelected ? Icons.check_circle : Icons.add_circle_outline, color: isSelected ? _blue : Colors.grey),
                             onTap: () {
                               setState(() {
-                                if (isSelected) _taggedItems.remove(opt);
-                                else _taggedItems.add(opt);
+                                if (isSelected) {
+                                  _taggedItems.remove(opt);
+                                } else {
+                                  _taggedItems.add(opt);
+                                }
                               });
                               setSheetState(() {});
                             },
@@ -1173,8 +1337,11 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                             trailing: Icon(isSelected ? Icons.check_circle : Icons.add_circle_outline, color: isSelected ? _blue : Colors.grey),
                             onTap: () {
                               setState(() {
-                                if (isSelected) _taggedItems.remove(opt);
-                                else _taggedItems.add(opt);
+                                if (isSelected) {
+                                  _taggedItems.remove(opt);
+                                } else {
+                                  _taggedItems.add(opt);
+                                }
                               });
                               setSheetState(() {});
                             },
@@ -1285,7 +1452,7 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                         const Text('STATUS SAAT INI', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blueGrey, letterSpacing: 0.5)),
                         const SizedBox(height: 2),
                         Text(
-                          '${widget.report.status.label}${widget.report.subStatus != null ? ' → ${widget.report.subStatus!.label}' : ''}',
+                          '${widget.report.status.label}${widget.report.subStatus != null ? ' â†’ ${widget.report.subStatus!.label}' : ''}',
                           style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _blue),
                         ),
                       ],
@@ -1340,7 +1507,7 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
             const SizedBox(height: 24),
 
             if (_selectedSub == ReportSubStatus.assigned || _selectedSub == ReportSubStatus.deferred) ...[
-              const Text('🏷️ TAG DEPARTEMEN / PJA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+              const Text('ðŸ·ï¸ TAG DEPARTEMEN / PJA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
               const SizedBox(height: 10),
               GestureDetector(
                 onTap: _showUnifiedPicker,
@@ -1401,7 +1568,7 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('📸 PHOTO EVIDENCE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                const Text('ðŸ“¸ PHOTO EVIDENCE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
                 if (_selectedSub == ReportSubStatus.reviewing)
                   const Text('* WAJIB UNTUK REVIEWING', style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
               ],
@@ -1538,4 +1705,33 @@ class _DashedRectPainter extends CustomPainter {
   bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  const _SectionHeader({required this.icon, required this.title});
 
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: const Color(0xFF1A56C4)),
+        const SizedBox(width: 6),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1A56C4),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: const Color(0xFF1A56C4).withValues(alpha: 0.15),
+          ),
+        ),
+      ],
+    );
+  }
+}

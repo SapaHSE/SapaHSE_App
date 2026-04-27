@@ -22,6 +22,10 @@ final List<Report> dummyReports = [
     reportedBy: 'Muhammad Faiz',
     imageUrl:
         'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80',
+    dueDate: '2026-05-15',
+    sisaHari: 18,
+    pelakuPelanggaran: 'Operator Buldozer (Nama tidak diketahui)',
+    pelaporLocation: '-0.451000, 117.079500',
   ),
   Report(
     id: '2',
@@ -111,6 +115,14 @@ final List<Report> dummyReports = [
     reportedBy: 'Hendra Wijaya',
     imageUrl:
         'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&q=80',
+    dueDate: '2026-05-10',
+    sisaHari: 13,
+    pelaporLocation: '-0.5312, 117.1510',
+    checklistItems: [
+      ChecklistItem(label: 'Cek kondisi kabel utama', isChecked: true),
+      ChecklistItem(label: 'Cek MCB box', isChecked: false),
+      ChecklistItem(label: 'Pastikan grounding terpasang', isChecked: false),
+    ],
   ),
   Report(
     id: '7',
@@ -361,6 +373,11 @@ void updateReportStatus(String id, ReportStatus newStatus) {
       createdAt: r.createdAt,
       reportedBy: r.reportedBy,
       imageUrl: r.imageUrl,
+      dueDate: r.dueDate,
+      sisaHari: r.sisaHari,
+      pelakuPelanggaran: r.pelakuPelanggaran,
+      pelaporLocation: r.pelaporLocation,
+      checklistItems: r.checklistItems,
     );
   }
 }
