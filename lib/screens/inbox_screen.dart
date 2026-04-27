@@ -4,13 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/inbox_item.dart';
 import '../models/report.dart';
+import '../services/cloud_save_service.dart';
 import '../services/inbox_service.dart';
-import '../services/report_service.dart';
 import 'report_detail_screen.dart';
 import '../widgets/sapa_hse_header.dart';
 import '../services/storage_service.dart';
 
+
 enum _SubFilter { unread, read }
+enum _MyPostFilter { all, draft, pending, approved, rejected }
 
 class InboxScreen extends StatefulWidget {
   const InboxScreen({super.key});
@@ -23,6 +25,7 @@ class _InboxScreenState extends State<InboxScreen>
     with SingleTickerProviderStateMixin {
   late TabController _mainTabController;
   _SubFilter _activeFilter = _SubFilter.unread;
+  _MyPostFilter _activeMyPostFilter = _MyPostFilter.all;
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -32,6 +35,7 @@ class _InboxScreenState extends State<InboxScreen>
   List<InboxItem> _reports = [];
   List<InboxItem> _announcements = [];
   List<Report> _myRawReports = [];
+  List<ReportDraft> _myDrafts = [];
   bool _loadingReports = false;
   bool _loadingAnnouncements = false;
   bool _loadingMyReports = false;
@@ -81,19 +85,72 @@ class _InboxScreenState extends State<InboxScreen>
       _loadingReports = true;
       _errorReports = null;
     });
-    final result = await InboxService.fetchInbox(
-      type: 'personal',
-      search: _searchQuery.isEmpty ? null : _searchQuery,
-      perPage: 100,
-    );
+    await Future.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
     setState(() {
       _loadingReports = false;
-      if (result.success) {
-        _reports = result.items;
-      } else {
-        _errorReports = result.errorMessage;
-      }
+      _reports = [
+        InboxItem(
+          id: 'r1',
+          itemType: InboxItemType.report,
+          isRead: false,
+          title: 'Kebocoran Pipa Bahan Kimia Area Produksi',
+          body: 'Ditemukan kebocoran kecil pada pipa bahan kimia di area produksi. Perlu perbaikan segera.',
+          fromName: 'Budi Santoso',
+          createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+          reportType: ReportType.hazard,
+          status: ReportStatus.open,
+          severity: ReportSeverity.high,
+          location: 'Area Produksi - Pipa Utama',
+          imageUrl: '',
+          ticketNumber: 'TKT-2026-001',
+        ),
+        InboxItem(
+          id: 'r2',
+          itemType: InboxItemType.report,
+          isRead: true,
+          title: 'Inspeksi Rutin Peralatan Berat',
+          body: 'Inspeksi rutin bulanan pada alat berat selesai dilakukan. Semua dalam kondisi baik.',
+          fromName: 'Ahmad Wijaya',
+          createdAt: DateTime.now().subtract(const Duration(days: 1)),
+          reportType: ReportType.inspection,
+          status: ReportStatus.closed,
+          severity: ReportSeverity.low,
+          location: 'Gudang Alat Berat',
+          imageUrl: '',
+          ticketNumber: 'TKT-2026-002',
+        ),
+        InboxItem(
+          id: 'r3',
+          itemType: InboxItemType.report,
+          isRead: false,
+          title: 'Laporan Kecelakaan Kerja Ringan',
+          body: 'Karyawan mengalami cedera ringan saat mengoperasikan mesin. Sedang dalam penanganan medis.',
+          fromName: 'Rina Kusuma',
+          createdAt: DateTime.now().subtract(const Duration(hours: 5)),
+          reportType: ReportType.hazard,
+          status: ReportStatus.inProgress,
+          severity: ReportSeverity.critical,
+          location: 'Mesin Pemotong - Lantai 2',
+          imageUrl: '',
+          ticketNumber: 'TKT-2026-003',
+        ),
+        InboxItem(
+          id: 'r4',
+          itemType: InboxItemType.report,
+          isRead: true,
+          title: 'Pembersihan Tumpahan Minyak',
+          body: 'Tumpahan minyak telah dibersihkan dan area sudah aman.',
+          fromName: 'Slamet Hadi',
+          createdAt: DateTime.now().subtract(const Duration(days: 3)),
+          reportType: ReportType.hazard,
+          status: ReportStatus.closed,
+          severity: ReportSeverity.medium,
+          location: 'Parkir Kendaraan',
+          imageUrl: '',
+          ticketNumber: 'TKT-2026-004',
+        ),
+      ];
     });
   }
 
@@ -102,19 +159,48 @@ class _InboxScreenState extends State<InboxScreen>
       _loadingAnnouncements = true;
       _errorAnnouncements = null;
     });
-    final result = await InboxService.fetchInbox(
-      type: 'announcement',
-      search: _searchQuery.isEmpty ? null : _searchQuery,
-      perPage: 100,
-    );
+    await Future.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
     setState(() {
       _loadingAnnouncements = false;
-      if (result.success) {
-        _announcements = result.items;
-      } else {
-        _errorAnnouncements = result.errorMessage;
-      }
+      _announcements = [
+        InboxItem(
+          id: 'a1',
+          itemType: InboxItemType.announcement,
+          isRead: false,
+          title: 'Pelatihan K3 Wajib Maret 2026',
+          body: 'Seluruh karyawan diwajibkan mengikuti pelatihan K3 pada tanggal 28 Maret 2026 pukul 08.00 di Aula Utama. Kehadiran bersifat wajib.',
+          fromName: 'Admin HSE',
+          createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+        ),
+        InboxItem(
+          id: 'a2',
+          itemType: InboxItemType.announcement,
+          isRead: false,
+          title: 'Inspeksi Rutin Area Tambang',
+          body: 'Akan dilaksanakan inspeksi rutin menyeluruh di seluruh area tambang pada minggu ini. Harap semua peralatan dalam kondisi siap periksa.',
+          fromName: 'Supervisor K3',
+          createdAt: DateTime.now().subtract(const Duration(days: 1)),
+        ),
+        InboxItem(
+          id: 'a3',
+          itemType: InboxItemType.announcement,
+          isRead: false,
+          title: 'Update SOP Penanganan Bahan B3',
+          body: 'SOP penanganan limbah B3 telah diperbarui sesuai regulasi KLHK terbaru. Silakan unduh dokumen terbaru di portal internal perusahaan.',
+          fromName: 'Admin HSE',
+          createdAt: DateTime.now().subtract(const Duration(days: 2)),
+        ),
+        InboxItem(
+          id: 'a4',
+          itemType: InboxItemType.announcement,
+          isRead: false,
+          title: 'Jadwal Pemeriksaan APAR Bulanan',
+          body: 'Pemeriksaan APAR bulanan akan dilaksanakan pada 30 Maret 2026. Pastikan semua unit APAR di area tanggung jawab Anda dalam kondisi baik.',
+          fromName: 'Tim HSE',
+          createdAt: DateTime.now().subtract(const Duration(days: 4)),
+        ),
+      ];
     });
   }
 
@@ -124,17 +210,85 @@ class _InboxScreenState extends State<InboxScreen>
       _loadingMyReports = true;
       _errorMyReports = null;
     });
-    final result = await ReportService.getReports();
+
+    await Future.delayed(const Duration(milliseconds: 500));
+
     if (!mounted) return;
     setState(() {
       _loadingMyReports = false;
-      if (result.success) {
-        _myRawReports = result.reports
-            .where((r) => r.reporterId == _currentUserId)
-            .toList();
-      } else {
-        _errorMyReports = result.errorMessage;
-      }
+      _myDrafts = [
+        ReportDraft(
+          id: 'd1',
+          type: DraftType.hazard,
+          title: 'Laporan Bahaya Bahan Kimia',
+          createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+          data: {
+            'description': 'Kebocoran bahan kimia berbahaya di area produksi',
+            'kronologi': 'Kebocoran terjadi saat proses pengisian tangki',
+            'location': 'Area Produksi - Tangki B-01',
+            'severity': 'high',
+          },
+        ),
+        ReportDraft(
+          id: 'd2',
+          type: DraftType.inspection,
+          title: 'Draft Inspeksi Peralatan Keselamatan',
+          createdAt: DateTime.now().subtract(const Duration(days: 1)),
+          data: {
+            'description': 'Inspeksi rutin peralatan keselamatan kerja',
+            'kronologi': 'Pemeriksaan alat pelindung diri dan peralatan darurat',
+            'location': 'Gudang Peralatan',
+            'severity': 'medium',
+          },
+        ),
+      ];
+      _myRawReports = [
+        Report(
+          id: 'mr1',
+          title: 'Laporan Kecelakaan Kerja Ringan',
+          description: 'Karyawan terpeleset di area basah',
+          type: ReportType.hazard,
+          status: ReportStatus.open,
+          subStatus: ReportSubStatus.validating,
+          severity: ReportSeverity.medium,
+          location: 'Area Gudang - Lorong Utama',
+          imageUrl: '',
+          ticketNumber: 'TKT-2026-005',
+          createdAt: DateTime.now().subtract(const Duration(days: 2)),
+          reportedBy: 'Noor Lintang Bhaskara',
+          reporterId: 'user123',
+        ),
+        Report(
+          id: 'mr2',
+          title: 'Inspeksi Rutin Peralatan Pemadam',
+          description: 'Pemeriksaan rutin APAR dan peralatan pemadam kebakaran',
+          type: ReportType.inspection,
+          status: ReportStatus.open,
+          subStatus: null,
+          severity: ReportSeverity.low,
+          location: 'Seluruh Area Pabrik',
+          imageUrl: '',
+          ticketNumber: 'TKT-2026-006',
+          createdAt: DateTime.now().subtract(const Duration(days: 5)),
+          reportedBy: 'Noor Lintang Bhaskara',
+          reporterId: 'user123',
+        ),
+        Report(
+          id: 'mr3',
+          title: 'Laporan Kebocoran Pipa Air',
+          description: 'Kebocoran pipa air telah diperbaiki',
+          type: ReportType.hazard,
+          status: ReportStatus.closed,
+          subStatus: ReportSubStatus.rejected,
+          severity: ReportSeverity.low,
+          location: 'Area Parkir',
+          imageUrl: '',
+          ticketNumber: 'TKT-2026-007',
+          createdAt: DateTime.now().subtract(const Duration(days: 7)),
+          reportedBy: 'Noor Lintang Bhaskara',
+          reporterId: 'user123',
+        ),
+      ];
     });
   }
 
@@ -148,6 +302,7 @@ class _InboxScreenState extends State<InboxScreen>
       reportType: r.type,
       description: r.description,
       status: r.status,
+      
       location: r.location,
       imageUrl: r.imageUrl,
       severity: r.severity,
@@ -194,7 +349,7 @@ class _InboxScreenState extends State<InboxScreen>
   }
 
   List<InboxItem> get _activeReports {
-    final list = _personalReports.where((i) {
+    var list = _personalReports.where((i) {
       if (_activeFilter == _SubFilter.unread) {
         return i.status != ReportStatus.closed;
       } else {
@@ -211,16 +366,93 @@ class _InboxScreenState extends State<InboxScreen>
       return b.createdAt.compareTo(a.createdAt);
     });
     
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      list = list.where((i) => 
+        i.title.toLowerCase().contains(q) || 
+        (i.location?.toLowerCase().contains(q) ?? false) || 
+        (i.reportedBy?.fullName.toLowerCase().contains(q) ?? false)
+      ).toList();
+    }
+    
     return list;
   }
 
   List<InboxItem> get _activeAnnouncements =>
       _filterByReadState(_announcements);
-  List<InboxItem> get _activeMyReports => _filterByReadState(_myReports);
+       
+  List<InboxItem> get _activeMyReports {
+    final drafts = _myDrafts.map((d) => InboxItem(
+          id: d.id,
+          itemType: InboxItemType.report,
+          isRead: true,
+          title: '[DRAFT] ${d.title}',
+          createdAt: d.createdAt,
+          reportType: d.type == DraftType.hazard ? ReportType.hazard : ReportType.inspection,
+          description: d.data['description']?.toString() ?? d.data['kronologi']?.toString() ?? '',
+          status: ReportStatus.open,
+          location: d.data['location']?.toString() ?? '-',
+          severity: _parseSeverity(d.data['severity']),
+        )).toList();
+
+    switch (_activeMyPostFilter) {
+      case _MyPostFilter.all:
+        final all = [...drafts, ..._myReports];
+        all.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        return all;
+      case _MyPostFilter.draft:
+        return drafts;
+      case _MyPostFilter.pending:
+        return _myRawReports
+            .where((r) => r.status == ReportStatus.open && r.subStatus == ReportSubStatus.validating)
+            .map(_reportToInboxItem)
+            .toList();
+      case _MyPostFilter.approved:
+        return _myRawReports
+            .where((r) =>
+                (r.status == ReportStatus.open && r.subStatus != ReportSubStatus.validating) ||
+                r.status == ReportStatus.inProgress)
+            .map(_reportToInboxItem)
+            .toList();
+      case _MyPostFilter.rejected:
+        return _myRawReports
+            .where((r) => r.subStatus == ReportSubStatus.rejected)
+            .map(_reportToInboxItem)
+            .toList();
+    }
+  }
+
+  int _myPostFilterCount(_MyPostFilter f) {
+    switch (f) {
+      case _MyPostFilter.all:
+        return _myDrafts.length + _myRawReports.length;
+      case _MyPostFilter.draft:
+        return _myDrafts.length;
+      case _MyPostFilter.pending:
+        return _myRawReports
+            .where((r) => r.status == ReportStatus.open && r.subStatus == ReportSubStatus.validating)
+            .length;
+      case _MyPostFilter.approved:
+        return _myRawReports
+            .where((r) =>
+                (r.status == ReportStatus.open && r.subStatus != ReportSubStatus.validating) ||
+                r.status == ReportStatus.inProgress)
+            .length;
+      case _MyPostFilter.rejected:
+        return _myRawReports.where((r) => r.subStatus == ReportSubStatus.rejected).length;
+    }
+  }
+
+  ReportSeverity _parseSeverity(dynamic raw) {
+    final s = raw?.toString().toLowerCase();
+    if (s == 'low') return ReportSeverity.low;
+    if (s == 'high') return ReportSeverity.high;
+    if (s == 'critical') return ReportSeverity.critical;
+    return ReportSeverity.medium;
+  }
 
   int get _readAnnouncementCount =>
       _announcements.where((i) => i.isRead).length;
-  int get _readMyReportCount => _myReports.where((i) => i.isRead).length;
 
   int get _unreadReports => _personalReports.where((i) => !i.isRead).length;
   int get _unreadAnnouncements => _announcements.where((i) => !i.isRead).length;
@@ -320,6 +552,16 @@ class _InboxScreenState extends State<InboxScreen>
     }
   }
 
+  String _myPostFilterLabel(_MyPostFilter f) {
+    switch (f) {
+      case _MyPostFilter.all: return 'Semua Laporan';
+      case _MyPostFilter.draft: return 'Draft';
+      case _MyPostFilter.pending: return 'Pending Approval';
+      case _MyPostFilter.approved: return 'Approved';
+      case _MyPostFilter.rejected: return 'Rejected';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -404,50 +646,106 @@ class _InboxScreenState extends State<InboxScreen>
             ),
             const Divider(height: 1),
 
-            // ── Sub-filter: Unread | Read ──────────────────────────────
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _SubFilterChip(
-                      label: _mainTabController.index == 1 ? 'Aktif' : 'Unread',
-                      isActive: _activeFilter == _SubFilter.unread,
-                      badge: _mainTabController.index == 0
-                          ? (_unreadAnnouncements > 0
-                              ? _unreadAnnouncements
-                              : null)
-                          : _mainTabController.index == 1
-                              ? (_aktifReportCount > 0 ? _aktifReportCount : null)
-                              : (_unreadMyReports > 0
-                                  ? _unreadMyReports
-                                  : null),
-                      onTap: () =>
-                          setState(() => _activeFilter = _SubFilter.unread),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _SubFilterChip(
-                      label: _mainTabController.index == 1 ? 'Selesai' : 'Read',
-                      isActive: _activeFilter == _SubFilter.read,
-                      badge: _mainTabController.index == 0
-                          ? (_readAnnouncementCount > 0
-                              ? _readAnnouncementCount
-                              : null)
-                          : _mainTabController.index == 1
-                              ? (_selesaiReportCount > 0 ? _selesaiReportCount : null)
-                              : (_readMyReportCount > 0
-                                  ? _readMyReportCount
-                                  : null),
-                      onTap: () =>
-                          setState(() => _activeFilter = _SubFilter.read),
-                    ),
-                  ),
-                ],
+              // ── Sub-filter: Unread | Read OR MyPost Status ────────────────────────
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: _mainTabController.index == 2
+                    ? Row(
+                        children: [
+                          const Text(
+                            'Filter:',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Container(
+                              height: 40,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<_MyPostFilter>(
+                                  value: _activeMyPostFilter,
+                                  isExpanded: true,
+                                  icon: const Icon(Icons.keyboard_arrow_down, size: 20),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1A56C4),
+                                  ),
+                                  items: _MyPostFilter.values.map((f) {
+                                    final count = _myPostFilterCount(f);
+                                    
+                                    return DropdownMenuItem(
+                                      value: f,
+                                      child: Row(
+                                        children: [
+                                          Text(_myPostFilterLabel(f)),
+                                          const Spacer(),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade200,
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            child: Text(
+                                              '$count',
+                                              style: const TextStyle(fontSize: 10, color: Colors.black54),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (val) {
+                                    if (val != null) setState(() => _activeMyPostFilter = val);
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: _SubFilterChip(
+                              label: _mainTabController.index == 1 ? 'Aktif' : 'Unread',
+                              isActive: _activeFilter == _SubFilter.unread,
+                              badge: _mainTabController.index == 0
+                                  ? (_unreadAnnouncements > 0
+                                      ? _unreadAnnouncements
+                                      : null)
+                                  : (_aktifReportCount > 0 ? _aktifReportCount : null),
+                              onTap: () =>
+                                  setState(() => _activeFilter = _SubFilter.unread),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _SubFilterChip(
+                              label: _mainTabController.index == 1 ? 'Selesai' : 'Read',
+                              isActive: _activeFilter == _SubFilter.read,
+                              badge: _mainTabController.index == 0
+                                  ? (_readAnnouncementCount > 0
+                                      ? _readAnnouncementCount
+                                      : null)
+                                  : (_selesaiReportCount > 0 ? _selesaiReportCount : null),
+                              onTap: () =>
+                                  setState(() => _activeFilter = _SubFilter.read),
+                            ),
+                          ),
+                        ],
+                      ),
               ),
-            ),
 
             // ── Tugas Butuh Tindakan Segera Banner ───────────────────────
             if (_mainTabController.index == 1)
@@ -556,9 +854,11 @@ class _InboxScreenState extends State<InboxScreen>
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    _activeFilter == _SubFilter.unread
-                        ? (_mainTabController.index == 1 ? 'Tidak ada tugas aktif!' : 'Semua sudah dibaca!')
-                        : (_mainTabController.index == 1 ? 'Tidak ada tugas selesai.' : 'Belum ada yang dibaca.'),
+                    _mainTabController.index == 2
+                      ? 'Tidak ada laporan dengan status ini.'
+                      : (_activeFilter == _SubFilter.unread
+                          ? (_mainTabController.index == 1 ? 'Tidak ada tugas aktif!' : 'Semua sudah dibaca!')
+                          : (_mainTabController.index == 1 ? 'Tidak ada tugas selesai.' : 'Belum ada yang dibaca.')),
                     style: const TextStyle(color: Colors.grey, fontSize: 14),
                   ),
                 ],
@@ -577,7 +877,7 @@ class _InboxScreenState extends State<InboxScreen>
         if (isAnnouncement) {
           return _AnnouncementCard(
             item: item,
-            formatDate: (dt) => _formatDate(dt),
+            formatDate: _formatDate,
             onTap: () {
               _markItemRead(item);
               _showAnnouncementDetail(context, item);
@@ -586,11 +886,11 @@ class _InboxScreenState extends State<InboxScreen>
         }
         return _InboxCard(
           item: item,
-          formatDate: (dt) => _formatDate(dt),
-          levelResiko: (s) => _levelResiko(s),
-          statusColor: (s) => _statusColor(s),
-          statusLabel: (s) => _statusLabel(s),
-          severityColor: (s) => _severityColor(s),
+          formatDate: _formatDate,
+          levelResiko: _levelResiko,
+          statusColor: _statusColor,
+          statusLabel: _statusLabel,
+          severityColor: _severityColor,
           onDetail: () {
             _markItemRead(item);
             Navigator.push(
@@ -822,7 +1122,7 @@ class _SubFilterChip extends StatelessWidget {
   }
 }
 
-// ── INBOX CARD (Report) ──────────────────────────────────────────────────────
+
 class _InboxCard extends StatelessWidget {
   final InboxItem item;
   final String Function(DateTime) formatDate;
