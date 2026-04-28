@@ -22,6 +22,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   static const _blue = Color(0xFF1A56C4);
   static const _blueLight = Color(0xFFEFF4FF);
+  bool _showTimeline = false;
 
   @override
   void initState() {
@@ -665,10 +666,52 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     // Step indicator bar
                     _buildStepBar(),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
+
+                    // "Show more" toggle button
+                    GestureDetector(
+                      onTap: () => setState(() => _showTimeline = !_showTimeline),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: _blueLight,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _blue.withValues(alpha: 0.15),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _showTimeline
+                                  ? Icons.keyboard_arrow_up_rounded
+                                  : Icons.keyboard_arrow_down_rounded,
+                              color: _blue,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _showTimeline
+                                  ? 'Sembunyikan Detail'
+                                  : 'Lihat Detail Aktivitas',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: _blue,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
 
                     // Timeline events (grouped by parent status)
-                    ..._buildGroupedTimeline(timeline),
+                    if (_showTimeline) ...[
+                      const SizedBox(height: 16),
+                      ..._buildGroupedTimeline(timeline),
+                    ],
                   ]),
             ),
 
