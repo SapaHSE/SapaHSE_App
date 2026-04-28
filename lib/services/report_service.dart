@@ -22,6 +22,44 @@ class ReportLogEntry {
   });
 }
 
+class HazardSubcategoryData {
+  final String id;
+  final String name;
+  final String? abbreviation;
+  final String? description;
+  final bool isActive;
+  final String status;
+  final String? categoryId;
+  final String? categoryName;
+  final String? proposedByName;
+
+  HazardSubcategoryData({
+    required this.id,
+    required this.name,
+    this.abbreviation,
+    this.description,
+    this.isActive = true,
+    this.status = 'approved',
+    this.categoryId,
+    this.categoryName,
+    this.proposedByName,
+  });
+}
+
+class HazardCategoryData {
+  final String id;
+  final String name;
+  final String? code;
+  final List<HazardSubcategoryData> subcategories;
+
+  HazardCategoryData({
+    required this.id,
+    required this.name,
+    this.code,
+    this.subcategories = const [],
+  });
+}
+
 class ReportService {
   static const String _placeholderImage =
       'https://placehold.co/600x400?text=No+Image';
@@ -236,6 +274,65 @@ class ReportService {
     if (!response.success) return const [];
     final raw = _asList(response.data['data']);
     return raw.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
+  }
+
+  // ── Category Management (Mock Implementations) ────────────────────────────
+  
+  static Future<List<HazardCategoryData>> getHazardCategories() async {
+    return [];
+  }
+
+  static Future<List<HazardSubcategoryData>> getPendingSubcategories() async {
+    return [];
+  }
+
+  static Future<HazardCategoryData?> createCategory(String name, {String? code}) async {
+    return HazardCategoryData(id: DateTime.now().millisecondsSinceEpoch.toString(), name: name, code: code);
+  }
+
+  static Future<HazardCategoryData?> updateCategory(String id, String name, {String? code}) async {
+    return HazardCategoryData(id: id, name: name, code: code);
+  }
+
+  static Future<bool> deleteCategory(String id) async {
+    return true;
+  }
+
+  static Future<HazardSubcategoryData?> createSubcategory(String categoryId, String name, {String? abbreviation, String? description}) async {
+    return HazardSubcategoryData(
+      id: DateTime.now().millisecondsSinceEpoch.toString(), 
+      name: name, 
+      abbreviation: abbreviation, 
+      description: description,
+      categoryId: categoryId,
+    );
+  }
+
+  static Future<HazardSubcategoryData?> updateSubcategory(String categoryId, String subId, String name, {String? abbreviation, String? description, bool isActive = true}) async {
+    return HazardSubcategoryData(
+      id: subId, 
+      name: name, 
+      abbreviation: abbreviation, 
+      description: description,
+      isActive: isActive,
+      categoryId: categoryId,
+    );
+  }
+
+  static Future<bool> deleteSubcategory(String categoryId, String subId) async {
+    return true;
+  }
+
+  static Future<bool> toggleSubcategoryStatus(String subId) async {
+    return true;
+  }
+
+  static Future<bool> approveSubcategory(String subId) async {
+    return true;
+  }
+
+  static Future<bool> rejectSubcategory(String subId) async {
+    return true;
   }
 
   static Report _mapHazardReport(Map<String, dynamic> json) {
