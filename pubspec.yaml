@@ -23,6 +23,7 @@ dependencies:
   connectivity_plus: ^7.1.1      # Cloud Save: detect network connectivity
   url_launcher: ^6.3.2
   fl_chart: ^1.2.0
+  flutter_image_compress: 2.4.0
   open_filex: ^4.5.0
   syncfusion_flutter_xlsio: ^33.2.3
   geolocator: ^14.0.2

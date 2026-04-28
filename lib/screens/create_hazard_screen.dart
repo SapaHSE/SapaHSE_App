@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/report.dart';
 import '../services/cloud_save_service.dart';
 import 'map_picker_screen.dart';
@@ -222,6 +224,24 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
+  Future<XFile?> _compressAndConvertImage(XFile file) async {
+    try {
+      final dir = await getTemporaryDirectory();
+      final targetPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_compressed.jpg';
+
+      final result = await FlutterImageCompress.compressAndGetFile(
+        file.path,
+        targetPath,
+        quality: 80,
+        format: CompressFormat.jpeg,
+      );
+      return result;
+    } catch (e) {
+      debugPrint('Compression error: $e');
+      return file; // Fallback ke file asli jika kompresi gagal
+    }
+  }
+
   Future<void> _pickPhoto(ImageSource source) async {
     try {
       if (source == ImageSource.gallery) {
@@ -229,14 +249,22 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           imageQuality: 80,
           maxWidth: 1280,
         );
-        if (picked.isNotEmpty) setState(() => _photoFiles.addAll(picked));
+        if (picked.isNotEmpty) {
+          for (var file in picked) {
+            final compressed = await _compressAndConvertImage(file);
+            if (compressed != null) setState(() => _photoFiles.add(compressed));
+          }
+        }
       } else {
         final picked = await _picker.pickImage(
           source: source,
           imageQuality: 80,
           maxWidth: 1280,
         );
-        if (picked != null) setState(() => _photoFiles.add(picked));
+        if (picked != null) {
+          final compressed = await _compressAndConvertImage(picked);
+          if (compressed != null) setState(() => _photoFiles.add(compressed));
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -269,8 +297,10 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
         ));
         return;
       }
-      setState(() => _currentStep++);
-      _scrollToTop();
+      _showPinpointConfirmationDialog(() {
+        setState(() => _currentStep++);
+        _scrollToTop();
+      });
     } else {
       _submitReport();
     }
@@ -298,6 +328,61 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
         );
       }
     });
+  }
+
+  void _showPinpointConfirmationDialog(VoidCallback onConfirm) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Konfirmasi Pinpoint', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Apakah lokasi kejadian (pinpoint) sudah sesuai?', style: TextStyle(color: Colors.black87)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FF),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.place, color: _blue, size: 24),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _kejadianLocationCtrl.text,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              onConfirm();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _blue,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Ya, Lanjut', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _submitReport() async {
@@ -521,11 +606,13 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 .map((e) => Chip(
                       label: Text(e, style: const TextStyle(fontSize: 12)),
                       padding: EdgeInsets.zero,
-                      onDeleted: () {
-                        setState(() {
-                          _selectedPIC.remove(e);
-                        });
-                      },
+                      onDeleted: e == 'Departemen HSE'
+                          ? null
+                          : () {
+                              setState(() {
+                                _selectedPIC.remove(e);
+                              });
+                            },
                     ))
                 .toList(),
           ),
@@ -650,6 +737,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               onSelected: (v) => setState(() {
                 _selectedPerusahaan = v;
                 _selectedPIC.clear();
+                _selectedPIC.add('Departemen HSE');
               }),
               dropdownMenuEntries: _perusahaanList
                   .map((e) => DropdownMenuEntry(value: e, label: e))
@@ -699,15 +787,16 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? colors[s]
-                          : colors[s]!.withValues(alpha: 0.1),
+                          : Colors.grey.shade200,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                          color: colors[s]!, width: isSelected ? 2 : 1),
+                          color: isSelected ? colors[s]! : Colors.grey.shade400,
+                          width: isSelected ? 2 : 1),
                     ),
                     child: Text(s.name.toUpperCase(),
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                            color: isSelected ? Colors.white : colors[s],
+                            color: isSelected ? Colors.white : Colors.grey.shade600,
                             fontSize: 12,
                             fontWeight: FontWeight.bold)),
                   ),
