@@ -360,8 +360,23 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       const SizedBox(height: 12),
                       _DetailRow(
                           icon: Icons.lightbulb_outline,
-                          label: 'Saran Perbaikan',
+                          label: 'Saran',
                           value: _report.saran!),
+                    ],
+                    if (_report.pelaporLocation != null &&
+                        _report.pelaporLocation!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.my_location_outlined,
+                          label: 'Koordinat Pelapor',
+                          value: _report.pelaporLocation!),
+                    ],
+                    if (_report.id.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.confirmation_number_outlined,
+                          label: 'No. Tiket',
+                          value: '#TKT-${_report.id.padLeft(4, '0')}'),
                     ],
                   ]),
             ),
@@ -543,37 +558,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   ],
                 ),
               ),
-
-              // â”€â”€ Card: Informasi Tambahan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-              if ((_report.pelaporLocation != null &&
-                      _report.pelaporLocation!.isNotEmpty) ||
-                  _report.id.isNotEmpty)
-                _card(
-                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const _SectionHeader(
-                          icon: Icons.info_outline,
-                          title: 'Informasi Tambahan'),
-                      if (_report.pelaporLocation != null &&
-                          _report.pelaporLocation!.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        _DetailRow(
-                            icon: Icons.my_location_outlined,
-                            label: 'Koordinat Pelapor',
-                            value: _report.pelaporLocation!),
-                      ],
-                      if (_report.id.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        _DetailRow(
-                            icon: Icons.confirmation_number_outlined,
-                            label: 'No. Tiket',
-                            value: '#TKT-${_report.id.padLeft(4, '0')}'),
-                      ],
-                    ],
-                  ),
-                ),
 
               // â”€â”€ Card: Informasi Inspeksi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
               if (_report.type == ReportType.inspection)
