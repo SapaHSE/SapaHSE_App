@@ -363,6 +363,27 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                           label: 'Saran',
                           value: _report.saran!),
                     ],
+                    const SizedBox(height: 12),
+                    _DetailRow(
+                        icon: Icons.category_outlined,
+                        label: 'Kategori',
+                        value: _report.category?.label ?? _report.type.label),
+                    if (_report.subkategori != null &&
+                        _report.subkategori!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.subdirectory_arrow_right,
+                          label: 'Sub-kategori',
+                          value: _report.subkategori!),
+                    ],
+                    if (_report.perusahaan != null &&
+                        _report.perusahaan!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                          icon: Icons.business_outlined,
+                          label: 'Perusahaan',
+                          value: _report.perusahaan!),
+                    ],
                     if (_report.pelaporLocation != null &&
                         _report.pelaporLocation!.isNotEmpty) ...[
                       const SizedBox(height: 12),
@@ -521,39 +542,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                               color: Color(0xFF1A56C4), size: 18),
                         ),
                       ),
-                    ],
-                  ],
-                ),
-              ),
-
-              // â”€â”€ Card: Klasifikasi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-              _card(
-                margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _SectionHeader(
-                        icon: Icons.category_outlined, title: 'Klasifikasi'),
-                    const SizedBox(height: 12),
-                    _DetailRow(
-                        icon: Icons.category_outlined,
-                        label: 'Kategori',
-                        value: _report.category?.label ?? _report.type.label),
-                    if (_report.subkategori != null &&
-                        _report.subkategori!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _DetailRow(
-                          icon: Icons.subdirectory_arrow_right,
-                          label: 'Sub-kategori',
-                          value: _report.subkategori!),
-                    ],
-                    if (_report.perusahaan != null &&
-                        _report.perusahaan!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _DetailRow(
-                          icon: Icons.business_outlined,
-                          label: 'Perusahaan',
-                          value: _report.perusahaan!),
                     ],
                   ],
                 ),
