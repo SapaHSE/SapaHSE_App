@@ -8,7 +8,9 @@ import 'storage_service.dart';
 
 class ApiService {
   // ── Base URL ─────────────────────────────────────────────────────────────
-  static const String baseUrl = 'https://sapahse.up.railway.app/api';
+  // Ganti ke 10.0.2.2 untuk Android Emulator, atau localhost untuk Web/Desktop
+  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  // static const String baseUrl = 'https://sapahse.up.railway.app/api';
 
   // ── Headers ───────────────────────────────────────────────────────────────
   static Future<Map<String, String>> _headers({bool auth = true}) async {
@@ -37,11 +39,12 @@ class ApiService {
       return await _handleResponse(response);
     } on SocketException {
       return ApiResponse.error(
-          'No internet connection. Check if Laravel server is running.');
-    } on HttpException {
-      return ApiResponse.error('Server error. Please try again.');
+          'Tidak dapat terhubung ke server. Pastikan Laravel sudah jalan (php artisan serve) dan URL benar.');
+    } on http.ClientException catch (e) {
+      return ApiResponse.error(
+          'Koneksi terputus atau server tidak merespon (ClientException).\n$e');
     } catch (e) {
-      return ApiResponse.error('Unexpected error: $e');
+      return ApiResponse.error('Terjadi kesalahan: $e');
     }
   }
 
@@ -62,11 +65,12 @@ class ApiService {
       return await _handleResponse(response);
     } on SocketException {
       return ApiResponse.error(
-          'No internet connection. Check if Laravel server is running.');
-    } on HttpException {
-      return ApiResponse.error('Server error. Please try again.');
+          'Tidak dapat terhubung ke server. Pastikan Laravel sudah jalan (php artisan serve) dan URL benar.');
+    } on http.ClientException catch (e) {
+      return ApiResponse.error(
+          'Koneksi terputus atau server tidak merespon (ClientException).\n$e');
     } catch (e) {
-      return ApiResponse.error('Unexpected error: $e');
+      return ApiResponse.error('Terjadi kesalahan: $e');
     }
   }
 

@@ -18,6 +18,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
   String? _userRole;
 
   List<HazardCategoryData> _categories = [];
+  List<HazardSubcategoryData> _pendingSubs = [];
   bool _isLoading = true;
   String? _error;
 
@@ -53,10 +54,14 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
       _error = null;
     });
     try {
-      final results = await ReportService.getHazardCategories();
+      final results = await Future.wait([
+        ReportService.getHazardCategories(),
+        ReportService.getPendingSubcategories(),
+      ]);
       if (mounted) {
         setState(() {
-          _categories = results;
+          _categories = results[0] as List<HazardCategoryData>;
+          _pendingSubs = results[1] as List<HazardSubcategoryData>;
           _isLoading = false;
         });
       }
@@ -259,42 +264,74 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
-      appBar: AppBar(
-        title: const Text('Kategori Laporan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
-            onPressed: _loadData,
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _buildError()
-              : _buildMainListTab(),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _isLoading
-            ? null
-            : () {
-                if (_isAdmin) {
-                  _showAddCategoryDialog();
-                } else {
-                  _showProposeSubcategoryForAnyCategory();
-                }
-              },
-        backgroundColor: _blue,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: Text(_isAdmin ? 'Tambah Kategori' : 'Usulkan Subkategori'),
-        isExtended: true,
+    return DefaultTabController(
+      length: 2,
+      child: Builder(
+        builder: (context) {
+          final tabController = DefaultTabController.of(context);
+          return Scaffold(
+            backgroundColor: const Color(0xFFF5F6FA),
+            appBar: AppBar(
+              title: const Text('Kategori Laporan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              elevation: 0,
+              centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh_rounded),
+                  tooltip: 'Refresh',
+                  onPressed: _loadData,
+                ),
+              ],
+              bottom: TabBar(
+                controller: tabController,
+                indicatorColor: _blue,
+                labelColor: _blue,
+                unselectedLabelColor: Colors.grey.shade400,
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                indicatorSize: TabBarIndicatorSize.label,
+                tabs: [
+                  const Tab(text: 'Daftar Kategori'),
+                  Tab(text: _isAdmin ? 'Persetujuan' : 'Status Usulan'),
+                ],
+              ),
+            ),
+            body: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? _buildError()
+                    : TabBarView(
+                        controller: tabController,
+                        children: [
+                          _buildMainListTab(),
+                          _buildPendingTab(),
+                        ],
+                      ),
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      if (_isAdmin) {
+                        if (tabController.index == 0) {
+                          _showAddCategoryDialog();
+                        } else {
+                          _showAddSubcategoryForAnyCategory();
+                        }
+                      } else {
+                        _showProposeSubcategoryForAnyCategory();
+                      }
+                    },
+              backgroundColor: _blue,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: Text(_isAdmin 
+                ? (tabController.index == 0 ? 'Tambah Kategori' : 'Tambah Subkategori') 
+                : 'Usulkan Subkategori'),
+              isExtended: true,
+            ),
+          );
+        },
       ),
     );
   }
@@ -593,6 +630,112 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
       _showSnack('Subkategori berhasil ditambahkan.');
     }
   }
+  Widget _buildPendingTab() {
+    if (_pendingSubs.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.checklist_outlined,
+        title: 'Tidak Ada Usulan',
+        subtitle: 'Usulan subkategori dari user akan muncul di sini.',
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+        itemCount: _pendingSubs.length,
+        itemBuilder: (context, i) => _buildPendingCard(_pendingSubs[i]),
+      ),
+    );
+  }
+
+  Widget _buildPendingCard(HazardSubcategoryData sub) {
+    Color statusColor;
+    IconData statusIcon;
+    String statusText;
+
+    switch (sub.status) {
+      case 'approved':
+        statusColor = Colors.green;
+        statusIcon = Icons.check_circle_outline;
+        statusText = 'Disetujui';
+        break;
+      case 'rejected':
+        statusColor = Colors.red;
+        statusIcon = Icons.cancel_outlined;
+        statusText = 'Ditolak';
+        break;
+      default:
+        statusColor = Colors.orange;
+        statusIcon = Icons.hourglass_empty;
+        statusText = 'Menunggu';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: _blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Text(sub.categoryName ?? 'Kategori', style: const TextStyle(color: _blue, fontWeight: FontWeight.bold, fontSize: 10)),
+              ),
+              const Spacer(),
+              if (_isAdmin)
+                Text('Oleh: ${sub.proposedByName ?? 'User'}', style: TextStyle(color: Colors.grey.shade500, fontSize: 11))
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                  child: Row(
+                    children: [
+                      Icon(statusIcon, color: statusColor, size: 12),
+                      const SizedBox(width: 4),
+                      Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 10)),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(sub.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          if (_isAdmin) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _handleReject(sub),
+                    icon: const Icon(Icons.close, size: 16),
+                    label: const Text('Tolak', style: TextStyle(fontSize: 12)),
+                    style: OutlinedButton.styleFrom(foregroundColor: Colors.red, side: const BorderSide(color: Colors.red), padding: const EdgeInsets.symmetric(vertical: 10)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _handleApprove(sub),
+                    icon: const Icon(Icons.check, size: 16),
+                    label: const Text('Setujui', style: TextStyle(fontSize: 12)),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade600, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 10)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   void _showProposeSubcategoryForAnyCategory() {
     if (_categories.isEmpty) {
@@ -655,7 +798,8 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
                 if (res != null) {
                   await _loadData();
                   _showSnack('Usulan berhasil dikirim.');
-
+                  // Switch to second tab to see status
+                  DefaultTabController.of(context).animateTo(1);
                 } else {
                   setState(() => _isLoading = false);
                   _showSnack('Gagal mengirim usulan.', isError: true);
