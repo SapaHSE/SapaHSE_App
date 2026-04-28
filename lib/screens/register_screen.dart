@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import '../services/auth_service.dart';
+import '../services/company_service.dart';
+import '../models/company_model.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -32,10 +34,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _simperCtrl = TextEditingController();
   final _emailKantorCtrl = TextEditingController();
 
-  final List<String> _perusahaanList = [
-    'PT. Bukit Baiduri Energi',
-    'PT. Khotai Makmur Insan Abadi',
-  ];
+  List<String> _ownerList = [];
+  List<String> _kontraktorList = [];
+  List<String> _subkontraktorList = [];
 
   final List<String> _departemenList = [
     'HSE',
@@ -49,6 +50,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
   ];
 
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCompanies();
+  }
+
+  Future<void> _fetchCompanies() async {
+    try {
+      final owners = await CompanyService.getCompanies(category: 'owner', active: true);
+      final contractors = await CompanyService.getCompanies(category: 'kontraktor', active: true);
+      final subContractors = await CompanyService.getCompanies(category: 'subkontraktor', active: true);
+
+      if (mounted) {
+        setState(() {
+          _ownerList = owners.map((e) => e.name).toList();
+          _kontraktorList = contractors.map((e) => e.name).toList();
+          _subkontraktorList = subContractors.map((e) => e.name).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching companies: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -103,6 +128,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         position: _jabatanCtrl.text,
         department: _departemen ?? '',
         company: _perusahaan ?? '',
+        tipeAfiliasi: _tipeAfiliasi,
+        perusahaanKontraktor: _perusahaanKontraktor,
+        subKontraktor: _subKontraktor,
+        simper: _simperCtrl.text,
       );
 
       if (!mounted) return;
@@ -544,7 +573,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 8),
                 _buildDropdown(
                   value: _perusahaan,
-                  items: _perusahaanList,
+                  items: _ownerList,
                   hint: '-- Pilih --',
                   onChanged: (v) => setState(() => _perusahaan = v),
                 ),
@@ -555,7 +584,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 8),
                   _buildDropdown(
                     value: _perusahaanKontraktor,
-                    items: _perusahaanList,
+                    items: _kontraktorList,
                     hint: '-- Pilih --',
                     onChanged: (v) => setState(() => _perusahaanKontraktor = v),
                     isRequired: false,
@@ -567,7 +596,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 8),
                   _buildDropdown(
                     value: _subKontraktor,
-                    items: _perusahaanList,
+                    items: _subkontraktorList,
                     hint: '-- Pilih --',
                     onChanged: (v) => setState(() => _subKontraktor = v),
                     isRequired: false,

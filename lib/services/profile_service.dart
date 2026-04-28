@@ -135,6 +135,46 @@ class ProfileService {
     return SimpleResult.success(
         response.data['message'] ?? 'Password berhasil diubah.');
   }
+
+  // ── Add License ─────────────────────────────────────────────────────────────
+  static Future<SimpleResult> addLicense({
+    required String name,
+    required String licenseNumber,
+    String? expiredAt,
+    String status = 'active',
+  }) async {
+    final response = await ApiService.post('/profile/license', {
+      'name': name,
+      'license_number': licenseNumber,
+      'expired_at': expiredAt,
+      'status': status,
+    });
+
+    if (!response.success) {
+      return SimpleResult.error(response.errorMessage ?? 'Gagal menambah lisensi.');
+    }
+    return SimpleResult.success('Lisensi berhasil ditambahkan.');
+  }
+
+  // ── Add Certification ───────────────────────────────────────────────────────
+  static Future<SimpleResult> addCertification({
+    required String name,
+    required String issuer,
+    int? year,
+    String status = 'active',
+  }) async {
+    final response = await ApiService.post('/profile/certification', {
+      'name': name,
+      'issuer': issuer,
+      'year': year,
+      'status': status,
+    });
+
+    if (!response.success) {
+      return SimpleResult.error(response.errorMessage ?? 'Gagal menambah sertifikasi.');
+    }
+    return SimpleResult.success('Sertifikasi berhasil ditambahkan.');
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
