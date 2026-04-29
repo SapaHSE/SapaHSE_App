@@ -165,21 +165,35 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     }
   }
 
+  String get _dynamicHseDepartment {
+    try {
+      final hseUser = _usersData.firstWhere(
+        (u) => (u.department?.toLowerCase().contains('hse') ?? false) || 
+               (u.department?.toLowerCase().contains('k3') ?? false),
+      );
+    } catch (e) {
+      // Ignore if not found
+    }
+    return 'Departemen HSE';
+  }
+
   List<String> get _picOptions {
     if (_selectedPerusahaan == null) return [];
 
     final companyUsers = _usersData.where((u) => 
-        u.company == _selectedPerusahaan && u.role != 'superadmin'
+        u.role != 'superadmin'
     ).toList();
     final depts = companyUsers
         .map((u) => u.department)
-        .where((d) => d != null && d.isNotEmpty)
+        .where((d) => d != null && d!.isNotEmpty)
         .toSet()
         .toList();
 
     final List<String> options = [];
     for (var d in depts) {
-      options.add('Departemen $d');
+      if (!d!.toLowerCase().contains('hse') && !d.toLowerCase().contains('k3')) {
+        options.add('Departemen $d');
+      }
     }
     for (var u in companyUsers) {
       final deptStr = (u.department != null && u.department!.isNotEmpty) ? ' (${u.department})' : '';
@@ -495,7 +509,24 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     );
   }
 
-
+  InputDecorationTheme _dropdownTheme() {
+    return InputDecorationTheme(
+      hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+      filled: true,
+      fillColor: const Color(0xFFF8F9FF),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey.shade300)),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey.shade300)),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: _blue, width: 1.5)),
+      constraints: const BoxConstraints(maxHeight: 50),
+    );
+  }
 
   Widget _label(String text, {Key? key}) => Padding(
         key: key,
@@ -581,7 +612,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 .map((e) => Chip(
                       label: Text(e, style: const TextStyle(fontSize: 12)),
                       padding: EdgeInsets.zero,
-                      onDeleted: e == 'Departemen HSE'
+                      onDeleted: e == _dynamicHseDepartment
                           ? null
                           : () {
                               setState(() {
@@ -605,7 +636,10 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           onTap: () async {
             final options = _usersData
                 .where((u) => u.company == _selectedPerusahaan && u.role != 'superadmin')
-                .map((u) => u.fullName)
+                .map((u) {
+                  final deptStr = (u.department != null && u.department!.isNotEmpty) ? ' (${u.department})' : '';
+                  return '${u.fullName}$deptStr';
+                })
                 .toList();
             final result = await _showPersonPicker(
               title: 'Tag Pelaku Pelanggaran',
@@ -676,11 +710,10 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           DropdownButtonFormField<String>(
             initialValue: _selectedKategori,
             validator: (v) => v == null ? 'Wajib dipilih' : null,
-            isExpanded: true,
             decoration: _inputDeco(
                 hint: _isLoadingData ? 'Memuat data...' : 'Pilih Kategori', icon: Icons.category_outlined),
             items: _categoriesData
-                .map((e) => DropdownMenuItem(value: e.name, child: Text(e.name, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)))
+                .map((e) => DropdownMenuItem(value: e.name, child: Text(e.name)))
                 .toList(),
             onChanged: (v) => setState(() {
               _selectedKategori = v;
@@ -692,36 +725,37 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           DropdownButtonFormField<String>(
             initialValue: _selectedSubkategori,
             validator: (v) => v == null ? 'Wajib dipilih' : null,
-            isExpanded: true,
             decoration: _inputDeco(
                 hint: 'Pilih Subkategori',
                 icon: Icons.subdirectory_arrow_right),
             items: _subkategoriList
                 .map((e) => DropdownMenuItem(
                     value: e,
-                    child: Text(e, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)))
+                    child: Text(e, style: const TextStyle(fontSize: 13))))
                 .toList(),
             onChanged: (v) => setState(() => _selectedSubkategori = v),
           ),
           const SizedBox(height: 14),
-          _label('Perusahaan *'),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedPerusahaan,
-            validator: (v) => v == null ? 'Wajib dipilih' : null,
-            isExpanded: true,
-            decoration: _inputDeco(
-                hint: _isLoadingData ? 'Memuat data...' : 'Pilih Perusahaan', icon: Icons.business_outlined),
-            items: _companiesData
-                .map((e) => DropdownMenuItem(
-                    value: e.name,
-                    child: Text(e.name, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)))
-                .toList(),
-            onChanged: (v) => setState(() {
-              _selectedPerusahaan = v;
-              _selectedLokasi = null;
-              _selectedPIC.clear();
-              _selectedPIC.add('Departemen HSE');
-            }),
+          _label('Perusahaan (Ketik untuk mencari) *'),
+          LayoutBuilder(
+            builder: (context, constraints) => DropdownMenu<String>(
+              width: constraints.maxWidth,
+              enableSearch: true,
+              enableFilter: true,
+              requestFocusOnTap: true,
+              initialSelection: _selectedPerusahaan,
+              hintText: _isLoadingData ? 'Memuat data...' : 'Pilih / Cari Perusahaan',
+              inputDecorationTheme: _dropdownTheme(),
+              onSelected: (v) => setState(() {
+                _selectedPerusahaan = v;
+                _selectedLokasi = null;
+                _selectedPIC.clear();
+                _selectedPIC.add(_dynamicHseDepartment);
+              }),
+              dropdownMenuEntries: _companiesData
+                  .map((e) => DropdownMenuEntry(value: e.name, label: e.name))
+                  .toList(),
+            ),
           ),
           const SizedBox(height: 14),
           _picTagField(),
