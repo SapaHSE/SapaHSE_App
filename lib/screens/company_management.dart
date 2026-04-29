@@ -175,8 +175,8 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> with 
   Widget _buildMainListTab() {
     // Group companies by category
     final owners = _allCompanies.where((c) => c.category == 'owner').toList();
-    final kontraktors = _allCompanies.where((c) => c.category == 'kontraktor').toList();
-    final subkontraktors = _allCompanies.where((c) => c.category == 'subkontraktor').toList();
+    final contractors = _allCompanies.where((c) => c.category == 'kontraktor').toList();
+    final subcontraktors = _allCompanies.where((c) => c.category == 'subkontraktor').toList();
 
     return RefreshIndicator(
       onRefresh: _loadData,
@@ -186,8 +186,8 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> with 
           _buildInfoBanner(),
           const SizedBox(height: 16),
           _buildCategoryCard('Owner', 'OWN', _blue, owners, 'owner'),
-          _buildCategoryCard('Kontraktor', 'KON', _red, kontraktors, 'kontraktor'),
-          _buildCategoryCard('Sub Kontraktor', 'SUB', _orange, subkontraktors, 'subkontraktor'),
+          _buildCategoryCard('Contractor', 'CON', _red, contractors, 'contractor'),
+          _buildCategoryCard('Sub Contractor', 'SUB', _orange, subcontraktors, 'sub contractor'),
         ],
       ),
     );
@@ -478,7 +478,7 @@ class _CompanyFormScreenState extends State<_CompanyFormScreen> {
                   const SizedBox(height: 16),
                   _buildLabel('KODE (OPSIONAL)'),
                   const SizedBox(height: 8),
-                  _buildTextField(_codeCtrl, hint: 'Contoh: BBE'),
+                  _buildTextField(_codeCtrl, hint: 'Contoh: BBE', maxLength: 5, capitalization: TextCapitalization.characters),
                 ],
               ),
             ),
@@ -614,15 +614,15 @@ class _CompanyFormScreenState extends State<_CompanyFormScreen> {
         ),
         items: const [
           DropdownMenuItem(value: 'owner', child: Text('Owner', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
-          DropdownMenuItem(value: 'kontraktor', child: Text('Kontraktor', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
-          DropdownMenuItem(value: 'subkontraktor', child: Text('Sub Kontraktor', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+          DropdownMenuItem(value: 'kontraktor', child: Text('Contractor', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+          DropdownMenuItem(value: 'subkontraktor', child: Text('Sub Contractor', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
         ],
         onChanged: (v) => setState(() => _category = v!),
       ),
     );
   }
 
-  Widget _buildTextField(TextEditingController ctrl, {String? hint}) {
+  Widget _buildTextField(TextEditingController ctrl, {String? hint, int? maxLength, TextCapitalization capitalization = TextCapitalization.none}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -631,6 +631,8 @@ class _CompanyFormScreenState extends State<_CompanyFormScreen> {
       ),
       child: TextField(
         controller: ctrl,
+        maxLength: maxLength,
+        textCapitalization: capitalization,
         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         decoration: InputDecoration(
           hintText: hint,
@@ -642,6 +644,7 @@ class _CompanyFormScreenState extends State<_CompanyFormScreen> {
           ),
           filled: true,
           fillColor: Colors.white,
+          counterText: "", // Hide the counter for cleaner UI
         ),
       ),
     );

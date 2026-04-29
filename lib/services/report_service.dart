@@ -62,12 +62,16 @@ class ReportService {
     required String description,
     required String location,
     String? severity,
-    String? namePja,
+    List<String>? pic,
     String? department,
     String? hazardCategory,
     String? hazardSubcategory,
     String? suggestion,
     String? imagePath,
+    String? pelakuPelanggaran,
+    String? pelaporLocation,
+    String? kejadianLocation,
+    String? perusahaan,
     bool isPublic = true,
   }) async {
     final payload = await _sendMultipart(
@@ -78,7 +82,7 @@ class ReportService {
         'description': description,
         'location': location,
         if (severity != null && severity.isNotEmpty) 'severity': severity,
-        if (namePja != null && namePja.isNotEmpty) 'name_pja': namePja,
+        if (pic != null && pic.isNotEmpty) 'pic_department': pic.join(', '),
         if (department != null && department.isNotEmpty)
           'reported_department': department,
         if (hazardCategory != null && hazardCategory.isNotEmpty)
@@ -87,6 +91,14 @@ class ReportService {
           'hazard_subcategory': hazardSubcategory,
         if (suggestion != null && suggestion.isNotEmpty)
           'suggestion': suggestion,
+        if (pelakuPelanggaran != null && pelakuPelanggaran.isNotEmpty)
+          'pelaku_pelanggaran': pelakuPelanggaran,
+        if (pelaporLocation != null && pelaporLocation.isNotEmpty)
+          'pelapor_location': pelaporLocation,
+        if (kejadianLocation != null && kejadianLocation.isNotEmpty)
+          'kejadian_location': kejadianLocation,
+        if (perusahaan != null && perusahaan.isNotEmpty)
+          'company': perusahaan,
         // Backend expects camelCase key `isPublic` and parses it as boolean.
         'isPublic': isPublic.toString(),
       },
@@ -238,6 +250,107 @@ class ReportService {
     return raw.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
   }
 
+  static Future<List<HazardCategoryData>> getHazardCategories() async {
+    final response = await ApiService.get('/hazard-categories');
+    if (!response.success) return const [];
+    final raw = _asList(response.data['data']);
+    return raw.map((e) => _mapCategoryData(e)).toList();
+  }
+
+  static HazardCategoryData _mapCategoryData(dynamic e) {
+    final m = Map<String, dynamic>.from(e);
+    final subs = _asList(m['subcategories']);
+    return HazardCategoryData(
+      id: m['id'] is int ? m['id'] : int.tryParse(m['id'].toString()) ?? 0,
+      name: m['name']?.toString() ?? '',
+      code: m['code']?.toString(),
+      subcategories: subs.map((s) => _mapSubcategoryData(s)).toList(),
+    );
+  }
+
+  static HazardSubcategoryData _mapSubcategoryData(dynamic s) {
+    final sm = Map<String, dynamic>.from(s);
+    return HazardSubcategoryData(
+      id: sm['id'] is int ? sm['id'] : int.tryParse(sm['id'].toString()) ?? 0,
+      name: sm['name']?.toString() ?? '',
+      abbreviation: sm['abbreviation']?.toString(),
+      description: sm['description']?.toString(),
+      isActive: sm['is_active'] == true || sm['is_active'] == 1,
+      status: sm['status']?.toString(),
+      categoryName: sm['category']?['name']?.toString(),
+      proposedByName: sm['proposed_by']?['full_name']?.toString() ?? sm['proposed_by_name']?.toString(),
+    );
+  }
+
+  // ── Category CRUD ─────────────────────────────────────────────────────────
+
+  static Future<HazardCategoryData?> createCategory(String name, {String? code}) async {
+    final response = await ApiService.post('/hazard-categories', {'name': name, if (code != null) 'code': code});
+    if (!response.success) return null;
+    return _mapCategoryData(response.data['data']);
+  }
+
+  static Future<HazardCategoryData?> updateCategory(int id, String name, {String? code}) async {
+    final response = await ApiService.put('/hazard-categories/$id', {'name': name, if (code != null) 'code': code});
+    if (!response.success) return null;
+    return _mapCategoryData(response.data['data']);
+  }
+
+  static Future<bool> deleteCategory(int id) async {
+    final response = await ApiService.delete('/hazard-categories/$id');
+    return response.success;
+  }
+
+  // ── Subcategory CRUD ──────────────────────────────────────────────────────
+
+  static Future<List<HazardSubcategoryData>> getPendingSubcategories() async {
+    final response = await ApiService.get('/hazard-categories/subcategories/pending');
+    if (!response.success) return const [];
+    final raw = _asList(response.data['data']);
+    return raw.map((e) => _mapSubcategoryData(e)).toList();
+  }
+
+  static Future<HazardSubcategoryData?> createSubcategory(int categoryId, String name, {String? abbreviation, String? description}) async {
+    final response = await ApiService.post('/hazard-categories/$categoryId/subcategories', {
+      'name': name,
+      'abbreviation': abbreviation,
+      'description': description,
+    });
+    if (!response.success) return null;
+    return _mapSubcategoryData(response.data['data']);
+  }
+
+  static Future<bool> approveSubcategory(int subId) async {
+    final response = await ApiService.post('/hazard-categories/subcategories/$subId/approve', {});
+    return response.success;
+  }
+
+  static Future<bool> rejectSubcategory(int subId) async {
+    final response = await ApiService.post('/hazard-categories/subcategories/$subId/reject', {});
+    return response.success;
+  }
+
+  static Future<HazardSubcategoryData?> updateSubcategory(int categoryId, int subId, String name, {String? abbreviation, String? description, bool? isActive}) async {
+    final response = await ApiService.put('/hazard-categories/$categoryId/subcategories/$subId', {
+      'name': name,
+      'abbreviation': abbreviation,
+      'description': description,
+      'is_active': isActive,
+    });
+    if (!response.success) return null;
+    return _mapSubcategoryData(response.data['data']);
+  }
+
+  static Future<bool> deleteSubcategory(int categoryId, int subId) async {
+    final response = await ApiService.delete('/hazard-categories/$categoryId/subcategories/$subId');
+    return response.success;
+  }
+
+  static Future<bool> toggleSubcategoryStatus(int subId) async {
+    final response = await ApiService.post('/hazard-categories/subcategories/$subId/toggle', {});
+    return response.success;
+  }
+
   static Report _mapHazardReport(Map<String, dynamic> json) {
     final severity =
         _severityFromApi(json['severity']?.toString()) ?? ReportSeverity.medium;
@@ -252,9 +365,13 @@ class ReportService {
       status: _statusFromApi(json['status']?.toString()),
       subStatus: _subStatusFromApi(json['sub_status']?.toString()),
       location: json['location']?.toString() ?? '-',
+      pelaporLocation: json['pelapor_location']?.toString(),
+      kejadianLocation: json['kejadian_location']?.toString(),
       saran: json['suggestion']?.toString(),
+      perusahaan: json['company']?.toString(),
       departemen: json['reported_department']?.toString(),
-      tagOrang: json['name_pja']?.toString(),
+      picDepartment: json['pic_department']?.toString(),
+      pelakuPelanggaran: json['pelaku_pelanggaran']?.toString(),
       createdAt: _parseDate(json['created_at']),
       reportedBy: _reportedBy(json['reported_by']),
       reporterId: _reporterId(json['reported_by']),
@@ -568,4 +685,40 @@ class _MultipartResult {
         errorMessage: message,
         statusCode: statusCode,
       );
+}
+
+class HazardSubcategoryData {
+  final int id;
+  final String name;
+  final String? abbreviation;
+  final String? description;
+  final bool isActive;
+  final String? status; // 'pending', 'approved', 'rejected'
+  final String? categoryName; // for pending view
+  final String? proposedByName;
+
+  HazardSubcategoryData({
+    required this.id,
+    required this.name,
+    this.abbreviation,
+    this.description,
+    this.isActive = true,
+    this.status,
+    this.categoryName,
+    this.proposedByName,
+  });
+}
+
+class HazardCategoryData {
+  final int id;
+  final String name;
+  final String? code;
+  final List<HazardSubcategoryData> subcategories;
+
+  HazardCategoryData({
+    required this.id,
+    required this.name,
+    required this.subcategories,
+    this.code,
+  });
 }
