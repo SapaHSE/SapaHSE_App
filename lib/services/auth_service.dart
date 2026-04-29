@@ -116,6 +116,16 @@ class AuthService {
     );
   }
 
+  // ── Get users list ────────────────────────────────────────────────────────
+  static Future<List<UserModel>> getUsers() async {
+    final response = await ApiService.get('/users');
+    if (response.success && response.data['data'] != null) {
+      final list = response.data['data'] as List;
+      return list.map((e) => UserModel.fromJson(e)).toList();
+    }
+    return [];
+  }
+
   // ── Get current user from local storage ───────────────────────────────────
   static Future<UserModel?> getCurrentUser() async {
     final data = await StorageService.getUser();

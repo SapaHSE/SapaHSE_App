@@ -8,77 +8,19 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/report.dart';
+import '../models/company_model.dart';
+import '../models/user_model.dart';
 import '../services/cloud_save_service.dart';
+import '../services/company_service.dart';
+import '../services/report_service.dart';
+import '../services/auth_service.dart';
 import 'map_picker_screen.dart';
 
-const _perusahaanList = [
-  'PT. Bukit Baiduri Energi',
-  'PT. Khotai Makmur Insan Abadi',
-];
 
-// Removed unused _departemenList
 
-class PjaData {
-  final String nama;
-  final String perusahaan;
-  final String departemen;
-  const PjaData(this.nama, this.perusahaan, this.departemen);
-}
 
-const _pjaList = [
-  PjaData('Budi Santoso', 'PT. Bukit Baiduri Energi', 'HSE'),
-  PjaData('Ahmad Fauzi', 'PT. Khotai Makmur Insan Abadi', 'Produksi'),
-  PjaData('Riko Pratama', 'PT. Bukit Baiduri Energi', 'Maintenance'),
-  PjaData('Hendra Wijaya', 'PT. Khotai Makmur Insan Abadi', 'Engineering'),
-  PjaData('Siti Rahayu', 'PT. Bukit Baiduri Energi', 'HRD'),
-  PjaData('Dian Permata', 'PT. Khotai Makmur Insan Abadi', 'Logistik'),
-  PjaData('Eko Susilo', 'PT. Bukit Baiduri Energi', 'Security'),
-  PjaData('Novi Andriani', 'PT. Khotai Makmur Insan Abadi', 'HSE'),
-  PjaData('Wahyu Hidayat', 'PT. Bukit Baiduri Energi', 'Produksi'),
-  PjaData('Agus Setiawan', 'PT. Khotai Makmur Insan Abadi', 'Maintenance'),
-  PjaData('Bambang Purnomo', 'PT. Bukit Baiduri Energi', 'Engineering'),
-  PjaData('Lintang Bhaskara', 'PT. Khotai Makmur Insan Abadi', 'HRD'),
-  PjaData('Maya Putri', 'PT. Bukit Baiduri Energi', 'Logistik'),
-  PjaData('Reza Firmansyah', 'PT. Khotai Makmur Insan Abadi', 'Security'),
-  PjaData('Kevin Alfarisi', 'PT. Bukit Baiduri Energi', 'HSE'),
-  PjaData('Deni Setiawan', 'PT. Khotai Makmur Insan Abadi', 'Produksi'),
-  PjaData('Putri Wulandari', 'PT. Bukit Baiduri Energi', 'Maintenance'),
-];
 
-const _subkategoriTTA = [
-  'Tidak Menggunakan APD',
-  'Mengoperasikan Peralatan Tanpa Izin',
-  'Posisi/Sikap Kerja Tidak Aman',
-  'Bekerja di Bawah Pengaruh Alkohol/Obat',
-  'Mengabaikan Prosedur Keselamatan',
-  'Berkendara Tidak Aman',
-  'Menggunakan Peralatan Rusak',
-];
 
-const _subkategoriKTA = [
-  'Kondisi Lantai/Jalan Berbahaya',
-  'Peralatan Rusak/Tidak Layak Pakai',
-  'Pencahayaan Tidak Memadai',
-  'Penyimpanan Material Tidak Aman',
-  'Bahaya Benda Jatuh/Terlempar',
-  'Kebisingan Berlebihan',
-  'Instalasi Listrik Tidak Aman',
-  'Ventilasi Tidak Memadai',
-  'Instalasi Listrik Tidak Aman',
-  'Ventilasi Tidak Memadai',
-];
-
-const _lokasiList = [
-  'Area Pit A',
-  'Area Pit B',
-  'Workshop Utama',
-  'Mess Karyawan',
-  'Jalan Hauling KM 10',
-  'Jalan Hauling KM 15',
-  'Pelabuhan (Jetty)',
-  'Office Utama',
-  'Gudang Logistik',
-];
 
 class CreateHazardScreen extends StatefulWidget {
   const CreateHazardScreen({super.key});
@@ -124,10 +66,41 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   bool _isPublic = true;
   bool _isSubmitting = false;
 
+  List<CompanyData> _companiesData = [];
+  List<AreaData> _areasData = [];
+  List<HazardCategoryData> _categoriesData = [];
+  List<UserModel> _usersData = [];
+  bool _isLoadingData = true;
+
   @override
   void initState() {
     super.initState();
     _fetchPelaporLocationSilent();
+    _fetchDynamicData();
+  }
+
+  Future<void> _fetchDynamicData() async {
+    try {
+      final companies = await CompanyService.getCompanies(active: true, category: 'owner');
+      final areas = await CompanyService.getAreas(active: true);
+      final categories = await ReportService.getHazardCategories();
+      final users = await AuthService.getUsers();
+      
+      if (mounted) {
+        setState(() {
+          _companiesData = companies;
+          _areasData = areas;
+          _categoriesData = categories;
+          _usersData = users;
+          _isLoadingData = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching dynamic data: $e');
+      if (mounted) {
+        setState(() => _isLoadingData = false);
+      }
+    }
   }
 
   Future<void> _fetchPelaporLocationSilent() async {
@@ -170,28 +143,47 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   }
 
   List<String> get _subkategoriList {
-    if (_selectedKategori == 'TTA (Tindakan Tidak Aman)') {
-      return _subkategoriTTA;
+    if (_selectedKategori == null) return [];
+    try {
+      final category = _categoriesData.firstWhere((c) => c.name == _selectedKategori);
+      return category.subcategories.map((s) => s.name).toList();
+    } catch (e) {
+      return [];
     }
-    if (_selectedKategori == 'KTA (Kondisi Tidak Aman)') {
-      return _subkategoriKTA;
+  }
+
+  List<String> get _lokasiList {
+    if (_selectedPerusahaan == null) return [];
+    try {
+      final selectedCompany = _companiesData.firstWhere((c) => c.name == _selectedPerusahaan);
+      return _areasData
+          .where((a) => a.companyId == selectedCompany.id)
+          .map((a) => a.name)
+          .toList();
+    } catch (e) {
+      return [];
     }
-    return [];
   }
 
   List<String> get _picOptions {
     if (_selectedPerusahaan == null) return [];
 
-    final pjaFiltered =
-        _pjaList.where((p) => p.perusahaan == _selectedPerusahaan).toList();
-    final depts = pjaFiltered.map((p) => p.departemen).toSet().toList();
+    final companyUsers = _usersData.where((u) => 
+        u.company == _selectedPerusahaan && u.role != 'superadmin'
+    ).toList();
+    final depts = companyUsers
+        .map((u) => u.department)
+        .where((d) => d != null && d!.isNotEmpty)
+        .toSet()
+        .toList();
 
     final List<String> options = [];
     for (var d in depts) {
       options.add('Departemen $d');
     }
-    for (var p in pjaFiltered) {
-      options.add('${p.nama} (${p.departemen})');
+    for (var u in companyUsers) {
+      final deptStr = (u.department != null && u.department!.isNotEmpty) ? ' (${u.department})' : '';
+      options.add('${u.fullName}$deptStr');
     }
     return options;
   }
@@ -628,7 +620,10 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
         _label('Pelaku Pelanggaran (Opsional)'),
         GestureDetector(
           onTap: () async {
-            final options = _pjaList.map((p) => p.nama).toList();
+            final options = _usersData
+                .where((u) => u.company == _selectedPerusahaan && u.role != 'superadmin')
+                .map((u) => u.fullName)
+                .toList();
             final result = await _showPersonPicker(
               title: 'Tag Pelaku Pelanggaran',
               options: options,
@@ -699,9 +694,9 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             initialValue: _selectedKategori,
             validator: (v) => v == null ? 'Wajib dipilih' : null,
             decoration: _inputDeco(
-                hint: 'Pilih Kategori', icon: Icons.category_outlined),
-            items: ['TTA (Tindakan Tidak Aman)', 'KTA (Kondisi Tidak Aman)']
-                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                hint: _isLoadingData ? 'Memuat data...' : 'Pilih Kategori', icon: Icons.category_outlined),
+            items: _categoriesData
+                .map((e) => DropdownMenuItem(value: e.name, child: Text(e.name)))
                 .toList(),
             onChanged: (v) => setState(() {
               _selectedKategori = v;
@@ -732,15 +727,16 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               enableFilter: true,
               requestFocusOnTap: true,
               initialSelection: _selectedPerusahaan,
-              hintText: 'Pilih / Cari Perusahaan',
+              hintText: _isLoadingData ? 'Memuat data...' : 'Pilih / Cari Perusahaan',
               inputDecorationTheme: _dropdownTheme(),
               onSelected: (v) => setState(() {
                 _selectedPerusahaan = v;
+                _selectedLokasi = null;
                 _selectedPIC.clear();
                 _selectedPIC.add('Departemen HSE');
               }),
-              dropdownMenuEntries: _perusahaanList
-                  .map((e) => DropdownMenuEntry(value: e, label: e))
+              dropdownMenuEntries: _companiesData
+                  .map((e) => DropdownMenuEntry(value: e.name, label: e.name))
                   .toList(),
             ),
           ),
@@ -827,7 +823,10 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             initialValue: _selectedLokasi,
             validator: (v) => v == null ? 'Wajib dipilih' : null,
             decoration: _inputDeco(
-                hint: 'Pilih Lokasi Kejadian', icon: Icons.location_city),
+                hint: _selectedPerusahaan == null 
+                    ? 'Pilih Perusahaan Dulu' 
+                    : (_isLoadingData ? 'Memuat data...' : 'Pilih Lokasi Kejadian'), 
+                icon: Icons.location_city),
             items: _lokasiList
                 .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                 .toList(),
