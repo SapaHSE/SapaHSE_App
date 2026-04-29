@@ -154,7 +154,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 const SizedBox(height: 8),
                 const Text(
-                  'Akun Anda telah berhasil dibuat. Silakan cek email Anda untuk verifikasi.',
+                  'Registrasi berhasil. Akun Anda sedang menunggu persetujuan administrator. Anda akan menerima email verifikasi setelah akun disetujui.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey, fontSize: 13),
                 ),
@@ -176,7 +176,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: const Text('Login Sekarang'),
+                    child: const Text('Oke Mengerti!'),
                   ),
                 ),
               ],
@@ -1011,7 +1011,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 borderSide: BorderSide(color: Colors.grey.shade300)),
             focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: Color(0xFF3D5AFE))),
+                borderSide: const BorderSide(color: Color(0xFF1A56C4))),
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: Colors.white,
@@ -1076,7 +1076,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         onPressed:
             _isLoading ? null : (_currentStep == 3 ? _submit : _nextStep),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF3D5AFE),
+          backgroundColor: const Color(0xFF1A56C4),
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           elevation: 0,

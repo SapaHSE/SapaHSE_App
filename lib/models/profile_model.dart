@@ -91,6 +91,7 @@ class UserLicense {
   final String? expiredAt;
   final String status;
   final bool isVerified;
+  final String? fileUrl;
 
   UserLicense({
     required this.id,
@@ -99,6 +100,7 @@ class UserLicense {
     this.expiredAt,
     required this.status,
     this.isVerified = false,
+    this.fileUrl,
   });
 
   factory UserLicense.fromJson(Map<String, dynamic> json) {
@@ -109,6 +111,7 @@ class UserLicense {
       expiredAt: json['expired_at']?.toString(),
       status: json['status']?.toString() ?? 'active',
       isVerified: json['is_verified'] == true || json['is_verified'] == 1,
+      fileUrl: json['file_url']?.toString(),
     );
   }
 
@@ -122,6 +125,7 @@ class UserCertification {
   final int? year;
   final String status;
   final bool isVerified;
+  final String? fileUrl;
 
   UserCertification({
     required this.id,
@@ -130,6 +134,7 @@ class UserCertification {
     this.year,
     required this.status,
     this.isVerified = false,
+    this.fileUrl,
   });
 
   factory UserCertification.fromJson(Map<String, dynamic> json) {
@@ -140,6 +145,7 @@ class UserCertification {
       year: json['year'] as int?,
       status: json['status']?.toString() ?? 'active',
       isVerified: json['is_verified'] == true || json['is_verified'] == 1,
+      fileUrl: json['file_url']?.toString(),
     );
   }
 

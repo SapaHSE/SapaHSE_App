@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import 'api_service.dart';
 import 'storage_service.dart';
 import '../models/profile_model.dart';
@@ -142,13 +145,21 @@ class ProfileService {
     required String licenseNumber,
     String? expiredAt,
     String status = 'active',
+    XFile? imageFile,
   }) async {
-    final response = await ApiService.post('/profile/license', {
+    final fields = {
       'name': name,
       'license_number': licenseNumber,
-      'expired_at': expiredAt,
+      'expired_at': expiredAt ?? '',
       'status': status,
-    });
+    };
+
+    final files = <http.MultipartFile>[];
+    if (imageFile != null) {
+      files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+    }
+
+    final response = await ApiService.postMultipart('/profile/license', fields, files);
 
     if (!response.success) {
       return SimpleResult.error(response.errorMessage ?? 'Gagal menambah lisensi.');
@@ -162,13 +173,21 @@ class ProfileService {
     required String issuer,
     int? year,
     String status = 'active',
+    XFile? imageFile,
   }) async {
-    final response = await ApiService.post('/profile/certification', {
+    final fields = {
       'name': name,
       'issuer': issuer,
-      'year': year,
+      'year': year?.toString() ?? '',
       'status': status,
-    });
+    };
+
+    final files = <http.MultipartFile>[];
+    if (imageFile != null) {
+      files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+    }
+
+    final response = await ApiService.postMultipart('/profile/certification', fields, files);
 
     if (!response.success) {
       return SimpleResult.error(response.errorMessage ?? 'Gagal menambah sertifikasi.');

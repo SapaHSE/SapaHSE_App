@@ -48,21 +48,22 @@ class Report {
   final ReportStatus status;
   final ReportSubStatus? subStatus;
   final String location;
+  final String? pelaporLocation;
   final String? kejadianLocation;
   final String? saran;
   final String? perusahaan;
   final String? departemen;
-  final String? tagOrang;
+  final String? picDepartment;
+  final String? pelakuPelanggaran;
   final DateTime createdAt;
   final String reportedBy;
   final String? reporterId;
   final String imageUrl;
+  final String? tagOrang;
 
   // Additional undefined UI fields
   final String? dueDate;
   final int? sisaHari;
-  final String? pelakuPelanggaran;
-  final String? pelaporLocation;
   final List<ChecklistItem>? checklistItems;
 
   // Additional Backend Fields
@@ -83,23 +84,24 @@ class Report {
     required this.status,
     this.subStatus,
     required this.location,
+    this.pelaporLocation,
     this.kejadianLocation,
     this.saran,
     this.perusahaan,
     this.departemen,
-    this.tagOrang,
+    this.picDepartment,
+    this.pelakuPelanggaran,
     required this.createdAt,
     required this.reportedBy,
     this.reporterId,
     required this.imageUrl,
+    this.tagOrang,
     this.area,
     this.inspector,
     this.notes,
     this.result,
     this.dueDate,
     this.sisaHari,
-    this.pelakuPelanggaran,
-    this.pelaporLocation,
     this.checklistItems,
   });
 
@@ -127,11 +129,13 @@ class Report {
       status: _mapStatus(json['status']),
       subStatus: _mapSubStatus(json['sub_status']),
       location: json['location']?.toString() ?? json['kejadian_location']?.toString() ?? '',
-      kejadianLocation: json['kejadian_location']?.toString() ?? json['location']?.toString(),
       saran: json['suggestion']?.toString() ?? json['saran']?.toString(),
-      perusahaan: json['perusahaan']?.toString(),
+      perusahaan: json['perusahaan']?.toString() ?? json['company']?.toString(),
       departemen: json['reported_department']?.toString() ?? json['departemen']?.toString(),
-      tagOrang: json['name_pja']?.toString() ?? json['tag_orang']?.toString(),
+      picDepartment: json['pic_department']?.toString() ?? json['name_pja']?.toString() ?? json['tag_orang']?.toString(),
+      pelakuPelanggaran: json['pelaku_pelanggaran']?.toString(),
+      pelaporLocation: json['pelapor_location']?.toString(),
+      kejadianLocation: json['kejadian_location']?.toString() ?? json['location']?.toString(),
       createdAt: json['created_at'] != null
           ? (json['created_at'] is String
               ? DateTime.parse(json['created_at'])
@@ -140,14 +144,13 @@ class Report {
       reportedBy: _mapReportedBy(json),
       reporterId: rId,
       imageUrl: json['image_url']?.toString() ?? '',
+      tagOrang: json['tag_orang']?.toString() ?? json['name_pja']?.toString(),
       area: json['area']?.toString(),
       inspector: json['name_inspector']?.toString(),
       notes: json['notes']?.toString(),
       result: json['result']?.toString(),
       dueDate: json['due_date']?.toString(),
       sisaHari: json['sisa_hari'] != null ? int.tryParse(json['sisa_hari'].toString()) : null,
-      pelakuPelanggaran: json['pelaku_pelanggaran']?.toString(),
-      pelaporLocation: json['pelapor_location']?.toString(),
       checklistItems: json['checklist_items'] != null
           ? (json['checklist_items'] as List).map((i) => ChecklistItem.fromJson(i)).toList()
           : null,

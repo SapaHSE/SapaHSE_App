@@ -49,11 +49,16 @@ class AuthService {
     String? position,
     String? department,
     String? company,
+    String? tipeAfiliasi,
+    String? perusahaanKontraktor,
+    String? subKontraktor,
+    String? simper,
   }) async {
     final response = await ApiService.post(
       '/register',
       {
         'employee_id': nik,
+        if (employeeId != null && employeeId.isNotEmpty) 'secondary_employee_id': employeeId,
         'full_name': fullName,
         'personal_email': personalEmail,
         if (workEmail != null && workEmail.isNotEmpty) 'work_email': workEmail,
@@ -62,6 +67,10 @@ class AuthService {
         if (position != null) 'position': position,
         if (department != null) 'department': department,
         if (company != null) 'company': company,
+        if (tipeAfiliasi != null) 'tipe_afiliasi': tipeAfiliasi,
+        if (perusahaanKontraktor != null) 'perusahaan_kontraktor': perusahaanKontraktor,
+        if (subKontraktor != null) 'sub_kontraktor': subKontraktor,
+        if (simper != null && simper.isNotEmpty) 'simper': simper,
       },
       auth: false,
     );
@@ -105,6 +114,16 @@ class AuthService {
       message: (response.data['message'] as String?) ??
           'Jika data terdaftar, tautan reset password akan dikirimkan ke email Anda.',
     );
+  }
+
+  // ── Get users list ────────────────────────────────────────────────────────
+  static Future<List<UserModel>> getUsers() async {
+    final response = await ApiService.get('/users');
+    if (response.success && response.data['data'] != null) {
+      final list = response.data['data'] as List;
+      return list.map((e) => UserModel.fromJson(e)).toList();
+    }
+    return [];
   }
 
   // ── Get current user from local storage ───────────────────────────────────

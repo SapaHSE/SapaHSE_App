@@ -42,7 +42,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   final List<Map<String, dynamic>> _subTabs = [
-    {'label': 'Biodata', 'icon': Icons.person, 'color': const Color(0xFF5C38FF)},
+    {'label': 'Biodata', 'icon': Icons.person, 'color': const Color(0xFF1A56C4)},
     {'label': 'Lisensi', 'icon': Icons.badge, 'color': const Color(0xFF1E88E5)},
     {'label': 'Pelanggaran', 'icon': Icons.warning_amber_rounded, 'color': const Color(0xFFFBC02D)},
     {'label': 'Sertifikat', 'icon': Icons.workspace_premium, 'color': const Color(0xFFF57C00)},
@@ -91,7 +91,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             children: [
               CircleAvatar(
                 radius: 50,
-                backgroundColor: const Color(0xFF5C38FF),
+                backgroundColor: const Color(0xFF1A56C4),
                 backgroundImage: _getAvatarImage(),
                 child: _avatarFile == null && (_profileData?.profilePhoto == null || _profileData!.profilePhoto!.isEmpty)
                     ? Text(initials, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold))
@@ -104,7 +104,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   onTap: _pickImage,
                   child: Container(
                     padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(color: Color(0xFF5C38FF), shape: BoxShape.circle),
+                    decoration: const BoxDecoration(color: Color(0xFF1A56C4), shape: BoxShape.circle),
                     child: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
                   ),
                 ),
@@ -231,7 +231,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 controller: numberController,
                 decoration: _buildInputDecoration('Contoh: SIM-2024-001234'),
               ),
-              const SizedBox(height: 16),
               _buildFieldLabel('Berlaku Sampai'),
               InkWell(
                 onTap: () async {
@@ -261,6 +260,16 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+              _buildFieldLabel('Foto Lisensi'),
+              _buildImagePicker(
+                image: _licenseImage,
+                onTap: () async {
+                  final picker = ImagePicker();
+                  final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+                  if (picked != null) setModalState(() => _licenseImage = picked);
+                },
+              ),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -279,6 +288,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       name: nameController.text,
                       licenseNumber: numberController.text,
                       expiredAt: selectedDate != null ? '${selectedDate!.year}-${selectedDate!.month}-${selectedDate!.day}' : null,
+                      imageFile: _licenseImage,
                     );
                     
                     if (result.success) {
@@ -291,7 +301,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5C38FF),
+                    backgroundColor: const Color(0xFF1A56C4),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
@@ -355,6 +365,16 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 keyboardType: TextInputType.number,
                 decoration: _buildInputDecoration('Contoh: 2023'),
               ),
+              const SizedBox(height: 16),
+              _buildFieldLabel('Foto Sertifikat'),
+              _buildImagePicker(
+                image: _certImage,
+                onTap: () async {
+                  final picker = ImagePicker();
+                  final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+                  if (picked != null) setModalState(() => _certImage = picked);
+                },
+              ),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -373,6 +393,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       name: nameController.text,
                       issuer: issuerController.text,
                       year: int.tryParse(yearController.text),
+                      imageFile: _certImage,
                     );
                     
                     if (result.success) {
@@ -385,7 +406,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5C38FF),
+                    backgroundColor: const Color(0xFF1A56C4),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
@@ -412,8 +433,39 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     fillColor: Colors.grey.shade50,
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF5C38FF))),
+    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF1A56C4))),
   );
+
+  Widget _buildImagePicker({XFile? image, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 120,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+        ),
+        child: image != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(File(image.path), fit: BoxFit.cover),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_a_photo_outlined, color: Colors.grey.shade400, size: 32),
+                  const SizedBox(height: 8),
+                  Text('Ambil atau Pilih Foto', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                ],
+              ),
+      ),
+    );
+  }
+
+  XFile? _licenseImage;
+  XFile? _certImage;
 }
 
 // ── SUB-TAB WIDGETS (INTERNAL) ──────────────────────────────────────────────
@@ -544,6 +596,19 @@ class _LicenseContent extends StatelessWidget {
                         Text('No. ${l.licenseNumber}', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
                         if (l.expiredAt != null)
                           Text('Berlaku s/d ${l.expiredAt}', style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
+                        if (l.fileUrl != null) ...[
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              l.fileUrl!,
+                              height: 60,
+                              width: 100,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const SizedBox(),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -572,8 +637,8 @@ class _LicenseContent extends StatelessWidget {
             icon: const Icon(Icons.add, size: 18),
             label: const Text('Tambah Lisensi'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF5C38FF),
-              side: const BorderSide(color: Color(0xFF5C38FF)),
+              foregroundColor: const Color(0xFF1A56C4),
+              side: const BorderSide(color: Color(0xFF1A56C4)),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -628,6 +693,19 @@ class _CertificationContent extends StatelessWidget {
                         Text(c.issuer, style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
                         if (c.year != null)
                           Text('Tahun: ${c.year}', style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
+                        if (c.fileUrl != null) ...[
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              c.fileUrl!,
+                              height: 60,
+                              width: 100,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const SizedBox(),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -656,8 +734,8 @@ class _CertificationContent extends StatelessWidget {
             icon: const Icon(Icons.add, size: 18),
             label: const Text('Tambah Sertifikat'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF5C38FF),
-              side: const BorderSide(color: Color(0xFF5C38FF)),
+              foregroundColor: const Color(0xFF1A56C4),
+              side: const BorderSide(color: Color(0xFF1A56C4)),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
