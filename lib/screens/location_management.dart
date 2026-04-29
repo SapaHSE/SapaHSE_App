@@ -540,7 +540,7 @@ class _AreaFormScreenState extends State<_AreaFormScreen> {
                   const SizedBox(height: 16),
                   _buildLabel('KODE LOKASI (OPSIONAL)'),
                   const SizedBox(height: 8),
-                  _buildTextField(_codeCtrl, hint: 'Contoh: PIT-M'),
+                  _buildTextField(_codeCtrl, hint: 'Contoh: PIT-M', maxLength: 3, capitalization: TextCapitalization.characters),
                 ],
               ),
             ),
@@ -683,7 +683,7 @@ class _AreaFormScreenState extends State<_AreaFormScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController ctrl, {String? hint}) {
+  Widget _buildTextField(TextEditingController ctrl, {String? hint, int? maxLength, TextCapitalization capitalization = TextCapitalization.none}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -692,6 +692,8 @@ class _AreaFormScreenState extends State<_AreaFormScreen> {
       ),
       child: TextField(
         controller: ctrl,
+        maxLength: maxLength,
+        textCapitalization: capitalization,
         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         decoration: InputDecoration(
           hintText: hint,
@@ -703,6 +705,7 @@ class _AreaFormScreenState extends State<_AreaFormScreen> {
           ),
           filled: true,
           fillColor: Colors.white,
+          counterText: "", // Hide the counter for cleaner UI
         ),
       ),
     );

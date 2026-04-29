@@ -81,7 +81,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
         title: 'Tambah Kategori',
         fields: [
           _FieldConfig('Nama Kategori', ctrl, 'cth: Lingkungan', required: true),
-          _FieldConfig('Kode (opsional)', codeCtrl, 'cth: LKG'),
+          _FieldConfig('Kode (opsional)', codeCtrl, 'cth: LKG', maxLength: 3, capitalization: TextCapitalization.characters),
         ],
         onSubmit: () async {
           if (ctrl.text.trim().isEmpty) return;
@@ -111,7 +111,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
         title: 'Edit Kategori',
         fields: [
           _FieldConfig('Nama Kategori', ctrl, '', required: true),
-          _FieldConfig('Kode (opsional)', codeCtrl, ''),
+          _FieldConfig('Kode (opsional)', codeCtrl, '', maxLength: 3, capitalization: TextCapitalization.characters),
         ],
         onSubmit: () async {
           if (ctrl.text.trim().isEmpty) return;
@@ -965,7 +965,7 @@ class _SubcategoryFormScreenState extends State<_SubcategoryFormScreen> {
             const SizedBox(height: 24),
             _buildLabel('SINGKATAN'),
             const SizedBox(height: 8),
-            _buildTextField(_abbrCtrl, hint: 'cth: TTA-01'),
+            _buildTextField(_abbrCtrl, hint: 'cth: TTA-01', maxLength: 3, capitalization: TextCapitalization.characters),
             const SizedBox(height: 24),
             _buildLabel('NAMA SUBKATEGORI'),
             const SizedBox(height: 8),
@@ -1023,7 +1023,7 @@ class _SubcategoryFormScreenState extends State<_SubcategoryFormScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController ctrl, {String? hint, int maxLines = 1}) {
+  Widget _buildTextField(TextEditingController ctrl, {String? hint, int maxLines = 1, int? maxLength, TextCapitalization capitalization = TextCapitalization.none}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1035,6 +1035,8 @@ class _SubcategoryFormScreenState extends State<_SubcategoryFormScreen> {
       child: TextField(
         controller: ctrl,
         maxLines: maxLines,
+        maxLength: maxLength,
+        textCapitalization: capitalization,
         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         decoration: InputDecoration(
           hintText: hint,
@@ -1046,6 +1048,7 @@ class _SubcategoryFormScreenState extends State<_SubcategoryFormScreen> {
           ),
           filled: true,
           fillColor: Colors.white,
+          counterText: "", // Hide the counter for cleaner UI
         ),
       ),
     );
@@ -1079,7 +1082,14 @@ class _FieldConfig {
   final TextEditingController controller;
   final String hint;
   final bool required;
-  _FieldConfig(this.label, this.controller, this.hint, {this.required = false});
+  final int? maxLength;
+  final TextCapitalization capitalization;
+
+  _FieldConfig(this.label, this.controller, this.hint, {
+    this.required = false, 
+    this.maxLength,
+    this.capitalization = TextCapitalization.none,
+  });
 }
 
 class _InputDialog extends StatelessWidget {
@@ -1109,11 +1119,14 @@ class _InputDialog extends StatelessWidget {
           const SizedBox(height: 6),
           TextField(
             controller: f.controller,
+            maxLength: f.maxLength,
+            textCapitalization: f.capitalization,
             decoration: InputDecoration(
               hintText: f.hint,
               hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              counterText: "", // Hide counter
             ),
           ),
           const SizedBox(height: 12),

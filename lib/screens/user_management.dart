@@ -15,8 +15,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   static const _blue = Color(0xFF1A56C4); // Unified Blue
   bool _isLoading = false;
   bool _isLoadingUnapproved = false;
+  bool _isLoadingRejected = false;
   List<dynamic> _allUsers = [];
   List<dynamic> _unapprovedUsers = [];
+  List<dynamic> _rejectedUsers = [];
   String _searchQuery = '';
   String _selectedFilter = 'Semua';
   bool _isSuperadmin = false;
@@ -34,6 +36,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         setState(() => _isSuperadmin = true);
         _fetchUsers();
         _fetchUnapprovedUsers();
+        _fetchRejectedUsers();
       } else {
         setState(() => _isSuperadmin = false);
       }
@@ -67,7 +70,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
   Future<void> _fetchUnapprovedUsers() async {
     setState(() => _isLoadingUnapproved = true);
-    final response = await ApiService.get('/admin/users?is_active=0');
+    final response = await ApiService.get('/admin/users?registration_status=pending');
     if (mounted) {
       setState(() {
         _isLoadingUnapproved = false;
@@ -79,6 +82,26 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             _unapprovedUsers = data;
           } else {
             _unapprovedUsers = [];
+          }
+        }
+      });
+    }
+  }
+
+  Future<void> _fetchRejectedUsers() async {
+    setState(() => _isLoadingRejected = true);
+    final response = await ApiService.get('/admin/registration-logs');
+    if (mounted) {
+      setState(() {
+        _isLoadingRejected = false;
+        if (response.success && response.data['data'] != null) {
+          final data = response.data['data'];
+          if (data is Map && data.containsKey('data')) {
+            _rejectedUsers = data['data'] ?? [];
+          } else if (data is List) {
+            _rejectedUsers = data;
+          } else {
+            _rejectedUsers = [];
           }
         }
       });
@@ -98,6 +121,59 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(response.errorMessage ?? 'Gagal menyetujui pengguna.')),
         );
+      }
+    }
+  }
+
+  Future<void> _rejectUser(String id) async {
+    final reasonCtrl = TextEditingController();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tolak Pendaftaran', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Berikan alasan penolakan (opsional):', style: TextStyle(fontSize: 13)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonCtrl,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Contoh: NIK tidak ditemukan atau data tidak valid...',
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Tolak Pendaftaran', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isLoadingUnapproved = true);
+      final response = await ApiService.post('/admin/users/$id/reject', {
+        'reason': reasonCtrl.text.trim(),
+      });
+      if (mounted) {
+        setState(() => _isLoadingUnapproved = false);
+        if (response.success) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pendaftaran ditolak. Email notifikasi telah dikirim.')));
+          _fetchUnapprovedUsers();
+          _fetchRejectedUsers();
+          _fetchUsers();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.errorMessage ?? 'Gagal menolak.')));
+        }
       }
     }
   }
@@ -167,7 +243,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final filters = ['Semua', 'User', 'Admin', 'Superadmin', 'Inactive'];
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: const Color(0xFFF5F6FA),
         appBar: AppBar(
@@ -193,15 +269,31 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               ),
             )
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             labelColor: _blue,
             unselectedLabelColor: Colors.grey,
             indicatorColor: _blue,
             indicatorWeight: 3,
-            labelStyle: TextStyle(fontWeight: FontWeight.bold),
+            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             tabs: [
-              Tab(text: 'Daftar Pengguna'),
-              Tab(text: 'Approval User'),
+              const Tab(text: 'Daftar'),
+              Tab(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Approval'),
+                    if (_unapprovedUsers.isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
+                        child: Text(_unapprovedUsers.length.toString(), style: const TextStyle(color: Colors.white, fontSize: 10)),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const Tab(text: 'History Ditolak'),
             ],
           ),
         ),
@@ -209,6 +301,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           children: [
             _buildUserListTab(),
             _buildApprovalTab(),
+            _buildRejectedHistoryTab(),
           ],
         ),
       ),
@@ -397,41 +490,142 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         final dept = user['department'] ?? '-';
         final email = user['personal_email'] ?? user['email'] ?? '-';
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 0,
-          color: Colors.white,
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: CircleAvatar(
-              backgroundColor: Colors.orange.withOpacity(0.1),
-              child: Text(initials, style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
-            ),
-            title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text('NIK: ${user['employee_id'] ?? '-'}'),
-                Text('Email: $email'),
-                Text('Dept: $dept'),
-              ],
-            ),
-            isThreeLine: true,
-            trailing: FilledButton(
-              onPressed: () => _approveUser(user['id'].toString()),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.orange,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        return GestureDetector(
+          onTap: () => _navigateToUserDetail(user),
+          child: Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
+            color: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: Colors.orange.withOpacity(0.1),
+                        child: Text(initials, style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text('NIK: ${user['employee_id'] ?? '-'}', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                    const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(Icons.business, size: 14, color: Colors.grey.shade600),
+                      const SizedBox(width: 4),
+                      Text(user['company'] ?? '-', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.email_outlined, size: 14, color: Colors.grey.shade600),
+                      const SizedBox(width: 4),
+                      Text(email, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _rejectUser(user['id'].toString()),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('Reject', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () => _approveUser(user['id'].toString()),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('Approve', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              child: const Text('Approve', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         );
       },
     );
   }
+
+  Widget _buildRejectedHistoryTab() {
+    if (_isLoadingRejected) return const Center(child: CircularProgressIndicator());
+    if (_rejectedUsers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.history, size: 64, color: Colors.grey.shade300),
+            const SizedBox(height: 16),
+            Text('Belum ada riwayat penolakan', style: TextStyle(color: Colors.grey.shade600)),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _rejectedUsers.length,
+      itemBuilder: (context, index) {
+        final log = _rejectedUsers[index];
+        final name = log['full_name'] ?? 'Unknown';
+        final nik = log['employee_id'] ?? '-';
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => _navigateToUserDetail(log), // Passing log as user object
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16),
+            title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Text('NIK: $nik • ${log['company'] ?? '-'}', style: const TextStyle(fontSize: 12)),
+                if (log['rejection_reason'] != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
+                    child: Text('Alasan: ${log['rejection_reason']}', style: TextStyle(color: Colors.red.shade900, fontSize: 11)),
+                  ),
+                ],
+              ],
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+          ),
+        ),
+      );
+    },
+  );
+}
 }
 
 // ── User Detail Screen ──────────────────────────────────────────────────────
@@ -445,7 +639,7 @@ class UserDetailScreen extends StatefulWidget {
 }
 
 class _UserDetailScreenState extends State<UserDetailScreen> {
-  static const _blue = Color(0xFF3F51B5);
+  static const _blue = Color(0xFF1A56C4);
   late String _selectedRole;
   late bool _isActive;
   bool _isLoading = false;
@@ -457,13 +651,88 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     _isActive = widget.user['is_active'] == 1 || widget.user['is_active'] == true;
   }
 
+  Future<void> _approveUser() async {
+    setState(() => _isLoading = true);
+    final response = await ApiService.put('/admin/users/${widget.user['id']}/approve', {});
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (response.success) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pengguna berhasil disetujui!')));
+        Navigator.pop(context, true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.errorMessage ?? 'Gagal menyetujui.')));
+      }
+    }
+  }
+
+  Future<void> _rejectUser() async {
+    final reasonCtrl = TextEditingController();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tolak Pendaftaran', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Berikan alasan penolakan (opsional):', style: TextStyle(fontSize: 13)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonCtrl,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Contoh: Data tidak valid atau bukan karyawan...',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Tolak', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isLoading = true);
+      final response = await ApiService.post('/admin/users/${widget.user['id']}/reject', {
+        'reason': reasonCtrl.text.trim(),
+      });
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (response.success) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pendaftaran ditolak. Email notifikasi telah dikirim.')));
+          Navigator.pop(context, true);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.errorMessage ?? 'Gagal menolak.')));
+        }
+      }
+    }
+  }
+
   Future<void> _saveChanges() async {
     setState(() => _isLoading = true);
     try {
-      final response = await ApiService.put('/admin/users/${widget.user['id']}', {
+      // Include all fields because backend validation might require them for PUT
+      final data = {
+        'full_name': widget.user['full_name'],
+        'employee_id': widget.user['employee_id'],
+        'personal_email': widget.user['personal_email'] ?? widget.user['email'],
+        'phone_number': widget.user['phone_number'],
+        'department': widget.user['department'],
+        'position': widget.user['position'] ?? widget.user['job_title'],
+        'company': widget.user['company'],
+        'tipe_afiliasi': widget.user['tipe_afiliasi'],
         'role': _selectedRole,
         'is_active': _isActive ? 1 : 0,
-      });
+      };
+
+      final response = await ApiService.put('/admin/users/${widget.user['id']}', data);
 
       if (mounted) {
         setState(() => _isLoading = false);
@@ -471,7 +740,12 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Perubahan berhasil disimpan')));
           Navigator.pop(context, true);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.errorMessage ?? 'Gagal menyimpan')));
+          // Show the specific error if available
+          String errorMsg = response.errorMessage ?? 'Gagal menyimpan';
+          if (response.data != null && response.data['message'] != null) {
+            errorMsg = response.data['message'];
+          }
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
         }
       }
     } catch (e) {
@@ -528,6 +802,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     final dept = widget.user['department'] ?? 'No Dept';
     final jabatan = widget.user['job_title'] ?? 'Staff';
     final role = (widget.user['role'] ?? 'user').toString().toLowerCase();
+    final isLogEntry = widget.user['registration_status'] == 'rejected' || widget.user.containsKey('rejected_at');
 
     Color avatarColor = Colors.green;
     if (role == 'superadmin') avatarColor = Colors.purple;
@@ -582,27 +857,21 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                        Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.black87)),
                         const SizedBox(height: 4),
-                        Text('$jabatan • $dept', style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
-                        const SizedBox(height: 8),
                         Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(12)),
-                              child: Text(role.toUpperCase(), style: TextStyle(color: Colors.orange.shade800, fontSize: 11, fontWeight: FontWeight.bold)),
-                            ),
+                            Icon(Icons.work_outline, size: 14, color: Colors.grey.shade600),
+                            const SizedBox(width: 4),
+                            Text('$jabatan • $dept', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            _buildStatusBadge(role.toUpperCase(), Colors.orange),
                             const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: _isActive ? Colors.green.shade50 : Colors.red.shade50, 
-                                borderRadius: BorderRadius.circular(12)
-                              ),
-                              child: Text(_isActive ? 'Aktif' : 'Inaktif', 
-                                style: TextStyle(color: _isActive ? Colors.green : Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
-                            ),
+                            _buildStatusBadge(_isActive ? 'AKTIF' : 'INAKTIF', _isActive ? Colors.green : Colors.red),
                           ],
                         )
                       ],
@@ -612,71 +881,120 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('ROLE & ACCESS', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                  if (isLogEntry) ...[
+                    _buildSectionTitle('ALASAN PENOLAKAN'),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.red.shade100),
+                      ),
+                      child: Text(
+                        widget.user['rejection_reason'] ?? 'Tidak ada alasan yang diberikan.',
+                        style: TextStyle(color: Colors.red.shade900, fontSize: 13, height: 1.4),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  _buildSectionTitle('INFORMASI PENGGUNA'),
                   const SizedBox(height: 12),
                   Container(
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(
+                      color: Colors.white, 
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))]
+                    ),
                     child: Column(
                       children: [
-                        _buildInfoRow('Role', Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(8)),
-                          child: Text(role.toUpperCase(), style: TextStyle(color: Colors.orange.shade800, fontSize: 12, fontWeight: FontWeight.bold)),
-                        )),
-                        const Divider(height: 1),
-                        _buildInfoRow('Departemen', Text(dept, style: const TextStyle(fontWeight: FontWeight.bold))),
-                        const Divider(height: 1),
-                        _buildInfoRow('Jabatan', Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(8)),
-                          child: Text(jabatan, style: TextStyle(color: Colors.green.shade700, fontSize: 12, fontWeight: FontWeight.bold)),
-                        )),
+                        _buildDetailItem(Icons.badge_outlined, 'NIK / Employee ID', widget.user['employee_id'] ?? '-'),
+                        _buildDetailDivider(),
+                        _buildDetailItem(Icons.email_outlined, 'Email Pribadi', widget.user['personal_email'] ?? widget.user['email'] ?? '-'),
+                        _buildDetailDivider(),
+                        _buildDetailItem(Icons.phone_outlined, 'Nomor HP', widget.user['phone_number'] ?? '-'),
+                        _buildDetailDivider(),
+                        _buildDetailItem(Icons.business_outlined, 'Perusahaan', widget.user['company'] ?? '-'),
                       ],
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text('CHANGE ROLE', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
-                  const SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                    child: Column(
-                      children: [
-                        _buildRoleOption('user', 'Akses dasar'),
-                        const Divider(height: 1),
-                        _buildRoleOption('admin', 'Kelola data & approve'),
-                        const Divider(height: 1),
-                        _buildRoleOption('superadmin', 'Akses penuh sistem'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  Row(
-                    children: [
-                      TextButton.icon(
-                        onPressed: () {
-                          setState(() => _isActive = !_isActive);
-                        },
-                        icon: Icon(_isActive ? Icons.lock_outline : Icons.lock_open, color: Colors.grey.shade700, size: 18),
-                        label: Text(_isActive ? 'Deactivate' : 'Activate', style: TextStyle(color: Colors.grey.shade700)),
+                  if (!isLogEntry) ...[
+                    if (widget.user['registration_status'] != 'rejected') ...[
+                      _buildSectionTitle('PENGATURAN AKSES & ROLE'),
+                      const SizedBox(height: 12),
+                      Column(
+                        children: [
+                          _buildModernRoleCard('user', 'User', 'Akses dasar untuk pelaporan hazard.', Icons.person_outline),
+                          const SizedBox(height: 12),
+                          _buildModernRoleCard('admin', 'Admin', 'Kelola data, approval, dan laporan.', Icons.admin_panel_settings_outlined),
+                          const SizedBox(height: 12),
+                          _buildModernRoleCard('superadmin', 'Superadmin', 'Akses penuh ke seluruh sistem.', Icons.security_outlined),
+                        ],
                       ),
-                      const Spacer(),
-                      ElevatedButton.icon(
-                        onPressed: _isLoading ? null : _saveChanges,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _blue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      const SizedBox(height: 32),
+                      if (!_isActive && widget.user['registration_status'] == 'pending') ...[
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: _isLoading ? null : _rejectUser,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.red,
+                                  side: const BorderSide(color: Colors.red),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: const Text('Reject Registration', style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _approveUser,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: const Text('Approve User', style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                          ],
                         ),
-                        icon: _isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.save, size: 18),
-                        label: const Text('Simpan Perubahan', style: TextStyle(fontWeight: FontWeight.bold)),
-                      )
+                        const SizedBox(height: 16),
+                      ],
+                      Row(
+                        children: [
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() => _isActive = !_isActive);
+                            },
+                            icon: Icon(_isActive ? Icons.lock_outline : Icons.lock_open, color: Colors.grey.shade700, size: 18),
+                            label: Text(_isActive ? 'Deactivate' : 'Activate', style: TextStyle(color: Colors.grey.shade700)),
+                          ),
+                          const Spacer(),
+                          ElevatedButton.icon(
+                            onPressed: _isLoading ? null : _saveChanges,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _blue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            icon: _isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.save, size: 18),
+                            label: const Text('Simpan Perubahan', style: TextStyle(fontWeight: FontWeight.bold)),
+                          )
+                        ],
+                      ),
                     ],
-                  ),
+                  ],
                   const SizedBox(height: 40),
                 ],
               ),
@@ -687,31 +1005,87 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, Widget value) {
+  Widget _buildStatusBadge(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+      child: Text(text, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(title, style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5));
+  }
+
+  Widget _buildDetailItem(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: const EdgeInsets.all(16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
-          value,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, size: 20, color: _blue),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                const SizedBox(height: 2),
+                Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87)),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildRoleOption(String roleValue, String subtitle) {
-    String title = roleValue[0].toUpperCase() + roleValue.substring(1);
+  Widget _buildDetailDivider() => Divider(height: 1, indent: 64, color: Colors.grey.shade100);
+
+  Widget _buildModernRoleCard(String roleValue, String title, String subtitle, IconData icon) {
     final isSelected = _selectedRole == roleValue;
-    return RadioListTile<String>(
-      value: roleValue,
-      groupValue: _selectedRole,
-      onChanged: (val) => setState(() => _selectedRole = val!),
-      activeColor: Colors.orange.shade700,
-      title: Text(title, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? Colors.orange.shade800 : Colors.black87)),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-      secondary: isSelected ? Icon(Icons.circle, color: Colors.orange.shade700, size: 10) : Icon(Icons.circle, color: Colors.grey.shade300, size: 10),
-      controlAffinity: ListTileControlAffinity.leading,
+    return GestureDetector(
+      onTap: () => setState(() => _selectedRole = roleValue),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? _blue.withOpacity(0.05) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isSelected ? _blue : Colors.grey.shade200, width: isSelected ? 2 : 1),
+          boxShadow: isSelected ? [BoxShadow(color: _blue.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))] : [],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isSelected ? _blue : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: isSelected ? Colors.white : Colors.grey.shade400, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isSelected ? _blue : Colors.black87)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                ],
+              ),
+            ),
+            if (isSelected)
+              const Icon(Icons.check_circle, color: _blue, size: 24)
+            else
+              Icon(Icons.circle_outlined, color: Colors.grey.shade300, size: 24),
+          ],
+        ),
+      ),
     );
   }
 }
