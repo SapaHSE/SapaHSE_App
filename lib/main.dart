@@ -13,6 +13,7 @@ import 'screens/profile_screen.dart';
 import 'screens/create_hazard_screen.dart';
 import 'screens/create_inspection_screen.dart';
 import 'screens/qr_scan_screen.dart';
+import 'screens/my_profile.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -156,6 +157,22 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         onAddNews: () {
           Navigator.pop(context);
           _showAddNewsSheet();
+        },
+        onEditBiodata: () {
+          Navigator.pop(context);
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen(initialAction: 'edit_biodata')));
+        },
+        onAddLicense: () {
+          Navigator.pop(context);
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen(initialAction: 'add_license')));
+        },
+        onAddCertification: () {
+          Navigator.pop(context);
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen(initialAction: 'add_certification')));
+        },
+        onEditMedical: () {
+          Navigator.pop(context);
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen(initialAction: 'edit_medical')));
         },
       ),
     );
@@ -413,6 +430,10 @@ class _FabMenuSheet extends StatelessWidget {
   final VoidCallback onCreateInspection;
   final VoidCallback onAddCarousel;
   final VoidCallback onAddNews;
+  final VoidCallback onEditBiodata;
+  final VoidCallback onAddLicense;
+  final VoidCallback onAddCertification;
+  final VoidCallback onEditMedical;
 
   const _FabMenuSheet({
     required this.currentIndex,
@@ -421,6 +442,10 @@ class _FabMenuSheet extends StatelessWidget {
     required this.onCreateInspection,
     required this.onAddCarousel,
     required this.onAddNews,
+    required this.onEditBiodata,
+    required this.onAddLicense,
+    required this.onAddCertification,
+    required this.onEditMedical,
   });
 
   @override
@@ -521,6 +546,46 @@ class _FabMenuSheet extends StatelessWidget {
               title: 'Tambah Berita',
               subtitle: 'Buat dan publikasikan berita baru',
               onTap: onAddNews,
+            ),
+          ],
+
+          // ── Manajemen Profil (Profile tab) ─────────────────────────
+          if (currentIndex == 4) ...[
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _MenuTile(
+              icon: Icons.person_outline,
+              iconBgColor: const Color(0xFFF3E5F5),
+              iconColor: const Color(0xFF8E24AA),
+              title: 'Edit Biodata',
+              subtitle: 'Perbarui nomor telepon & email',
+              onTap: onEditBiodata,
+            ),
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _MenuTile(
+              icon: Icons.badge_outlined,
+              iconBgColor: const Color(0xFFE3F2FD),
+              iconColor: const Color(0xFF1E88E5),
+              title: 'Tambah Lisensi',
+              subtitle: 'Tambahkan SIM/SIO/KIMPER',
+              onTap: onAddLicense,
+            ),
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _MenuTile(
+              icon: Icons.workspace_premium_outlined,
+              iconBgColor: const Color(0xFFFFF3E0),
+              iconColor: const Color(0xFFEF6C00),
+              title: 'Tambah Sertifikat',
+              subtitle: 'Tambahkan sertifikasi keahlian',
+              onTap: onAddCertification,
+            ),
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _MenuTile(
+              icon: Icons.medical_services_outlined,
+              iconBgColor: const Color(0xFFFFEBEE),
+              iconColor: const Color(0xFFE53935),
+              title: 'Edit Data Medis',
+              subtitle: 'Perbarui info kesehatan & alergi',
+              onTap: onEditMedical,
             ),
           ],
 

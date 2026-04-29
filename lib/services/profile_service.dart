@@ -111,6 +111,28 @@ class ProfileService {
     return ProfileResult.success(ProfileData.fromJson(userData));
   }
 
+  // ── Update Medical ──────────────────────────────────────────────────────────
+  static Future<SimpleResult> updateMedical({
+    String? bloodType,
+    String? height,
+    String? weight,
+    String? bloodPressure,
+    String? allergies,
+  }) async {
+    final response = await ApiService.post('/profile/medical', {
+      'blood_type': bloodType,
+      'height': height,
+      'weight': weight,
+      'blood_pressure': bloodPressure,
+      'allergies': allergies,
+    });
+
+    if (!response.success) {
+      return SimpleResult.error(response.errorMessage ?? 'Gagal menyimpan data medis.');
+    }
+    return SimpleResult.success('Data medis berhasil disimpan.');
+  }
+
   // ── Change password ───────────────────────────────────────────────────────
   static Future<SimpleResult> changePassword({
     required String currentPassword,

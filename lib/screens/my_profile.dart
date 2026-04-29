@@ -5,7 +5,8 @@ import 'package:sapahse/models/profile_model.dart';
 import 'package:sapahse/services/profile_service.dart';
 
 class MyProfileScreen extends StatefulWidget {
-  const MyProfileScreen({super.key});
+  final String? initialAction;
+  const MyProfileScreen({super.key, this.initialAction});
 
   @override
   State<MyProfileScreen> createState() => _MyProfileScreenState();
@@ -20,7 +21,24 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    if (widget.initialAction == 'add_license') {
+      _selectedSubTab = 1;
+    } else if (widget.initialAction == 'add_certification') {
+      _selectedSubTab = 3;
+    } else if (widget.initialAction == 'edit_medical') {
+      _selectedSubTab = 4;
+    }
+    _loadProfile().then((_) {
+      if (widget.initialAction == 'edit_biodata') {
+        _showEditBiodataForm();
+      } else if (widget.initialAction == 'add_license') {
+        _showAddLicenseForm();
+      } else if (widget.initialAction == 'add_certification') {
+        _showAddCertificationForm();
+      } else if (widget.initialAction == 'edit_medical') {
+        _showEditMedicalForm();
+      }
+    });
   }
 
   Future<void> _loadProfile() async {
@@ -187,6 +205,219 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       case 4: return _MedicalContent(medicals: _profileData?.medicals ?? []);
       default: return const SizedBox();
     }
+  }
+
+  void _showEditForm() {
+    switch (_selectedSubTab) {
+      case 0:
+        _showEditBiodataForm();
+        break;
+      case 1:
+        _showAddLicenseForm();
+        break;
+      case 2:
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data pelanggaran tidak dapat diedit.')));
+        break;
+      case 3:
+        _showAddCertificationForm();
+        break;
+      case 4:
+        _showEditMedicalForm();
+        break;
+    }
+  }
+
+  void _showEditBiodataForm() {
+    final phoneCtrl = TextEditingController(text: _profileData?.phoneNumber);
+    final emailCtrl = TextEditingController(text: _profileData?.personalEmail);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.only(
+            left: 24, right: 24, top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text('Edit Biodata', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Spacer(),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _buildFieldLabel('Nomor Telepon'),
+              TextField(
+                controller: phoneCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: _buildInputDecoration('Contoh: 08123456789'),
+              ),
+              const SizedBox(height: 16),
+              _buildFieldLabel('Email Pribadi'),
+              TextField(
+                controller: emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                decoration: _buildInputDecoration('Contoh: user@email.com'),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    setState(() => _isLoading = true);
+                    
+                    final result = await ProfileService.updateProfile(
+                      phoneNumber: phoneCtrl.text.isNotEmpty ? phoneCtrl.text : null,
+                      personalEmail: emailCtrl.text.isNotEmpty ? emailCtrl.text : null,
+                    );
+                    
+                    if (result.success) {
+                      if (mounted) _loadProfile();
+                    } else {
+                      if (mounted) {
+                        setState(() => _isLoading = false);
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.errorMessage ?? 'Gagal menyimpan')));
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5C38FF),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  child: const Text('Simpan', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditMedicalForm() {
+    final medicals = _profileData?.medicals ?? [];
+    final latest = medicals.isNotEmpty ? medicals.first : null;
+    
+    final bloodTypeCtrl = TextEditingController(text: latest?.bloodType);
+    final heightCtrl = TextEditingController(text: latest?.height);
+    final weightCtrl = TextEditingController(text: latest?.weight);
+    final bloodPressureCtrl = TextEditingController(text: latest?.bloodPressure);
+    final allergiesCtrl = TextEditingController(text: latest?.allergies);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.only(
+            left: 24, right: 24, top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text('Edit Data Medis', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _buildFieldLabel('Golongan Darah'),
+                TextField(
+                  controller: bloodTypeCtrl,
+                  decoration: _buildInputDecoration('Contoh: O, A, B, AB'),
+                ),
+                const SizedBox(height: 16),
+                _buildFieldLabel('Tinggi Badan (cm)'),
+                TextField(
+                  controller: heightCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: _buildInputDecoration('Contoh: 170'),
+                ),
+                const SizedBox(height: 16),
+                _buildFieldLabel('Berat Badan (kg)'),
+                TextField(
+                  controller: weightCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: _buildInputDecoration('Contoh: 65'),
+                ),
+                const SizedBox(height: 16),
+                _buildFieldLabel('Tekanan Darah'),
+                TextField(
+                  controller: bloodPressureCtrl,
+                  decoration: _buildInputDecoration('Contoh: 120/80'),
+                ),
+                const SizedBox(height: 16),
+                _buildFieldLabel('Alergi'),
+                TextField(
+                  controller: allergiesCtrl,
+                  decoration: _buildInputDecoration('Contoh: Debu, Seafood...'),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      setState(() => _isLoading = true);
+                      
+                      final result = await ProfileService.updateMedical(
+                        bloodType: bloodTypeCtrl.text,
+                        height: heightCtrl.text,
+                        weight: weightCtrl.text,
+                        bloodPressure: bloodPressureCtrl.text,
+                        allergies: allergiesCtrl.text,
+                      );
+                      
+                      if (result.success) {
+                        if (mounted) _loadProfile();
+                      } else {
+                        if (mounted) {
+                          setState(() => _isLoading = false);
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message)));
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5C38FF),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                    child: const Text('Simpan Data Medis', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _showAddLicenseForm() {

@@ -404,14 +404,14 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
 
   Widget _buildRedesignedCategoryCard(HazardCategoryData cat) {
     final color = (cat.code == 'TTA') ? _red : (cat.code == 'KTA') ? _orange : _blue;
-    final bgColor = color.withOpacity(0.05);
+    final bgColor = color.withValues(alpha: 0.05);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [
@@ -573,7 +573,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
           label: const Text('Tambah Kategori Utama Baru'),
           style: OutlinedButton.styleFrom(
             foregroundColor: _blue,
-            side: BorderSide(color: _blue.withOpacity(0.5)),
+            side: BorderSide(color: _blue.withValues(alpha: 0.5)),
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -677,7 +677,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -686,7 +686,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: _blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(color: _blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                 child: Text(sub.categoryName ?? 'Kategori', style: const TextStyle(color: _blue, fontWeight: FontWeight.bold, fontSize: 10)),
               ),
               const Spacer(),
@@ -695,7 +695,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
               else
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                  decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
                   child: Row(
                     children: [
                       Icon(statusIcon, color: statusColor, size: 12),
@@ -799,6 +799,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
                   await _loadData();
                   _showSnack('Usulan berhasil dikirim.');
                   // Switch to second tab to see status
+                  if (!ctx.mounted) return;
                   DefaultTabController.of(context).animateTo(1);
                 } else {
                   setState(() => _isLoading = false);
@@ -1000,7 +1001,7 @@ class _SubcategoryFormScreenState extends State<_SubcategoryFormScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: DropdownButtonFormField<HazardCategoryData>(
@@ -1029,7 +1030,7 @@ class _SubcategoryFormScreenState extends State<_SubcategoryFormScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: TextField(
@@ -1065,7 +1066,7 @@ class _SubcategoryFormScreenState extends State<_SubcategoryFormScreen> {
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 2,
-          shadowColor: _blue.withOpacity(0.4),
+          shadowColor: _blue.withValues(alpha: 0.4),
         ),
         child: _isLoading 
           ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
