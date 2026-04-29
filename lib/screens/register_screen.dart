@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import '../services/auth_service.dart';
 import '../services/company_service.dart';
+import '../services/department_service.dart';
 import '../models/company_model.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -37,17 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   List<String> _ownerList = [];
   List<String> _kontraktorList = [];
   List<String> _subkontraktorList = [];
-
-  final List<String> _departemenList = [
-    'HSE',
-    'IT',
-    'Operasional',
-    'Produksi',
-    'Keuangan',
-    'HR',
-    'Maintenance',
-    'Logistik',
-  ];
+  List<String> _departemenList = [];
 
   bool _isLoading = false;
 
@@ -55,6 +46,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void initState() {
     super.initState();
     _fetchCompanies();
+    _fetchDepartments();
+  }
+
+  Future<void> _fetchDepartments() async {
+    try {
+      final depts = await DepartmentService.getDepartments();
+      if (mounted) {
+        setState(() {
+          _departemenList = depts.map((e) => e.name).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching departments: $e');
+    }
   }
 
   Future<void> _fetchCompanies() async {

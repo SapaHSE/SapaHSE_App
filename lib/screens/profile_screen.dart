@@ -10,6 +10,7 @@ import 'settings_screen.dart';
 import 'neztek_admin_screen.dart';
 import 'company_management.dart';
 import 'location_management.dart';
+import 'department_management.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -185,6 +186,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       context,
                       MaterialPageRoute(
                           builder: (_) => const CompanyManagementScreen()));
+                },
+              ),
+              _buildMenuItem(
+                icon: Icons.corporate_fare,
+                iconBg: const Color(0xFFE8EAF6),
+                iconColor: const Color(0xFF3F51B5),
+                title: 'Department Management',
+                subtitle: 'Daftar departemen perusahaan',
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const DepartmentManagementScreen()));
                 },
               ),
               Divider(height: 1, color: Colors.grey.shade100, indent: 70),
