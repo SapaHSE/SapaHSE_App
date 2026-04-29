@@ -726,38 +726,3 @@ class _MultipartResult {
       );
 }
 
-class HazardSubcategoryData {
-  final int id;
-  final String name;
-  final String? abbreviation;
-  final String? description;
-  final bool isActive;
-  final String? status; // 'pending', 'approved', 'rejected'
-  final String? categoryName; // for pending view
-  final String? proposedByName;
-
-  HazardSubcategoryData({
-    required this.id,
-    required this.name,
-    this.abbreviation,
-    this.description,
-    this.isActive = true,
-    this.status,
-    this.categoryName,
-    this.proposedByName,
-  });
-}
-
-class HazardCategoryData {
-  final int id;
-  final String name;
-  final String? code;
-  final List<HazardSubcategoryData> subcategories;
-
-  HazardCategoryData({
-    required this.id,
-    required this.name,
-    required this.subcategories,
-    this.code,
-  });
-}

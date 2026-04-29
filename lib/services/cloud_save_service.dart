@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 // ── Model: Draft Laporan ──────────────────────────────────────────────────────
 enum DraftType { hazard, inspection }
@@ -72,10 +73,19 @@ class CloudSaveService {
   Future<List<ReportDraft>> getDrafts() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getStringList(_prefKey) ?? [];
-    return raw
-        .map((e) => ReportDraft.fromJson(jsonDecode(e) as Map<String, dynamic>))
-        .toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    
+    final List<ReportDraft> validDrafts = [];
+    for (final e in raw) {
+      try {
+        validDrafts.add(ReportDraft.fromJson(jsonDecode(e) as Map<String, dynamic>));
+      } catch (err) {
+        // Abaikan data draft lama yang korup atau tidak sesuai struktur model terbaru
+        debugPrint('Failed to parse draft, skipping: $err');
+      }
+    }
+    
+    validDrafts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return validDrafts;
   }
 
   Future<void> saveDraft(ReportDraft draft) async {

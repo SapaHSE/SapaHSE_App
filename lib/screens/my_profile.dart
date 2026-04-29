@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:sapahse/models/profile_model.dart';
 import 'package:sapahse/services/profile_service.dart';
+import 'package:sapahse/main.dart';
 
 class MyProfileScreen extends StatefulWidget {
   final String? initialAction;
@@ -67,6 +68,32 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     {'label': 'Medis', 'icon': Icons.medical_services, 'color': const Color(0xFFE91E63)},
   ];
 
+  void _onTabTapped(int index) {
+    if (index == 4) {
+      Navigator.pop(context);
+      return;
+    }
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => MainScreen(initialIndex: index)),
+      (route) => false,
+    );
+  }
+
+  void _openFabMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _ProfileFabMenuSheet(
+        onEditBiodata: () { Navigator.pop(context); _showEditBiodataForm(); },
+        onAddLicense: () { Navigator.pop(context); _showAddLicenseForm(); },
+        onAddCertification: () { Navigator.pop(context); _showAddCertificationForm(); },
+        onEditMedical: () { Navigator.pop(context); _showEditMedicalForm(); },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -92,6 +119,34 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             _buildSubTabContent(),
             const SizedBox(height: 40),
           ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openFabMenu,
+        backgroundColor: const Color(0xFF1A56C4),
+        foregroundColor: Colors.white,
+        shape: const CircleBorder(),
+        elevation: 4,
+        child: const Icon(Icons.add, size: 30),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        color: Colors.white,
+        elevation: 8,
+        child: SizedBox(
+          height: 60,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _ProfileNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
+              _ProfileNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
+              const SizedBox(width: 48),
+              _ProfileNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
+              _ProfileNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
+            ],
+          ),
         ),
       ),
     );
@@ -1179,4 +1234,192 @@ class _ViolationContent extends StatelessWidget {
   }
 }
 
+// ── NAV ITEM ──────────────────────────────────────────────────────────────────
+class _ProfileNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int index;
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const _ProfileNavItem({
+    required this.icon,
+    required this.label,
+    required this.index,
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = currentIndex == index;
+    return GestureDetector(
+      onTap: () => onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 70,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isActive ? const Color(0xFF1A56C4) : Colors.grey, size: 24),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: isActive ? const Color(0xFF1A56C4) : Colors.grey,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileMenuTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconBgColor;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ProfileMenuTile({
+    required this.icon,
+    required this.iconBgColor,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(color: iconBgColor, borderRadius: BorderRadius.circular(12)),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87)),
+                    const SizedBox(height: 2),
+                    Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20),
+            ],
+          ),
+        ),
+      );
+}
+
+// ── FAB BOTTOM SHEET ──────────────────────────────────────────────────────────
+class _ProfileFabMenuSheet extends StatelessWidget {
+  final VoidCallback onEditBiodata;
+  final VoidCallback onAddLicense;
+  final VoidCallback onAddCertification;
+  final VoidCallback onEditMedical;
+
+  const _ProfileFabMenuSheet({
+    required this.onEditBiodata,
+    required this.onAddLicense,
+    required this.onAddCertification,
+    required this.onEditMedical,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 20, offset: const Offset(0, -4)),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 12, bottom: 8),
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: Text('Pilih Aksi Profil', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+          ),
+          const SizedBox(height: 8),
+
+          _ProfileMenuTile(
+            icon: Icons.person_outline,
+            iconBgColor: const Color(0xFFF3E5F5),
+            iconColor: const Color(0xFF8E24AA),
+            title: 'Edit Biodata',
+            subtitle: 'Perbarui nomor telepon & email',
+            onTap: onEditBiodata,
+          ),
+          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          _ProfileMenuTile(
+            icon: Icons.badge_outlined,
+            iconBgColor: const Color(0xFFE3F2FD),
+            iconColor: const Color(0xFF1E88E5),
+            title: 'Tambah Lisensi',
+            subtitle: 'Tambahkan SIM/SIO/KIMPER',
+            onTap: onAddLicense,
+          ),
+          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          _ProfileMenuTile(
+            icon: Icons.workspace_premium_outlined,
+            iconBgColor: const Color(0xFFFFF3E0),
+            iconColor: const Color(0xFFEF6C00),
+            title: 'Tambah Sertifikat',
+            subtitle: 'Tambahkan sertifikasi keahlian',
+            onTap: onAddCertification,
+          ),
+          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          _ProfileMenuTile(
+            icon: Icons.medical_services_outlined,
+            iconBgColor: const Color(0xFFFFEBEE),
+            iconColor: const Color(0xFFE53935),
+            title: 'Edit Data Medis',
+            subtitle: 'Perbarui info kesehatan & alergi',
+            onTap: onEditMedical,
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: BorderSide(color: Colors.grey.shade200)),
+                ),
+                child: const Text('Batal', style: TextStyle(fontSize: 14)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 

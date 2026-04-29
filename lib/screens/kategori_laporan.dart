@@ -799,7 +799,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
                   await _loadData();
                   _showSnack('Usulan berhasil dikirim.');
                   // Switch to second tab to see status
-                  if (!ctx.mounted) return;
+                  if (!mounted) return;
                   DefaultTabController.of(context).animateTo(1);
                 } else {
                   setState(() => _isLoading = false);

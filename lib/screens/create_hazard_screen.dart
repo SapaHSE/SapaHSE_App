@@ -173,7 +173,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     ).toList();
     final depts = companyUsers
         .map((u) => u.department)
-        .where((d) => d != null && d!.isNotEmpty)
+        .where((d) => d != null && d.isNotEmpty)
         .toSet()
         .toList();
 
@@ -495,24 +495,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     );
   }
 
-  InputDecorationTheme _dropdownTheme() {
-    return InputDecorationTheme(
-      hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-      filled: true,
-      fillColor: const Color(0xFFF8F9FF),
-      border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300)),
-      enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300)),
-      focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: _blue, width: 1.5)),
-      constraints: const BoxConstraints(maxHeight: 50),
-    );
-  }
+
 
   Widget _label(String text, {Key? key}) => Padding(
         key: key,

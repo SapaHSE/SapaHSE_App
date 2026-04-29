@@ -9,7 +9,7 @@ import 'storage_service.dart';
 class ApiService {
   // ── Base URL ─────────────────────────────────────────────────────────────
   // Ganti ke 10.0.2.2 untuk Android Emulator, atau localhost untuk Web/Desktop
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  static const String baseUrl = 'https://sapahse.up.railway.app/api';
   // static const String baseUrl = 'https://sapahse.up.railway.app/api';
 
   // ── Headers ───────────────────────────────────────────────────────────────
@@ -198,7 +198,15 @@ class ApiService {
 
   // ── Response Handler ──────────────────────────────────────────────────────
   static Future<ApiResponse> _handleResponse(http.Response response) async {
-    final body = jsonDecode(response.body);
+    dynamic body;
+    try {
+      body = jsonDecode(response.body);
+    } catch (e) {
+      return ApiResponse.error(
+        'Format respons tidak valid (Status ${response.statusCode}).',
+        statusCode: response.statusCode,
+      );
+    }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (body['status'] == 'success') {

@@ -153,21 +153,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // ── Scrollable Body ─────────────────────────────────────────────
             Expanded(
-              child: CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  // ── Carousel ───────────────────────────────────────────────────
-                  SliverToBoxAdapter(child: _buildCarousel()),
+              child: ValueListenableBuilder<List<Report>>(
+                valueListenable: ReportStore.instance.reports,
+                builder: (context, allReports, _) {
+                  final filtered = _getFilteredReports(allReports);
+                  final displayList = filtered.take(_displayedCount).toList();
 
-                  // ── Filters ────────────────────────────────────────────────────
-                  SliverToBoxAdapter(child: _buildFilters()),
+                  return CustomScrollView(
+                    controller: _scrollController,
+                    slivers: [
+                      // ── Carousel ───────────────────────────────────────────────────
+                      SliverToBoxAdapter(child: _buildCarousel()),
 
-                  // ── Report list section with state sync ─────────────────────────────
-                  ValueListenableBuilder<List<Report>>(
-                    valueListenable: ReportStore.instance.reports,
-                    builder: (context, allReports, _) {
-                      final filtered = _getFilteredReports(allReports);
-                      return SliverToBoxAdapter(
+                      // ── Filters ────────────────────────────────────────────────────
+                      SliverToBoxAdapter(child: _buildFilters()),
+
+                      // ── Report list section with state sync ─────────────────────────────
+                      SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                           child: Row(
@@ -185,19 +187,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                         ),
-                      );
-                    },
-                  ),
+                      ),
 
-                  ValueListenableBuilder<List<Report>>(
-                    valueListenable: ReportStore.instance.reports,
-                    builder: (context, allReports, _) {
-                      final filtered = _getFilteredReports(allReports);
-                      final displayList =
-                          filtered.take(_displayedCount).toList();
-
-                      if (filtered.isEmpty) {
-                        return const SliverFillRemaining(
+                      if (filtered.isEmpty)
+                        const SliverFillRemaining(
                           hasScrollBody: false,
                           child: Padding(
                             padding: EdgeInsets.all(40),
@@ -214,40 +207,39 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                           ),
-                        );
-                      }
-
-                      return SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            if (index == displayList.length) {
-                              return const Padding(
-                                padding: EdgeInsets.all(20),
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                      color: Color(0xFF1A56C4)),
+                        )
+                      else
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              if (index == displayList.length) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(20),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                        color: Color(0xFF1A56C4)),
+                                  ),
+                                );
+                              }
+                              return _ReportCard(
+                                report: displayList[index],
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ReportDetailScreen(
+                                        report: displayList[index]),
+                                  ),
                                 ),
                               );
-                            }
-                            return _ReportCard(
-                              report: displayList[index],
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ReportDetailScreen(
-                                      report: displayList[index]),
-                                ),
-                              ),
-                            );
-                          },
-                          childCount:
-                              displayList.length + (_isLoadingMore ? 1 : 0),
+                            },
+                            childCount:
+                                displayList.length + (_isLoadingMore ? 1 : 0),
+                          ),
                         ),
-                      );
-                    },
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 80)),
-                ],
+                      const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                    ],
+                  );
+                },
               ),
             ),
           ],
