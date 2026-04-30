@@ -115,7 +115,19 @@ class UserLicense {
     );
   }
 
-  bool get isActive => status == 'active';
+  bool get isActive {
+    if (status != 'active') return false;
+    if (expiredAt != null) {
+      try {
+        final expiry = DateTime.parse(expiredAt!);
+        // Set to end of day to be safe, or just check if it's before now
+        return expiry.isAfter(DateTime.now().subtract(const Duration(days: 1)));
+      } catch (_) {
+        return true;
+      }
+    }
+    return true;
+  }
 }
 
 class UserCertification {

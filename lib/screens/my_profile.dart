@@ -850,7 +850,7 @@ class _LicenseContent extends StatelessWidget {
       child: Column(
         children: [
           ...licenses.map((l) {
-            final isAktif = l.status.toLowerCase() == 'active';
+            final isAktif = l.isActive;
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
@@ -947,7 +947,7 @@ class _CertificationContent extends StatelessWidget {
       child: Column(
         children: [
           ...certifications.map((c) {
-            final isAktif = c.status.toLowerCase() == 'active';
+            final isAktif = c.isActive;
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
