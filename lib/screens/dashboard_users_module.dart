@@ -3,6 +3,7 @@ import '../models/user_model.dart';
 import '../services/api_service.dart';
 import '../services/company_service.dart';
 import '../services/department_service.dart';
+import '../services/storage_service.dart';
 import 'dashboard_widgets.dart';
 
 class DashboardUsersModule extends StatefulWidget {
@@ -19,15 +20,26 @@ class _DashboardUsersModuleState extends State<DashboardUsersModule> {
   int _userTotalPages = 1;
   int _currentUserPage = 1;
   String _searchQuery = '';
+  bool _isSuperadmin = false;
 
   @override
   void initState() {
     super.initState();
+    _checkAccess();
     _fetchUsers();
     _searchCtrl.addListener(() {
       setState(() => _searchQuery = _searchCtrl.text.toLowerCase());
       _fetchUsers(page: 1);
     });
+  }
+
+  Future<void> _checkAccess() async {
+    final user = await StorageService.getUser();
+    if (mounted) {
+      setState(() {
+        _isSuperadmin = user?['role']?.toString().toLowerCase() == 'superadmin';
+      });
+    }
   }
 
   @override
@@ -84,6 +96,7 @@ class _DashboardUsersModuleState extends State<DashboardUsersModule> {
   }
 
   void _showUserForm({UserModel? user}) {
+    if (!_isSuperadmin) return;
     final nameCtrl = TextEditingController(text: user?.fullName);
     final personalEmailCtrl = TextEditingController(text: user?.personalEmail);
     final workEmailCtrl = TextEditingController(text: user?.workEmail);
@@ -388,6 +401,7 @@ class _DashboardUsersModuleState extends State<DashboardUsersModule> {
           ),
         ),
         const SizedBox(width: 16),
+        if (_isSuperadmin)
         ElevatedButton.icon(
           onPressed: () => _showUserForm(),
           icon: const Icon(Icons.person_add),
@@ -424,8 +438,8 @@ class _DashboardUsersModuleState extends State<DashboardUsersModule> {
                     padding: const EdgeInsets.only(bottom: 12.0),
                     child: DashboardUserCard(
                         user: u,
-                        onEdit: () => _showUserForm(user: u),
-                        onDelete: () => _confirmDelete(u)),
+                        onEdit: _isSuperadmin ? () => _showUserForm(user: u) : null,
+                        onDelete: _isSuperadmin ? () => _confirmDelete(u) : null),
                   ))
               .toList(),
         ),
@@ -461,7 +475,7 @@ class _DashboardUsersModuleState extends State<DashboardUsersModule> {
                   style: TextStyle(
                       color: u.isActive ? Colors.green : Colors.red,
                       fontWeight: FontWeight.bold))),
-              DataCell(Row(children: [
+              DataCell(_isSuperadmin ? Row(children: [
                 IconButton(
                     icon: const Icon(Icons.edit_outlined, size: 20),
                     onPressed: () => _showUserForm(user: u)),
@@ -469,7 +483,7 @@ class _DashboardUsersModuleState extends State<DashboardUsersModule> {
                     icon: const Icon(Icons.delete_outline,
                         size: 20, color: Colors.red),
                     onPressed: () => _confirmDelete(u)),
-              ])),
+              ]) : const SizedBox.shrink()),
             ]);
           }).toList(),
         ),
@@ -478,6 +492,7 @@ class _DashboardUsersModuleState extends State<DashboardUsersModule> {
   }
 
   void _confirmDelete(UserModel u) async {
+    if (!_isSuperadmin) return;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => DashboardConfirmDialog(

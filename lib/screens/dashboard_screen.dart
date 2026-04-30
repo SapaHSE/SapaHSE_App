@@ -41,6 +41,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   bool get _canSeeUsers =>
+      _userRole.toLowerCase() == 'admin' ||
       _userRole.toLowerCase() == 'super admin' ||
       _userRole.toLowerCase() == 'superadmin';
 

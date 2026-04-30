@@ -36,8 +36,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   Future<void> _checkAccessAndLoad() async {
     final user = await StorageService.getUser();
     if (mounted) {
-      if (user != null && user['role'] == 'superadmin') {
-        setState(() => _isSuperadmin = true);
+      final role = user?['role']?.toString().toLowerCase();
+      final isSuper = role == 'superadmin';
+      final isAdmin = role == 'admin' || isSuper;
+      
+      if (user != null && isAdmin) {
+        setState(() => _isSuperadmin = isSuper);
         _fetchUsers();
         _fetchUnapprovedUsers();
         _fetchRejectedUsers();
@@ -250,8 +254,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       isScrollControlled: true,
       builder: (_) => _UserFabMenuSheet(
         onAddUser: () {
-          Navigator.pop(context);
-          _navigateToUserForm();
+          if (_isSuperadmin) {
+            Navigator.pop(context);
+            _navigateToUserForm();
+          }
         },
         onRefreshData: () {
           Navigator.pop(context);
@@ -265,15 +271,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isSuperadmin) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('User Management')),
-        body: const Center(
-          child: Text('Akses Ditolak. Hanya Superadmin yang dapat mengakses halaman ini.', 
-            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-        ),
-      );
-    }
+    // Admin & Superadmin can enter. Others blocked.
+    // If _isSuperadmin is false here, it means we might be admin or unauthorized.
+    // Let's check more strictly.
+    // Actually, _checkAccessAndLoad already handles the logic.
+    // We just need to make sure we don't show the blank screen if not superadmin.
 
     final users = _filteredUsers;
     final filters = ['Semua', 'User', 'Admin', 'Superadmin', 'Inactive'];
@@ -363,14 +365,14 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             _buildRejectedHistoryTab(),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
+        floatingActionButton: _isSuperadmin ? FloatingActionButton(
           onPressed: _openFabMenu,
           backgroundColor: const Color(0xFF1A56C4),
           foregroundColor: Colors.white,
           shape: const CircleBorder(),
           elevation: 4,
           child: const Icon(Icons.add, size: 30),
-        ),
+        ) : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         bottomNavigationBar: BottomAppBar(
           shape: const CircularNotchedRectangle(),
@@ -601,32 +603,35 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => _rejectUser(user['id'].toString()),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red,
-                            side: const BorderSide(color: Colors.red),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  if (_isSuperadmin) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => _rejectUser(user['id'].toString()),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.red,
+                              side: const BorderSide(color: Colors.red),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: const Text('Reject', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
-                          child: const Text('Reject', style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () => _approveUser(user['id'].toString()),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.orange,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () => _approveUser(user['id'].toString()),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: const Text('Approve', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
-                          child: const Text('Approve', style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -707,12 +712,23 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
   late String _selectedRole;
   late bool _isActive;
   bool _isLoading = false;
+  bool _isSuperadmin = false;
 
   @override
   void initState() {
     super.initState();
+    _checkAccess();
     _selectedRole = (widget.user['role'] ?? 'user').toString().toLowerCase();
     _isActive = widget.user['is_active'] == 1 || widget.user['is_active'] == true;
+  }
+
+  Future<void> _checkAccess() async {
+    final user = await StorageService.getUser();
+    if (mounted) {
+      setState(() {
+        _isSuperadmin = user?['role']?.toString().toLowerCase() == 'superadmin';
+      });
+    }
   }
 
   Future<void> _approveUser() async {
@@ -1007,7 +1023,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                         ],
                       ),
                       const SizedBox(height: 32),
-                      if (!_isActive && widget.user['registration_status'] == 'pending') ...[
+                      if (_isSuperadmin && !_isActive && widget.user['registration_status'] == 'pending') ...[
                         Row(
                           children: [
                             Expanded(
@@ -1039,6 +1055,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                         ),
                         const SizedBox(height: 16),
                       ],
+                      if (_isSuperadmin)
                       Row(
                         children: [
                           TextButton.icon(
@@ -1071,14 +1088,14 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: _isSuperadmin ? FloatingActionButton(
         onPressed: _openDetailFabMenu,
         backgroundColor: const Color(0xFF1A56C4),
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
         elevation: 4,
         child: const Icon(Icons.add, size: 30),
-      ),
+      ) : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
@@ -1157,7 +1174,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
   Widget _buildModernRoleCard(String roleValue, String title, String subtitle, IconData icon) {
     final isSelected = _selectedRole == roleValue;
     return GestureDetector(
-      onTap: () => setState(() => _selectedRole = roleValue),
+      onTap: _isSuperadmin ? () => setState(() => _selectedRole = roleValue) : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
@@ -1317,6 +1334,20 @@ class _UserFormScreenState extends State<UserFormScreen> {
 
     if (widget.userToEdit != null) {
       _role = (widget.userToEdit['role'] ?? 'user').toString().toLowerCase();
+    }
+    _checkFormAccess();
+  }
+
+  Future<void> _checkFormAccess() async {
+    final user = await StorageService.getUser();
+    final role = user?['role']?.toString().toLowerCase();
+    if (role != 'superadmin') {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Akses Ditolak. Hanya Superadmin yang dapat mengubah data user.')),
+        );
+        Navigator.pop(context);
+      }
     }
   }
 
