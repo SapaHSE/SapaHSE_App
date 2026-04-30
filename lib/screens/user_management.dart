@@ -26,11 +26,19 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   bool _isSuperadmin = false;
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _checkAccessAndLoad();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
   }
 
   Future<void> _checkAccessAndLoad() async {
@@ -253,6 +261,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _UserFabMenuSheet(
+        isSuperadmin: _isSuperadmin,
         onAddUser: () {
           if (_isSuperadmin) {
             Navigator.pop(context);
@@ -264,6 +273,13 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           _fetchUsers();
           _fetchUnapprovedUsers();
           _fetchRejectedUsers();
+        },
+        onSearch: () {
+          Navigator.pop(context);
+          setState(() {
+            _isSearching = true;
+          });
+          FocusScope.of(context).requestFocus(_searchFocusNode);
         },
       ),
     );
@@ -288,14 +304,15 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           title: _isSearching 
             ? TextField(
                 controller: _searchController,
+                focusNode: _searchFocusNode,
                 autofocus: true,
                 onChanged: (val) => setState(() => _searchQuery = val),
                 decoration: const InputDecoration(
                   hintText: 'Cari user...',
                   border: InputBorder.none,
-                  hintStyle: TextStyle(color: Colors.grey, fontSize: 16),
+                  hintStyle: TextStyle(color: Colors.grey),
                 ),
-                style: const TextStyle(color: Colors.black87, fontSize: 16),
+                style: const TextStyle(color: Colors.black87),
               )
             : const Text('User Management', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87)),
           backgroundColor: Colors.white,
@@ -365,14 +382,14 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             _buildRejectedHistoryTab(),
           ],
         ),
-        floatingActionButton: _isSuperadmin ? FloatingActionButton(
+        floatingActionButton: FloatingActionButton(
           onPressed: _openFabMenu,
           backgroundColor: const Color(0xFF1A56C4),
           foregroundColor: Colors.white,
           shape: const CircleBorder(),
           elevation: 4,
           child: const Icon(Icons.add, size: 30),
-        ) : null,
+        ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         bottomNavigationBar: BottomAppBar(
           shape: const CircularNotchedRectangle(),
@@ -1673,12 +1690,16 @@ class _UserMenuTile extends StatelessWidget {
 
 // ── FAB BOTTOM SHEET ──────────────────────────────────────────────────────────
 class _UserFabMenuSheet extends StatelessWidget {
+  final bool isSuperadmin;
   final VoidCallback onAddUser;
   final VoidCallback onRefreshData;
+  final VoidCallback onSearch;
 
   const _UserFabMenuSheet({
+    required this.isSuperadmin,
     required this.onAddUser,
     required this.onRefreshData,
+    required this.onSearch,
   });
 
   @override
@@ -1724,15 +1745,17 @@ class _UserFabMenuSheet extends StatelessWidget {
           const SizedBox(height: 8),
 
           // Tambah User
-          _UserMenuTile(
-            icon: Icons.person_add_outlined,
-            iconBgColor: const Color(0xFFE3F2FD),
-            iconColor: const Color(0xFF1E88E5),
-            title: 'Tambah Pengguna Baru',
-            subtitle: 'Daftarkan admin atau user baru',
-            onTap: onAddUser,
-          ),
-          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          if (isSuperadmin) ...[
+            _UserMenuTile(
+              icon: Icons.person_add_outlined,
+              iconBgColor: const Color(0xFFE3F2FD),
+              iconColor: const Color(0xFF1E88E5),
+              title: 'Tambah Pengguna Baru',
+              subtitle: 'Daftarkan admin atau user baru',
+              onTap: onAddUser,
+            ),
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          ],
 
           // Refresh / Read All
           _UserMenuTile(
@@ -1742,6 +1765,17 @@ class _UserFabMenuSheet extends StatelessWidget {
             title: 'Refresh Data',
             subtitle: 'Muat ulang data pengguna terkini',
             onTap: onRefreshData,
+          ),
+          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+
+          // Search
+          _UserMenuTile(
+            icon: Icons.search_rounded,
+            iconBgColor: const Color(0xFFFFF3E0),
+            iconColor: const Color(0xFFFF9800),
+            title: 'Cari Pengguna',
+            subtitle: 'Cari berdasarkan nama atau NIK',
+            onTap: onSearch,
           ),
           const SizedBox(height: 8),
 
