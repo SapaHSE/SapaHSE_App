@@ -179,17 +179,9 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
           Navigator.pop(context);
           _showForm();
         },
-        onScanQr: () {
+        onRefresh: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScanScreen()));
-        },
-        onCreateHazard: () {
-          Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateHazardScreen()));
-        },
-        onCreateInspection: () {
-          Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateInspectionScreen()));
+          _loadInitialData();
         },
       ),
     );
@@ -296,16 +288,12 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
 class _DeptFabMenuSheet extends StatelessWidget {
   final bool canEdit;
   final VoidCallback onAddDepartment;
-  final VoidCallback onScanQr;
-  final VoidCallback onCreateHazard;
-  final VoidCallback onCreateInspection;
+  final VoidCallback onRefresh;
 
   const _DeptFabMenuSheet({
     required this.canEdit,
     required this.onAddDepartment,
-    required this.onScanQr,
-    required this.onCreateHazard,
-    required this.onCreateInspection,
+    required this.onRefresh,
   });
 
   @override
@@ -351,30 +339,12 @@ class _DeptFabMenuSheet extends StatelessWidget {
             Divider(height: 1, indent: 72, color: Colors.grey.shade100),
           ],
           _DeptFabMenuTile(
-            icon: Icons.qr_code_scanner_rounded,
-            iconBgColor: const Color(0xFFEFF4FF),
-            iconColor: const Color(0xFF1A56C4),
-            title: 'Scan QR Code',
-            subtitle: 'Pindai QR untuk verifikasi peralatan',
-            onTap: onScanQr,
-          ),
-          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
-          _DeptFabMenuTile(
-            icon: Icons.warning_amber_rounded,
-            iconBgColor: const Color(0xFFFFEBEE),
-            iconColor: const Color(0xFFF44336),
-            title: 'Buat Laporan Hazard',
-            subtitle: 'Laporkan temuan bahaya di lapangan',
-            onTap: onCreateHazard,
-          ),
-          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
-          _DeptFabMenuTile(
-            icon: Icons.search_rounded,
-            iconBgColor: const Color(0xFFE3F2FD),
-            iconColor: const Color(0xFF1565C0),
-            title: 'Buat Laporan Inspeksi',
-            subtitle: 'Lakukan inspeksi rutin unit kerja',
-            onTap: onCreateInspection,
+            icon: Icons.refresh_rounded,
+            iconBgColor: const Color(0xFFE8F5E9),
+            iconColor: const Color(0xFF2E7D32),
+            title: 'Refresh Data',
+            subtitle: 'Muat ulang daftar departemen',
+            onTap: onRefresh,
           ),
           const SizedBox(height: 12),
           Padding(
