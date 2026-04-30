@@ -14,6 +14,8 @@ import '../services/cloud_save_service.dart';
 import '../services/company_service.dart';
 import '../services/report_service.dart';
 import '../services/auth_service.dart';
+import 'package:sapahse/services/department_service.dart';
+import 'package:sapahse/models/department_model.dart';
 import 'map_picker_screen.dart';
 
 
@@ -70,6 +72,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   List<AreaData> _areasData = [];
   List<HazardCategoryData> _categoriesData = [];
   List<UserModel> _usersData = [];
+  List<DepartmentData> _departmentsData = [];
   bool _isLoadingData = true;
 
   @override
@@ -85,6 +88,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
       final areas = await CompanyService.getAreas(active: true);
       final categories = await ReportService.getHazardCategories();
       final users = await AuthService.getUsers();
+      final departments = await DepartmentService.getDepartments();
       
       if (mounted) {
         setState(() {
@@ -92,6 +96,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           _areasData = areas;
           _categoriesData = categories;
           _usersData = users;
+          _departmentsData = departments;
           _isLoadingData = false;
         });
       }
@@ -171,9 +176,6 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
         (u) => (u.department?.toLowerCase().contains('hse') ?? false) || 
                (u.department?.toLowerCase().contains('k3') ?? false),
       );
-      if (hseUser.department != null && hseUser.department!.isNotEmpty) {
-        return 'Departemen ${hseUser.department}';
-      }
     } catch (e) {
       // Ignore if not found
     }
@@ -183,27 +185,22 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   List<String> get _picOptions {
     if (_selectedPerusahaan == null) return [];
 
-    final companyUsers = _usersData.where((u) => 
-        u.role != 'superadmin' &&
-        !(u.department?.toLowerCase().contains('hse') ?? false) &&
-        !(u.department?.toLowerCase().contains('k3') ?? false)
-    ).toList();
-    final depts = companyUsers
-        .map((u) => u.department)
-        .where((d) => d != null && d!.isNotEmpty)
-        .toSet()
-        .toList();
-
     final List<String> options = [];
-    for (var d in depts) {
-      if (!d!.toLowerCase().contains('hse') && !d.toLowerCase().contains('k3')) {
-        options.add('Departemen $d');
+    
+    // Add dynamic departments
+    for (var d in _departmentsData) {
+      if (!d.name.toLowerCase().contains('hse') && !d.name.toLowerCase().contains('k3')) {
+        options.add('Departemen ${d.name}');
       }
     }
+
+    // Add company users
+    final companyUsers = _usersData.where((u) => u.role != 'superadmin').toList();
     for (var u in companyUsers) {
       final deptStr = (u.department != null && u.department!.isNotEmpty) ? ' (${u.department})' : '';
       options.add('${u.fullName}$deptStr');
     }
+    
     return options;
   }
 
@@ -545,12 +542,13 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
 
 
   // ── FULLSCREEN PERSON PICKER ──────────────────────────────────────────────
-  Future<String?> _showPersonPicker({
+  Future<List<String>?> _showPersonPicker({
     required String title,
     required List<String> options,
+    required List<String> initialSelected,
     String? hint,
   }) async {
-    return showModalBottomSheet<String>(
+    return showModalBottomSheet<List<String>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
@@ -560,6 +558,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
       builder: (context) => _PersonPickerContent(
         title: title,
         options: options,
+        initialSelected: initialSelected,
         hint: hint ?? 'Cari...',
       ),
     );
@@ -575,12 +574,12 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             final result = await _showPersonPicker(
               title: 'Tag PIC / Departemen',
               options: _picOptions,
+              initialSelected: _selectedPIC,
             );
             if (result != null) {
               setState(() {
-                if (!_selectedPIC.contains(result)) {
-                  _selectedPIC.add(result);
-                }
+                _selectedPIC.clear();
+                _selectedPIC.addAll(result);
               });
             }
           },
@@ -640,18 +639,21 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
         GestureDetector(
           onTap: () async {
             final options = _usersData
-                .where((u) => u.company == _selectedPerusahaan && u.role != 'superadmin')
-                .map((u) => u.fullName)
+                .where((u) => u.role != 'superadmin')
+                .map((u) {
+                  final deptStr = (u.department != null && u.department!.isNotEmpty) ? ' (${u.department})' : '';
+                  return '${u.fullName}$deptStr';
+                })
                 .toList();
             final result = await _showPersonPicker(
               title: 'Tag Pelaku Pelanggaran',
               options: options,
+              initialSelected: _selectedPelaku,
             );
             if (result != null) {
               setState(() {
-                if (!_selectedPelaku.contains(result)) {
-                  _selectedPelaku.add(result);
-                }
+                _selectedPelaku.clear();
+                _selectedPelaku.addAll(result);
               });
             }
           },
@@ -1062,12 +1064,12 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                     final result = await _showPersonPicker(
                       title: 'Tag PIC / Departemen',
                       options: _picOptions,
+                      initialSelected: _selectedPIC,
                     );
                     if (result != null) {
                       setState(() {
-                        if (!_selectedPIC.contains(result)) {
-                          _selectedPIC.add(result);
-                        }
+                        _selectedPIC.clear();
+                        _selectedPIC.addAll(result);
                       });
                     }
                   },
@@ -1272,11 +1274,13 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
 class _PersonPickerContent extends StatefulWidget {
   final String title;
   final List<String> options;
+  final List<String> initialSelected;
   final String hint;
 
   const _PersonPickerContent({
     required this.title,
     required this.options,
+    required this.initialSelected,
     required this.hint,
   });
 
@@ -1287,11 +1291,31 @@ class _PersonPickerContent extends StatefulWidget {
 class _PersonPickerContentState extends State<_PersonPickerContent> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _query = '';
+  late List<String> _selectedItems;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedItems = List.from(widget.initialSelected);
+  }
 
   @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _toggleSelection(String item) {
+    setState(() {
+      if (_selectedItems.contains(item)) {
+        // Jangan biarkan auto-tag terhapus jika kita anggap 'Departemen HSE' dsb wajib, 
+        // tapi untuk mempermudah, asumsikan UI checkbox mengizinkan hapus, 
+        // validasi ada di layer atas jika diperlukan.
+        _selectedItems.remove(item);
+      } else {
+        _selectedItems.add(item);
+      }
+    });
   }
 
   @override
@@ -1306,7 +1330,7 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 0),
       child: Column(
         children: [
           // Header
@@ -1375,8 +1399,12 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
                                 ListTile(
                                   contentPadding: EdgeInsets.zero,
                                   title: Text(opt, style: const TextStyle(fontSize: 14)),
-                                  trailing: const Icon(Icons.add_circle_outline, size: 20, color: Color(0xFF1A56C4)),
-                                  onTap: () => Navigator.pop(context, opt),
+                                  trailing: Icon(
+                                    _selectedItems.contains(opt) ? Icons.check_circle : Icons.add_circle_outline,
+                                    color: _selectedItems.contains(opt) ? Colors.green : const Color(0xFF1A56C4),
+                                    size: 24,
+                                  ),
+                                  onTap: () => _toggleSelection(opt),
                                 ),
                                 const Divider(height: 1),
                               ],
@@ -1392,8 +1420,12 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
                                 ListTile(
                                   contentPadding: EdgeInsets.zero,
                                   title: Text(opt, style: const TextStyle(fontSize: 14)),
-                                  trailing: const Icon(Icons.add_circle_outline, size: 20, color: Color(0xFF1A56C4)),
-                                  onTap: () => Navigator.pop(context, opt),
+                                  trailing: Icon(
+                                    _selectedItems.contains(opt) ? Icons.check_circle : Icons.add_circle_outline,
+                                    color: _selectedItems.contains(opt) ? Colors.green : const Color(0xFF1A56C4),
+                                    size: 24,
+                                  ),
+                                  onTap: () => _toggleSelection(opt),
                                 ),
                                 const Divider(height: 1),
                               ],
@@ -1402,6 +1434,23 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
                     ],
                   ),
           ),
+          // Save Button
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A56C4),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () => Navigator.pop(context, _selectedItems),
+              child: const Text('Simpan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          )
         ],
       ),
     );
