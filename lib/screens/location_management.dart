@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/company_model.dart';
 import '../services/company_service.dart';
 import 'company_management.dart';
+import '../services/storage_service.dart';
 import 'package:sapahse/main.dart';
 
 class LocationManagementScreen extends StatefulWidget {
@@ -24,13 +25,26 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> wit
 
   List<CompanyData> _ownerCompanies = [];
   List<AreaData> _allAreas = [];
+  String? _userRole;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 1, vsync: this);
+    _checkRoleAndLoad();
+  }
+
+  Future<void> _checkRoleAndLoad() async {
+    final user = await StorageService.getUser();
+    if (mounted) {
+      setState(() {
+        _userRole = user?['role']?.toString();
+      });
+    }
     _loadData();
   }
+
+  bool get _isSuperAdmin => _userRole?.toLowerCase() == 'superadmin' || _userRole?.toLowerCase() == 'super admin';
 
   Future<void> _loadData() async {
     setState(() {
@@ -155,6 +169,7 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> wit
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _LocationFabMenuSheet(
+        isSuperAdmin: _isSuperAdmin,
         onAddLocation: () {
           Navigator.pop(context);
           _navigateToAreaForm();
@@ -422,23 +437,24 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> wit
           // Subcategories
           ...areas.map((area) => _buildSubcategoryItem(area, company)),
           // Add Subcategory Button
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => _navigateToAreaForm(defaultCompany: company),
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Tambah Lokasi'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: color,
-                  side: BorderSide(color: color.withOpacity(0.5)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          if (_isSuperAdmin)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _navigateToAreaForm(defaultCompany: company),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Tambah Lokasi'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: color,
+                    side: BorderSide(color: color.withOpacity(0.5)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -464,42 +480,44 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> wit
                   ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.red, size: 16),
-                onPressed: () => _confirmDeleteArea(area),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-              const SizedBox(width: 8),
-              TextButton(
-                onPressed: () => _navigateToAreaForm(area: area),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              if (_isSuperAdmin) ...[
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red, size: 16),
+                  onPressed: () => _confirmDeleteArea(area),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
-                child: const Text('Edit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(width: 4),
-              GestureDetector(
-                onTap: () => _toggleStatus(area),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: area.isActive ? Colors.green.shade50 : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(4),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: () => _navigateToAreaForm(area: area),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  child: Text(
-                    area.isActive ? 'On' : 'Off',
-                    style: TextStyle(
-                      color: area.isActive ? Colors.green.shade700 : Colors.grey.shade600,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
+                  child: const Text('Edit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () => _toggleStatus(area),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: area.isActive ? Colors.green.shade50 : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      area.isActive ? 'On' : 'Off',
+                      style: TextStyle(
+                        color: area.isActive ? Colors.green.shade700 : Colors.grey.shade600,
+                        fontWeight: area.isActive ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 11,
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -508,6 +526,7 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> wit
   }
 
   Widget _buildGoToCompanyManagementButton() {
+    if (!_isSuperAdmin) return const SizedBox.shrink();
     return InkWell(
       onTap: () {
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const CompanyManagementScreen()));
@@ -941,10 +960,12 @@ class _LocationMenuTile extends StatelessWidget {
 
 // ── FAB Bottom Sheet ──────────────────────────────────────────────────────────
 class _LocationFabMenuSheet extends StatelessWidget {
+  final bool isSuperAdmin;
   final VoidCallback onAddLocation;
   final VoidCallback onRefreshData;
 
   const _LocationFabMenuSheet({
+    required this.isSuperAdmin,
     required this.onAddLocation,
     required this.onRefreshData,
   });
@@ -989,15 +1010,17 @@ class _LocationFabMenuSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          _LocationMenuTile(
-            icon: Icons.add_location_alt_outlined,
-            iconBgColor: const Color(0xFFE3F2FD),
-            iconColor: const Color(0xFF1E88E5),
-            title: 'Tambah Lokasi Baru',
-            subtitle: 'Daftarkan area atau lokasi kerja baru',
-            onTap: onAddLocation,
-          ),
-          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          if (isSuperAdmin) ...[
+            _LocationMenuTile(
+              icon: Icons.add_location_alt_outlined,
+              iconBgColor: const Color(0xFFE3F2FD),
+              iconColor: const Color(0xFF1E88E5),
+              title: 'Tambah Lokasi Baru',
+              subtitle: 'Daftarkan area atau lokasi kerja baru',
+              onTap: onAddLocation,
+            ),
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          ],
           _LocationMenuTile(
             icon: Icons.refresh_rounded,
             iconBgColor: const Color(0xFFE8F5E9),

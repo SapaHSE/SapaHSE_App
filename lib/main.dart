@@ -53,12 +53,23 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   late int _currentIndex;
+  String? _userRole;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
     WidgetsBinding.instance.addObserver(this);
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final user = await StorageService.getUser();
+    if (mounted) {
+      setState(() {
+        _userRole = user?['role']?.toString();
+      });
+    }
   }
 
   @override
@@ -127,12 +138,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
 
   void _openFabMenu() {
+    final isSuperAdmin = _userRole?.toLowerCase() == 'superadmin';
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => FabMenuSheet(
         currentIndex: _currentIndex,
+        isSuperAdmin: isSuperAdmin,
         onScanQr: () {
           Navigator.pop(context);
           Navigator.push(
@@ -562,6 +575,7 @@ class _ImageSourceCard extends StatelessWidget {
 // ── FAB BOTTOM SHEET (SHARED) ──────────────────────────────────────────────────
 class FabMenuSheet extends StatelessWidget {
   final int currentIndex;
+  final bool? isSuperAdmin;
   final VoidCallback onScanQr;
   final VoidCallback onCreateHazard;
   final VoidCallback onCreateInspection;
@@ -575,6 +589,7 @@ class FabMenuSheet extends StatelessWidget {
   const FabMenuSheet({
     super.key,
     required this.currentIndex,
+    this.isSuperAdmin,
     required this.onScanQr,
     required this.onCreateHazard,
     required this.onCreateInspection,
@@ -649,7 +664,7 @@ class FabMenuSheet extends StatelessWidget {
             subtitle: 'Lakukan inspeksi rutin peralatan & area kerja',
             onTap: onCreateInspection,
           ),
-          if (currentIndex == 0) ...[
+          if (currentIndex == 0 && (isSuperAdmin ?? false)) ...[
             Divider(height: 1, indent: 72, color: Colors.grey.shade100),
             _FabMenuTile(
               icon: Icons.add_photo_alternate_outlined,
@@ -660,7 +675,7 @@ class FabMenuSheet extends StatelessWidget {
               onTap: onAddCarousel,
             ),
           ],
-          if (currentIndex == 1) ...[
+          if (currentIndex == 1 && (isSuperAdmin ?? false)) ...[
             Divider(height: 1, indent: 72, color: Colors.grey.shade100),
             _FabMenuTile(
               icon: Icons.article_outlined,

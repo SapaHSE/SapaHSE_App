@@ -168,11 +168,13 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
   }
 
   void _openFabMenu() {
+    final bool canEdit = _currentUser?.role.toLowerCase() == 'superadmin';
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _DeptFabMenuSheet(
+        canEdit: canEdit,
         onAddDepartment: () {
           Navigator.pop(context);
           _showForm();
@@ -195,7 +197,7 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
 
   @override
   Widget build(BuildContext context) {
-    final bool canEdit = _currentUser?.role == 'superadmin';
+    final bool canEdit = _currentUser?.role.toLowerCase() == 'superadmin';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
@@ -292,12 +294,14 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
 
 // ── DEPT FAB MENU SHEET ────────────────────────────────────────────────────────
 class _DeptFabMenuSheet extends StatelessWidget {
+  final bool canEdit;
   final VoidCallback onAddDepartment;
   final VoidCallback onScanQr;
   final VoidCallback onCreateHazard;
   final VoidCallback onCreateInspection;
 
   const _DeptFabMenuSheet({
+    required this.canEdit,
     required this.onAddDepartment,
     required this.onScanQr,
     required this.onCreateHazard,
@@ -335,15 +339,17 @@ class _DeptFabMenuSheet extends StatelessWidget {
             child: Text('Manajemen Department', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.black87)),
           ),
           const SizedBox(height: 8),
-          _DeptFabMenuTile(
-            icon: Icons.add_business_rounded,
-            iconBgColor: const Color(0xFFE8F5E9),
-            iconColor: const Color(0xFF2E7D32),
-            title: 'Tambah Department',
-            subtitle: 'Daftarkan unit atau departemen baru',
-            onTap: onAddDepartment,
-          ),
-          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          if (canEdit) ...[
+            _DeptFabMenuTile(
+              icon: Icons.add_business_rounded,
+              iconBgColor: const Color(0xFFE8F5E9),
+              iconColor: const Color(0xFF2E7D32),
+              title: 'Tambah Department',
+              subtitle: 'Daftarkan unit atau departemen baru',
+              onTap: onAddDepartment,
+            ),
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          ],
           _DeptFabMenuTile(
             icon: Icons.qr_code_scanner_rounded,
             iconBgColor: const Color(0xFFEFF4FF),

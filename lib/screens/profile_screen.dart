@@ -234,20 +234,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildSectionHeader('ALAT ADMIN',
                   badge: 'CHIEF', badgeColor: const Color(0xFFE65100)),
               _buildMenuItem(
-                icon: Icons.people,
-                iconBg: const Color(0xFFE3F2FD),
-                iconColor: const Color(0xFF1565C0),
-                title: 'User Management',
-                subtitle: 'Roles, access, approvals',
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const UserManagementScreen()));
-                },
-              ),
-              Divider(height: 1, color: Colors.grey.shade100, indent: 70),
-              _buildMenuItem(
                 icon: Icons.folder_special,
                 iconBg: const Color(0xFFFBE9E7),
                 iconColor: const Color(0xFFD84315),
@@ -305,6 +291,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
             if (_profileData?.role == 'superadmin') ...[
               _buildSectionHeader('PLATFORM',
                   badge: 'NEZTEK ADMIN', badgeColor: const Color(0xFFD32F2F)),
+              _buildMenuItem(
+                icon: Icons.people,
+                iconBg: const Color(0xFFE3F2FD),
+                iconColor: const Color(0xFF1565C0),
+                title: 'User Management',
+                subtitle: 'Roles, access, approvals',
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const UserManagementScreen()));
+                },
+              ),
+              Divider(height: 1, color: Colors.grey.shade100, indent: 70),
               _buildMenuItem(
                 icon: Icons.admin_panel_settings,
                 iconBg: const Color(0xFFE8EAF6),
