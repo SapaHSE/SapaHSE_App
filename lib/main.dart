@@ -210,148 +210,16 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void _showAddCarouselSheet() {
     XFile? pickedFile;
     final ImagePicker picker = ImagePicker();
+    final captionCtrl = TextEditingController();
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => StatefulBuilder(
-        builder: (ctx, setModalState) => Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const Text('Tambah Gambar Carousel',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 20),
-              if (pickedFile != null)
-                Container(
-                  height: 180,
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    image: DecorationImage(
-                      image: FileImage(File(pickedFile!.path)),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        right: 8,
-                        top: 8,
-                        child: GestureDetector(
-                          onTap: () => setModalState(() => pickedFile = null),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                                color: Colors.black54, shape: BoxShape.circle),
-                            child: const Icon(Icons.close,
-                                color: Colors.white, size: 20),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ImageSourceCard(
-                        icon: Icons.camera_alt_outlined,
-                        label: 'Kamera',
-                        color: const Color(0xFF1A56C4),
-                        onTap: () async {
-                          final file = await picker.pickImage(
-                              source: ImageSource.camera);
-                          if (file != null) {
-                            setModalState(() => pickedFile = file);
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _ImageSourceCard(
-                        icon: Icons.photo_library_outlined,
-                        label: 'Galeri',
-                        color: const Color(0xFF2E7D32),
-                        onTap: () async {
-                          final file = await picker.pickImage(
-                              source: ImageSource.gallery);
-                          if (file != null) {
-                            setModalState(() => pickedFile = file);
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: pickedFile == null
-                      ? null
-                      : () {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(const SnackBar(
-                            content:
-                                Text('Gambar carousel berhasil ditambahkan'),
-                            behavior: SnackBarBehavior.floating,
-                          ));
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1565C0),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey.shade300,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
-                  ),
-                  child: const Text('Simpan Banner'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showAddNewsSheet() {
-    final titleCtrl = TextEditingController();
-    final excerptCtrl = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModal) => Padding(
-          padding:
-              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom),
           child: Container(
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
             padding: const EdgeInsets.all(20),
@@ -374,57 +242,297 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     ),
                   ),
                 ),
-                const Text('Tambah Berita',
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: titleCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Judul Berita',
-                    hintText: 'Masukkan judul berita',
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
+                const Text('Tambah Gambar Carousel',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 20),
+                if (pickedFile != null)
+                  Container(
+                    height: 180,
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      image: DecorationImage(
+                        image: FileImage(File(pickedFile!.path)),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: GestureDetector(
+                            onTap: () => setModalState(() => pickedFile = null),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                  color: Colors.black54, shape: BoxShape.circle),
+                              child: const Icon(Icons.close,
+                                  color: Colors.white, size: 20),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _ImageSourceCard(
+                          icon: Icons.camera_alt_outlined,
+                          label: 'Kamera',
+                          color: const Color(0xFF1A56C4),
+                          onTap: () async {
+                            final file = await picker.pickImage(
+                                source: ImageSource.camera);
+                            if (file != null) {
+                              setModalState(() => pickedFile = file);
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _ImageSourceCard(
+                          icon: Icons.photo_library_outlined,
+                          label: 'Galeri',
+                          color: const Color(0xFF2E7D32),
+                          onTap: () async {
+                            final file = await picker.pickImage(
+                                source: ImageSource.gallery);
+                            if (file != null) {
+                              setModalState(() => pickedFile = file);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
+                const Text('Caption Banner',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black54)),
+                const SizedBox(height: 8),
                 TextField(
-                  controller: excerptCtrl,
+                  controller: captionCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Masukkan keterangan banner...',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
                   maxLines: 2,
-                  decoration: InputDecoration(
-                    labelText: 'Ringkasan',
-                    hintText: 'Masukkan ringkasan berita',
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
-                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
-                  height: 46,
+                  height: 48,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text('Berita berhasil ditambahkan'),
-                        behavior: SnackBarBehavior.floating,
-                      ));
-                    },
+                    onPressed: pickedFile == null
+                        ? null
+                        : () {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(const SnackBar(
+                              content:
+                                  Text('Gambar carousel berhasil ditambahkan'),
+                              behavior: SnackBarBehavior.floating,
+                            ));
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1565C0),
                       foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey.shade300,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                          borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
-                    child: const Text('Tambah'),
+                    child: const Text('Simpan Banner'),
                   ),
                 ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAddNewsSheet() async {
+    final titleCtrl = TextEditingController();
+    final captionCtrl = TextEditingController();
+    final contentCtrl = TextEditingController();
+    final hashtagCtrl = TextEditingController();
+    XFile? pickedFile;
+    String selectedType = 'K3 / HSE';
+    final ImagePicker picker = ImagePicker();
+    
+    // Get current user for author name
+    final user = await StorageService.getUser();
+    final authorName = user?['full_name'] ?? 'Admin HSE';
+    final releaseDate = '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}';
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModal) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40, height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                    ),
+                  ),
+                  const Text('Tambah Berita Baru', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  const SizedBox(height: 20),
+
+                  // ── Image Section ──────────────────────────────────────────
+                  if (pickedFile != null)
+                    Container(
+                      height: 160, width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        image: DecorationImage(image: FileImage(File(pickedFile!.path)), fit: BoxFit.cover),
+                      ),
+                      child: Stack(children: [
+                        Positioned(right: 8, top: 8, child: GestureDetector(
+                          onTap: () => setModal(() => pickedFile = null),
+                          child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(Icons.close, color: Colors.white, size: 20)),
+                        )),
+                      ]),
+                    )
+                  else
+                    Row(children: [
+                      Expanded(child: _ImageSourceCard(icon: Icons.camera_alt_outlined, label: 'Kamera', color: const Color(0xFF1A56C4), onTap: () async {
+                        final file = await picker.pickImage(source: ImageSource.camera);
+                        if (file != null) setModal(() => pickedFile = file);
+                      })),
+                      const SizedBox(width: 12),
+                      Expanded(child: _ImageSourceCard(icon: Icons.photo_library_outlined, label: 'Galeri', color: const Color(0xFF2E7D32), onTap: () async {
+                        final file = await picker.pickImage(source: ImageSource.gallery);
+                        if (file != null) setModal(() => pickedFile = file);
+                      })),
+                    ]),
+
+                  const SizedBox(height: 20),
+                  
+                  // ── Meta Info (Author & Date) ───────────────────────────────
+                  Row(children: [
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      const Text('PEMBUAT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                      const SizedBox(height: 4),
+                      Text(authorName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    ])),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      const Text('TANGGAL RILIS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                      const SizedBox(height: 4),
+                      Text(releaseDate, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    ])),
+                  ]),
+
+                  const SizedBox(height: 20),
+
+                  // ── Form Fields ────────────────────────────────────────────
+                  TextField(
+                    controller: titleCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Judul Berita',
+                      hintText: 'Masukkan judul utama berita',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      prefixIcon: const Icon(Icons.title, size: 20),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextField(
+                    controller: captionCtrl,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      labelText: 'Caption Berita',
+                      hintText: 'Ringkasan singkat yang menarik...',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      prefixIcon: const Icon(Icons.short_text, size: 20),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Type Dropdown
+                  DropdownButtonFormField<String>(
+                    value: selectedType,
+                    decoration: InputDecoration(
+                      labelText: 'Tipe Berita',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      prefixIcon: const Icon(Icons.category_outlined, size: 20),
+                    ),
+                    items: ['K3 / HSE', 'Operasional', 'Regulasi', 'Prestasi']
+                        .map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                    onChanged: (v) => selectedType = v ?? selectedType,
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextField(
+                    controller: contentCtrl,
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      labelText: 'Deskripsi Berita',
+                      hintText: 'Tulis detail isi berita secara lengkap di sini...',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextField(
+                    controller: hashtagCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Hashtag',
+                      hintText: 'Contoh: #safetyfirst #hseupdate',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      prefixIcon: const Icon(Icons.tag, size: 20),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity, height: 50,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('Berita berhasil dipublikasikan'),
+                          behavior: SnackBarBehavior.floating,
+                        ));
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1565C0),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      child: const Text('Publikasikan Berita', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -686,44 +794,7 @@ class FabMenuSheet extends StatelessWidget {
               onTap: onAddNews,
             ),
           ],
-          if (currentIndex == 4) ...[
-            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
-            _FabMenuTile(
-              icon: Icons.person_outline_rounded,
-              iconBgColor: const Color(0xFFF3E5F5),
-              iconColor: const Color(0xFF8E24AA),
-              title: 'Edit Biodata',
-              subtitle: 'Update informasi dasar akun Anda',
-              onTap: onEditBiodata,
-            ),
-            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
-            _FabMenuTile(
-              icon: Icons.badge_outlined,
-              iconBgColor: const Color(0xFFE3F2FD),
-              iconColor: const Color(0xFF1E88E5),
-              title: 'Tambah Lisensi',
-              subtitle: 'Upload SIM, SIO, atau KIMPER baru',
-              onTap: onAddLicense,
-            ),
-            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
-            _FabMenuTile(
-              icon: Icons.workspace_premium_outlined,
-              iconBgColor: const Color(0xFFFFF3E0),
-              iconColor: const Color(0xFFEF6C00),
-              title: 'Tambah Sertifikat',
-              subtitle: 'Lengkapi dokumen keahlian profesional',
-              onTap: onAddCertification,
-            ),
-            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
-            _FabMenuTile(
-              icon: Icons.medical_services_outlined,
-              iconBgColor: const Color(0xFFFFEBEE),
-              iconColor: const Color(0xFFE53935),
-              title: 'Update Data Medis',
-              subtitle: 'Perbarui info kesehatan & riwayat medis',
-              onTap: onEditMedical,
-            ),
-          ],
+          // Profile specific actions are removed from FAB as per user request to match Home Screen
           const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
