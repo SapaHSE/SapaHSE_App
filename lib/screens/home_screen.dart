@@ -42,11 +42,36 @@ class _HomeScreenState extends State<HomeScreen> {
     'Inspection',
   ];
 
+  List<Report> _filteredReportsCache = [];
+  Timer? _searchDebounce;
+
   @override
   void initState() {
     super.initState();
-    _loadCarouselNews();
     _scrollController.addListener(_onScroll);
+    
+    // Initial filter calculation
+    _updateFilteredCache();
+    
+    // Listen to changes in ReportStore to update cache
+    ReportStore.instance.reports.addListener(_updateFilteredCache);
+
+    // STAGGERED LOADING: Give the engine time to render the first frames
+    // before starting heavy data tasks.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          _loadCarouselNews();
+        }
+      });
+    });
+  }
+
+  void _updateFilteredCache() {
+    if (!mounted) return;
+    setState(() {
+      _filteredReportsCache = _getFilteredReports(ReportStore.instance.reports.value);
+    });
   }
 
   Future<void> _loadCarouselNews() async {
@@ -56,20 +81,25 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _carouselItems = result.articles.where((a) => a.isFeatured).toList();
       });
-      _startCarousel();
+      // Delay start carousel slightly more
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) _startCarousel();
+      });
     }
   }
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      final filteredCount =
-          _getFilteredReports(ReportStore.instance.reports.value).length;
+      
+      // Use the CACHED filtered list instead of recalculating
+      final filteredCount = _filteredReportsCache.length;
+      
       if (!_isLoadingMore && _displayedCount < filteredCount) {
         setState(() {
           _isLoadingMore = true;
         });
-        Future.delayed(const Duration(milliseconds: 1000), () {
+        Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) {
             setState(() {
               _displayedCount += 5;
@@ -81,17 +111,30 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _onSearchChanged(String v) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (mounted) {
+        setState(() {
+          _searchQuery = v;
+          _displayedCount = 5;
+          _updateFilteredCache();
+        });
+      }
+    });
+  }
+
   void _startCarousel() {
     _carouselTimer?.cancel();
     if (_carouselItems.isEmpty) return;
-    _carouselTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+    _carouselTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!mounted) return;
       if (!_pageController.hasClients) return;
       if (_carouselItems.isEmpty) return;
       final next = (_currentPage + 1) % _carouselItems.length;
       _pageController.animateToPage(
         next,
-        duration: const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 600),
         curve: Curves.easeInOut,
       );
     });
@@ -99,6 +142,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    ReportStore.instance.reports.removeListener(_updateFilteredCache);
+    _searchDebounce?.cancel();
     _carouselTimer?.cancel();
     _pageController.dispose();
     _searchController.dispose();
@@ -107,6 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Report> _getFilteredReports(List<Report> allReports) {
+    final query = _searchQuery.toLowerCase();
     return allReports.where((r) {
       final matchType =
           _selectedType == 'All Report' || r.type.label == _selectedType;
@@ -117,9 +163,9 @@ class _HomeScreenState extends State<HomeScreen> {
         matchStatus = r.status == ReportStatus.closed;
       }
 
-      final matchSearch = _searchQuery.isEmpty ||
-          r.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          r.description.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchSearch = query.isEmpty ||
+          r.title.toLowerCase().contains(query) ||
+          r.description.toLowerCase().contains(query);
       return matchType && matchStatus && matchSearch;
     }).toList();
   }
@@ -135,10 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
               isSearching: _isSearching,
               searchController: _searchController,
               searchHint: 'Cari laporan...',
-              onSearchChanged: (v) => setState(() {
-                _searchQuery = v;
-                _displayedCount = 5;
-              }),
+              onSearchChanged: _onSearchChanged,
               onSearchToggle: () {
                 setState(() {
                   _isSearching = !_isSearching;
@@ -146,6 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _searchController.clear();
                     _searchQuery = '';
                     _displayedCount = 5;
+                    _updateFilteredCache();
                   }
                 });
               },
@@ -155,8 +199,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: ValueListenableBuilder<List<Report>>(
                 valueListenable: ReportStore.instance.reports,
-                builder: (context, allReports, _) {
-                  final filtered = _getFilteredReports(allReports);
+                builder: (context, _, __) {
+                  final filtered = _filteredReportsCache;
                   final displayList = filtered.take(_displayedCount).toList();
 
                   return CustomScrollView(
@@ -469,6 +513,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     setState(() {
                       _selectedType = val;
                       _displayedCount = 5;
+                      _updateFilteredCache();
                     });
                   }
                 },
@@ -496,6 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _statusFilter = label;
           _displayedCount = 5;
+          _updateFilteredCache();
         });
       },
       child: AnimatedContainer(
@@ -533,8 +579,8 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 6),
               ValueListenableBuilder<List<Report>>(
                 valueListenable: ReportStore.instance.reports,
-                builder: (context, reports, _) {
-                  final count = _getFilteredReports(reports).length;
+                builder: (context, _, __) {
+                  final count = _filteredReportsCache.length;
                   return Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 1),

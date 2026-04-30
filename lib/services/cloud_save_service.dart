@@ -48,21 +48,48 @@ class CloudSaveService {
   CloudSaveService._();
 
   // ── Connectivity ──────────────────────────────────────────────────────────
+  static bool? _lastOnlineStatus;
+  static DateTime? _lastCheckTime;
+
   /// Returns true if device currently has internet access.
+  /// Optimized to be non-blocking and avoid UI freezes.
   static Future<bool> isOnline() async {
+    // 1. Quick check: If we checked very recently, return cached status
+    if (_lastOnlineStatus != null && _lastCheckTime != null) {
+      if (DateTime.now().difference(_lastCheckTime!) < const Duration(seconds: 5)) {
+        return _lastOnlineStatus!;
+      }
+    }
+
     try {
+      // 2. Check basic connectivity first (Wifi/Mobile data)
       final results = await Connectivity().checkConnectivity();
-      if (results.contains(ConnectivityResult.none) && results.length == 1) {
+      
+      if (results.isEmpty || (results.length == 1 && results.contains(ConnectivityResult.none))) {
+        _updateCache(false);
         return false;
       }
 
-      // Verification: Try to lookup a reliable host
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 3));
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } catch (_) {
+      // 3. For Web, basic connectivity is enough
+      if (kIsWeb) {
+        _updateCache(true);
+        return true;
+      }
+
+      // 4. For Mobile, instead of blocking DNS lookup, we'll assume online 
+      // if basic connectivity is active. The actual API call will handle 
+      // the real internet check. This prevents UI freezes.
+      _updateCache(true);
+      return true;
+    } catch (e) {
+      debugPrint('Connectivity check error: $e');
       return false;
     }
+  }
+
+  static void _updateCache(bool status) {
+    _lastOnlineStatus = status;
+    _lastCheckTime = DateTime.now();
   }
 
   /// Stream of connectivity changes (for real-time UI updates).
