@@ -14,7 +14,6 @@ import 'screens/create_hazard_screen.dart';
 import 'screens/create_inspection_screen.dart';
 import 'screens/qr_scan_screen.dart';
 import 'screens/my_profile.dart';
-import 'widgets/fab_menu.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -271,8 +270,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                         onTap: () async {
                           final file = await picker.pickImage(
                               source: ImageSource.camera);
-                          if (file != null)
+                          if (file != null) {
                             setModalState(() => pickedFile = file);
+                          }
                         },
                       ),
                     ),
@@ -285,8 +285,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                         onTap: () async {
                           final file = await picker.pickImage(
                               source: ImageSource.gallery);
-                          if (file != null)
+                          if (file != null) {
                             setModalState(() => pickedFile = file);
+                          }
                         },
                       ),
                     ),
@@ -594,7 +595,7 @@ class FabMenuSheet extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),
