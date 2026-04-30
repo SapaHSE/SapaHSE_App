@@ -14,6 +14,7 @@ import 'screens/create_hazard_screen.dart';
 import 'screens/create_inspection_screen.dart';
 import 'screens/qr_scan_screen.dart';
 import 'screens/my_profile.dart';
+import 'widgets/fab_menu.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -131,7 +132,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => _FabMenuSheet(
+      builder: (_) => FabMenuSheet(
         currentIndex: _currentIndex,
         onScanQr: () {
           Navigator.pop(context);
@@ -140,10 +141,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         },
         onCreateHazard: () {
           Navigator.pop(context);
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => const CreateHazardScreen()));
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const CreateHazardScreen()));
         },
         onCreateInspection: () {
           Navigator.pop(context);
@@ -162,19 +161,35 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         },
         onEditBiodata: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen(initialAction: 'edit_biodata')));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) =>
+                      const MyProfileScreen(initialAction: 'edit_biodata')));
         },
         onAddLicense: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen(initialAction: 'add_license')));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) =>
+                      const MyProfileScreen(initialAction: 'add_license')));
         },
         onAddCertification: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen(initialAction: 'add_certification')));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const MyProfileScreen(
+                      initialAction: 'add_certification')));
         },
         onEditMedical: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen(initialAction: 'edit_medical')));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) =>
+                      const MyProfileScreen(initialAction: 'edit_medical')));
         },
       ),
     );
@@ -202,7 +217,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             children: [
               Center(
                 child: Container(
-                  width: 40, height: 4,
+                  width: 40,
+                  height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade300,
@@ -213,7 +229,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               const Text('Tambah Gambar Carousel',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 20),
-              
               if (pickedFile != null)
                 Container(
                   height: 180,
@@ -229,13 +244,16 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   child: Stack(
                     children: [
                       Positioned(
-                        right: 8, top: 8,
+                        right: 8,
+                        top: 8,
                         child: GestureDetector(
                           onTap: () => setModalState(() => pickedFile = null),
                           child: Container(
                             padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                            child: const Icon(Icons.close, color: Colors.white, size: 20),
+                            decoration: const BoxDecoration(
+                                color: Colors.black54, shape: BoxShape.circle),
+                            child: const Icon(Icons.close,
+                                color: Colors.white, size: 20),
                           ),
                         ),
                       ),
@@ -251,8 +269,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                         label: 'Kamera',
                         color: const Color(0xFF1A56C4),
                         onTap: () async {
-                          final file = await picker.pickImage(source: ImageSource.camera);
-                          if (file != null) setModalState(() => pickedFile = file);
+                          final file = await picker.pickImage(
+                              source: ImageSource.camera);
+                          if (file != null)
+                            setModalState(() => pickedFile = file);
                         },
                       ),
                     ),
@@ -263,31 +283,37 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                         label: 'Galeri',
                         color: const Color(0xFF2E7D32),
                         onTap: () async {
-                          final file = await picker.pickImage(source: ImageSource.gallery);
-                          if (file != null) setModalState(() => pickedFile = file);
+                          final file = await picker.pickImage(
+                              source: ImageSource.gallery);
+                          if (file != null)
+                            setModalState(() => pickedFile = file);
                         },
                       ),
                     ),
                   ],
                 ),
-              
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: pickedFile == null ? null : () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Gambar carousel berhasil ditambahkan'),
-                      behavior: SnackBarBehavior.floating,
-                    ));
-                  },
+                  onPressed: pickedFile == null
+                      ? null
+                      : () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(const SnackBar(
+                            content:
+                                Text('Gambar carousel berhasil ditambahkan'),
+                            behavior: SnackBarBehavior.floating,
+                          ));
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1565C0),
                     foregroundColor: Colors.white,
                     disabledBackgroundColor: Colors.grey.shade300,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),
                   child: const Text('Simpan Banner'),
@@ -310,7 +336,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModal) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: Container(
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
             padding: const EdgeInsets.all(20),
@@ -324,7 +351,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               children: [
                 Center(
                   child: Container(
-                    width: 40, height: 4,
+                    width: 40,
+                    height: 4,
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade300,
@@ -333,15 +361,18 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   ),
                 ),
                 const Text('Tambah Berita',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 16),
                 TextField(
                   controller: titleCtrl,
                   decoration: InputDecoration(
                     labelText: 'Judul Berita',
                     hintText: 'Masukkan judul berita',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -351,8 +382,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   decoration: InputDecoration(
                     labelText: 'Ringkasan',
                     hintText: 'Masukkan ringkasan berita',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -365,12 +398,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                         content: Text('Berita berhasil ditambahkan'),
                         behavior: SnackBarBehavior.floating,
-                    ));
+                      ));
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1565C0),
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                       elevation: 0,
                     ),
                     child: const Text('Tambah'),
@@ -407,270 +441,37 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _NavItem(icon: Icons.home, label: 'Home', index: 0,
-                  currentIndex: _currentIndex, onTap: _onTabTapped),
-              _NavItem(icon: Icons.article_outlined, label: 'News', index: 1,
-                  currentIndex: _currentIndex, onTap: _onTabTapped),
+              _NavItem(
+                  icon: Icons.home,
+                  label: 'Home',
+                  index: 0,
+                  currentIndex: _currentIndex,
+                  onTap: _onTabTapped),
+              _NavItem(
+                  icon: Icons.article_outlined,
+                  label: 'News',
+                  index: 1,
+                  currentIndex: _currentIndex,
+                  onTap: _onTabTapped),
               const SizedBox(width: 48),
-              _NavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3,
-                  currentIndex: _currentIndex, onTap: _onTabTapped),
-              _NavItem(icon: Icons.menu, label: 'Menu', index: 4,
-                  currentIndex: _currentIndex, onTap: _onTabTapped),
+              _NavItem(
+                  icon: Icons.inbox_outlined,
+                  label: 'Inbox',
+                  index: 3,
+                  currentIndex: _currentIndex,
+                  onTap: _onTabTapped),
+              _NavItem(
+                  icon: Icons.menu,
+                  label: 'Menu',
+                  index: 4,
+                  currentIndex: _currentIndex,
+                  onTap: _onTabTapped),
             ],
           ),
         ),
       ),
     );
   }
-}
-
-// ── FAB BOTTOM SHEET ──────────────────────────────────────────────────────────
-class _FabMenuSheet extends StatelessWidget {
-  final int currentIndex;
-  final VoidCallback onScanQr;
-  final VoidCallback onCreateHazard;
-  final VoidCallback onCreateInspection;
-  final VoidCallback onAddCarousel;
-  final VoidCallback onAddNews;
-  final VoidCallback onEditBiodata;
-  final VoidCallback onAddLicense;
-  final VoidCallback onAddCertification;
-  final VoidCallback onEditMedical;
-
-  const _FabMenuSheet({
-    required this.currentIndex,
-    required this.onScanQr,
-    required this.onCreateHazard,
-    required this.onCreateInspection,
-    required this.onAddCarousel,
-    required this.onAddNews,
-    required this.onEditBiodata,
-    required this.onAddLicense,
-    required this.onAddCertification,
-    required this.onEditMedical,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 20,
-              offset: const Offset(0, -4)),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle
-          Padding(
-            padding: const EdgeInsets.only(top: 12, bottom: 8),
-            child: Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2)),
-            ),
-          ),
-
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
-            child: Text(
-              'Pilih Aksi',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Colors.black87),
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // ── Scan QR ───────────────────────────────────────────────
-          _MenuTile(
-            icon: Icons.qr_code_scanner,
-            iconBgColor: const Color(0xFFEFF4FF),
-            iconColor: const Color(0xFF1A56C4),
-            title: 'Scan QR Code',
-            subtitle: 'Pindai QR untuk verifikasi peralatan',
-            onTap: onScanQr,
-          ),
-
-          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
-
-          // ── Create Hazard ─────────────────────────────────────────
-          _MenuTile(
-            icon: Icons.warning_amber_rounded,
-            iconBgColor: const Color(0xFFFFEBEE),
-            iconColor: const Color(0xFFF44336),
-            title: 'Buat Laporan Hazard',
-            subtitle: 'Laporkan potensi bahaya di area kerja',
-            onTap: onCreateHazard,
-          ),
-
-          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
-
-          // ── Create Inspection ─────────────────────────────────────
-          _MenuTile(
-            icon: Icons.search,
-            iconBgColor: const Color(0xFFE3F2FD),
-            iconColor: const Color(0xFF1565C0),
-            title: 'Buat Laporan Inspeksi',
-            subtitle: 'Catat hasil inspeksi rutin area kerja',
-            onTap: onCreateInspection,
-          ),
-
-          // ── Tambah Gambar Carousel (Home tab) ─────────────────────
-          if (currentIndex == 0) ...[
-            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
-            _MenuTile(
-              icon: Icons.add_photo_alternate_outlined,
-              iconBgColor: const Color(0xFFE8F5E9),
-              iconColor: const Color(0xFF2E7D32),
-              title: 'Tambah Gambar Carousel',
-              subtitle: 'Tambah banner gambar di halaman utama',
-              onTap: onAddCarousel,
-            ),
-          ],
-
-          // ── Tambah Berita (News tab) ───────────────────────────────
-          if (currentIndex == 1) ...[
-            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
-            _MenuTile(
-              icon: Icons.article_outlined,
-              iconBgColor: const Color(0xFFFFF3E0),
-              iconColor: const Color(0xFFE65100),
-              title: 'Tambah Berita',
-              subtitle: 'Buat dan publikasikan berita baru',
-              onTap: onAddNews,
-            ),
-          ],
-
-          // ── Manajemen Profil (Profile tab) ─────────────────────────
-          if (currentIndex == 4) ...[
-            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
-            _MenuTile(
-              icon: Icons.person_outline,
-              iconBgColor: const Color(0xFFF3E5F5),
-              iconColor: const Color(0xFF8E24AA),
-              title: 'Edit Biodata',
-              subtitle: 'Perbarui nomor telepon & email',
-              onTap: onEditBiodata,
-            ),
-            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
-            _MenuTile(
-              icon: Icons.badge_outlined,
-              iconBgColor: const Color(0xFFE3F2FD),
-              iconColor: const Color(0xFF1E88E5),
-              title: 'Tambah Lisensi',
-              subtitle: 'Tambahkan SIM/SIO/KIMPER',
-              onTap: onAddLicense,
-            ),
-            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
-            _MenuTile(
-              icon: Icons.workspace_premium_outlined,
-              iconBgColor: const Color(0xFFFFF3E0),
-              iconColor: const Color(0xFFEF6C00),
-              title: 'Tambah Sertifikat',
-              subtitle: 'Tambahkan sertifikasi keahlian',
-              onTap: onAddCertification,
-            ),
-            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
-            _MenuTile(
-              icon: Icons.medical_services_outlined,
-              iconBgColor: const Color(0xFFFFEBEE),
-              iconColor: const Color(0xFFE53935),
-              title: 'Edit Data Medis',
-              subtitle: 'Perbarui info kesehatan & alergi',
-              onTap: onEditMedical,
-            ),
-          ],
-
-          const SizedBox(height: 8),
-
-          // Cancel button
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(color: Colors.grey.shade200)),
-                ),
-                child: const Text('Batal', style: TextStyle(fontSize: 14)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MenuTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconBgColor;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _MenuTile({
-    required this.icon,
-    required this.iconBgColor,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) => InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Container(
-                width: 44, height: 44,
-                decoration: BoxDecoration(
-                    color: iconBgColor,
-                    borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, color: iconColor, size: 24),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            color: Colors.black87)),
-                    const SizedBox(height: 2),
-                    Text(subtitle,
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right,
-                  color: Colors.grey.shade400, size: 20),
-            ],
-          ),
-        ),
-      );
 }
 
 // ── NAV ITEM ──────────────────────────────────────────────────────────────────
@@ -709,8 +510,7 @@ class _NavItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 color: isActive ? const Color(0xFF1A56C4) : Colors.grey,
-                fontWeight:
-                    isActive ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
           ],
@@ -748,7 +548,235 @@ class _ImageSourceCard extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 32),
             const SizedBox(height: 8),
-            Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+            Text(label,
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── FAB BOTTOM SHEET (SHARED) ──────────────────────────────────────────────────
+class FabMenuSheet extends StatelessWidget {
+  final int currentIndex;
+  final VoidCallback onScanQr;
+  final VoidCallback onCreateHazard;
+  final VoidCallback onCreateInspection;
+  final VoidCallback onAddCarousel;
+  final VoidCallback onAddNews;
+  final VoidCallback onEditBiodata;
+  final VoidCallback onAddLicense;
+  final VoidCallback onAddCertification;
+  final VoidCallback onEditMedical;
+
+  const FabMenuSheet({
+    super.key,
+    required this.currentIndex,
+    required this.onScanQr,
+    required this.onCreateHazard,
+    required this.onCreateInspection,
+    required this.onAddCarousel,
+    required this.onAddNews,
+    required this.onEditBiodata,
+    required this.onAddLicense,
+    required this.onAddCertification,
+    required this.onEditMedical,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 12, bottom: 8),
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              'Pilih Aksi Cepat',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.black87),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _FabMenuTile(
+            icon: Icons.qr_code_scanner_rounded,
+            iconBgColor: const Color(0xFFEFF4FF),
+            iconColor: const Color(0xFF1A56C4),
+            title: 'Scan QR Code',
+            subtitle: 'Pindai QR untuk verifikasi peralatan & area',
+            onTap: onScanQr,
+          ),
+          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          _FabMenuTile(
+            icon: Icons.warning_amber_rounded,
+            iconBgColor: const Color(0xFFFFEBEE),
+            iconColor: const Color(0xFFF44336),
+            title: 'Buat Laporan Hazard',
+            subtitle: 'Laporkan temuan bahaya TTA/KTA di lapangan',
+            onTap: onCreateHazard,
+          ),
+          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          _FabMenuTile(
+            icon: Icons.search_rounded,
+            iconBgColor: const Color(0xFFE3F2FD),
+            iconColor: const Color(0xFF1565C0),
+            title: 'Buat Laporan Inspeksi',
+            subtitle: 'Lakukan inspeksi rutin peralatan & area kerja',
+            onTap: onCreateInspection,
+          ),
+          if (currentIndex == 0) ...[
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _FabMenuTile(
+              icon: Icons.add_photo_alternate_outlined,
+              iconBgColor: const Color(0xFFE8F5E9),
+              iconColor: const Color(0xFF2E7D32),
+              title: 'Tambah Gambar Carousel',
+              subtitle: 'Tambah banner informasi di halaman beranda',
+              onTap: onAddCarousel,
+            ),
+          ],
+          if (currentIndex == 1) ...[
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _FabMenuTile(
+              icon: Icons.article_outlined,
+              iconBgColor: const Color(0xFFFFF3E0),
+              iconColor: const Color(0xFFE65100),
+              title: 'Tambah Berita',
+              subtitle: 'Publikasikan pengumuman atau berita terbaru',
+              onTap: onAddNews,
+            ),
+          ],
+          if (currentIndex == 4) ...[
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _FabMenuTile(
+              icon: Icons.person_outline_rounded,
+              iconBgColor: const Color(0xFFF3E5F5),
+              iconColor: const Color(0xFF8E24AA),
+              title: 'Edit Biodata',
+              subtitle: 'Update informasi dasar akun Anda',
+              onTap: onEditBiodata,
+            ),
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _FabMenuTile(
+              icon: Icons.badge_outlined,
+              iconBgColor: const Color(0xFFE3F2FD),
+              iconColor: const Color(0xFF1E88E5),
+              title: 'Tambah Lisensi',
+              subtitle: 'Upload SIM, SIO, atau KIMPER baru',
+              onTap: onAddLicense,
+            ),
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _FabMenuTile(
+              icon: Icons.workspace_premium_outlined,
+              iconBgColor: const Color(0xFFFFF3E0),
+              iconColor: const Color(0xFFEF6C00),
+              title: 'Tambah Sertifikat',
+              subtitle: 'Lengkapi dokumen keahlian profesional',
+              onTap: onAddCertification,
+            ),
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _FabMenuTile(
+              icon: Icons.medical_services_outlined,
+              iconBgColor: const Color(0xFFFFEBEE),
+              iconColor: const Color(0xFFE53935),
+              title: 'Update Data Medis',
+              subtitle: 'Perbarui info kesehatan & riwayat medis',
+              onTap: onEditMedical,
+            ),
+          ],
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey.shade600,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
+                child: const Text('Batal', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FabMenuTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconBgColor;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _FabMenuTile({
+    required this.icon,
+    required this.iconBgColor,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(color: iconBgColor, borderRadius: BorderRadius.circular(14)),
+              child: Icon(icon, color: iconColor, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: Colors.grey.shade300, size: 22),
           ],
         ),
       ),

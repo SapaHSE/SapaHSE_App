@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/company_model.dart';
 import '../services/company_service.dart';
 import 'company_management.dart';
+import 'package:sapahse/main.dart';
 
 class LocationManagementScreen extends StatefulWidget {
   const LocationManagementScreen({super.key});
@@ -17,6 +18,9 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> wit
   late TabController _tabController;
   bool _isLoading = true;
   String? _error;
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   List<CompanyData> _ownerCompanies = [];
   List<AreaData> _allAreas = [];
@@ -133,21 +137,85 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> wit
     _loadData();
   }
 
+  void _onTabTapped(int index) {
+    if (index == 4) {
+      Navigator.pop(context);
+      return;
+    }
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => MainScreen(initialIndex: index)),
+      (route) => false,
+    );
+  }
+
+  void _openFabMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _LocationFabMenuSheet(
+        onAddLocation: () {
+          Navigator.pop(context);
+          _navigateToAreaForm();
+        },
+        onRefreshData: () {
+          Navigator.pop(context);
+          _loadData();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
-        title: const Text('Location Management', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: _isSearching 
+          ? TextField(
+              controller: _searchController,
+              autofocus: true,
+              onChanged: (val) => setState(() => _searchQuery = val),
+              decoration: const InputDecoration(
+                hintText: 'Cari lokasi...',
+                border: InputBorder.none,
+                hintStyle: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+              style: const TextStyle(color: Colors.black87, fontSize: 16),
+            )
+          : const Text('Location Management', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
         centerTitle: true,
+        leading: _isSearching
+          ? IconButton(
+              icon: const Icon(Icons.close, color: Colors.black87),
+              onPressed: () {
+                setState(() {
+                  _isSearching = false;
+                  _searchQuery = '';
+                  _searchController.clear();
+                });
+              },
+            )
+          : IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black87),
+              onPressed: () => Navigator.pop(context),
+            ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
-            onPressed: _loadData,
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchQuery = '';
+                  _searchController.clear();
+                }
+              });
+            },
           ),
         ],
         bottom: TabBar(
@@ -172,18 +240,48 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> wit
                     _buildMainListTab(),
                   ],
                 ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _navigateToAreaForm(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openFabMenu,
         backgroundColor: _blue,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah Lokasi'),
-        isExtended: true,
+        shape: const CircleBorder(),
+        elevation: 4,
+        child: const Icon(Icons.add, size: 30),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        color: Colors.white,
+        elevation: 8,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _LocationNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
+              _LocationNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
+              const SizedBox(width: 48),
+              _LocationNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
+              _LocationNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildMainListTab() {
+    final searchLower = _searchQuery.toLowerCase();
+    
+    final filteredCompanies = _ownerCompanies.where((company) {
+      if (_searchQuery.isEmpty) return true;
+      final companyMatch = company.name.toLowerCase().contains(searchLower) || 
+                           (company.code?.toLowerCase().contains(searchLower) ?? false);
+      final areaMatch = _allAreas.any((a) => a.companyId == company.id && a.name.toLowerCase().contains(searchLower));
+      return companyMatch || areaMatch;
+    }).toList();
+
     return RefreshIndicator(
       onRefresh: _loadData,
       child: ListView(
@@ -191,19 +289,47 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> wit
         children: [
           _buildInfoBanner(),
           const SizedBox(height: 16),
-          if (_ownerCompanies.isEmpty)
+          if (filteredCompanies.isEmpty && _searchQuery.isNotEmpty)
+            _buildEmptyStateForSearch()
+          else if (_ownerCompanies.isEmpty)
             _buildEmptyState()
           else
-            ..._ownerCompanies.asMap().entries.map((entry) {
+            ...filteredCompanies.asMap().entries.map((entry) {
               int idx = entry.key;
               CompanyData company = entry.value;
               Color color = idx % 2 == 0 ? _blue : _orange;
+              
               List<AreaData> companyAreas = _allAreas.where((a) => a.companyId == company.id).toList();
+              
+              // If searching and company doesn't match, only show matching areas
+              final companyMatch = company.name.toLowerCase().contains(searchLower) || 
+                                   (company.code?.toLowerCase().contains(searchLower) ?? false);
+              if (_searchQuery.isNotEmpty && !companyMatch) {
+                companyAreas = companyAreas.where((a) => a.name.toLowerCase().contains(searchLower)).toList();
+              }
+
               return _buildCategoryCard(company, color, companyAreas);
             }),
           const SizedBox(height: 16),
           _buildGoToCompanyManagementButton(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyStateForSearch() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          children: [
+            const Icon(Icons.search_off, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text('Tidak Ada Hasil', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 8),
+            Text('Lokasi atau perusahaan tidak ditemukan.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade500)),
+          ],
+        ),
       ),
     );
   }
@@ -707,6 +833,199 @@ class _AreaFormScreenState extends State<_AreaFormScreen> {
           fillColor: Colors.white,
           counterText: "", // Hide the counter for cleaner UI
         ),
+      ),
+    );
+  }
+}
+
+// ── Nav Item ──────────────────────────────────────────────────────────────────
+class _LocationNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int index;
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const _LocationNavItem({
+    required this.icon,
+    required this.label,
+    required this.index,
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = currentIndex == index;
+    return GestureDetector(
+      onTap: () => onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 70,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isActive ? const Color(0xFF1A56C4) : Colors.grey, size: 24),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: isActive ? const Color(0xFF1A56C4) : Colors.grey,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Menu Tile ─────────────────────────────────────────────────────────────────
+class _LocationMenuTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconBgColor;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _LocationMenuTile({
+    required this.icon,
+    required this.iconBgColor,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: Colors.black87)),
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                        style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20),
+            ],
+          ),
+        ),
+      );
+}
+
+// ── FAB Bottom Sheet ──────────────────────────────────────────────────────────
+class _LocationFabMenuSheet extends StatelessWidget {
+  final VoidCallback onAddLocation;
+  final VoidCallback onRefreshData;
+
+  const _LocationFabMenuSheet({
+    required this.onAddLocation,
+    required this.onRefreshData,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 12, bottom: 8),
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: Text(
+              'Aksi Lokasi',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black87),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _LocationMenuTile(
+            icon: Icons.add_location_alt_outlined,
+            iconBgColor: const Color(0xFFE3F2FD),
+            iconColor: const Color(0xFF1E88E5),
+            title: 'Tambah Lokasi Baru',
+            subtitle: 'Daftarkan area atau lokasi kerja baru',
+            onTap: onAddLocation,
+          ),
+          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          _LocationMenuTile(
+            icon: Icons.refresh_rounded,
+            iconBgColor: const Color(0xFFE8F5E9),
+            iconColor: const Color(0xFF2E7D32),
+            title: 'Refresh Data',
+            subtitle: 'Muat ulang data lokasi terkini',
+            onTap: onRefreshData,
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
+                child: const Text('Batal', style: TextStyle(fontSize: 14)),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/report_service.dart';
 import '../services/storage_service.dart';
+import 'package:sapahse/main.dart';
 
 class KategoriLaporanScreen extends StatefulWidget {
   const KategoriLaporanScreen({super.key});
@@ -21,6 +22,9 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
   List<HazardSubcategoryData> _pendingSubs = [];
   bool _isLoading = true;
   String? _error;
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -260,6 +264,46 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
     ));
   }
 
+  void _onTabTapped(int index) {
+    if (index == 4) {
+      Navigator.pop(context);
+      return;
+    }
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => MainScreen(initialIndex: index)),
+      (route) => false,
+    );
+  }
+
+  void _openFabMenu(int currentTabIndex) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _KategoriFabMenuSheet(
+        isAdmin: _isAdmin,
+        currentTabIndex: currentTabIndex,
+        onAddCategory: () {
+          Navigator.pop(context);
+          _showAddCategoryDialog();
+        },
+        onAddSubcategory: () {
+          Navigator.pop(context);
+          _showAddSubcategoryForAnyCategory();
+        },
+        onProposeSubcategory: () {
+          Navigator.pop(context);
+          _showProposeSubcategoryForAnyCategory();
+        },
+        onRefreshData: () {
+          Navigator.pop(context);
+          _loadData();
+        },
+      ),
+    );
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
@@ -272,16 +316,50 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
           return Scaffold(
             backgroundColor: const Color(0xFFF5F6FA),
             appBar: AppBar(
-              title: const Text('Kategori Laporan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              title: _isSearching 
+                ? TextField(
+                    controller: _searchController,
+                    autofocus: true,
+                    onChanged: (val) => setState(() => _searchQuery = val),
+                    decoration: const InputDecoration(
+                      hintText: 'Cari kategori...',
+                      border: InputBorder.none,
+                      hintStyle: TextStyle(color: Colors.grey, fontSize: 16),
+                    ),
+                    style: const TextStyle(color: Colors.black87, fontSize: 16),
+                  )
+                : const Text('Kategori Laporan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               backgroundColor: Colors.white,
               foregroundColor: Colors.black,
               elevation: 0,
               centerTitle: true,
+              leading: _isSearching
+                ? IconButton(
+                    icon: const Icon(Icons.close, color: Colors.black87),
+                    onPressed: () {
+                      setState(() {
+                        _isSearching = false;
+                        _searchQuery = '';
+                        _searchController.clear();
+                      });
+                    },
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                    onPressed: () => Navigator.pop(context),
+                  ),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.refresh_rounded),
-                  tooltip: 'Refresh',
-                  onPressed: _loadData,
+                  icon: const Icon(Icons.search),
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = !_isSearching;
+                      if (!_isSearching) {
+                        _searchQuery = '';
+                        _searchController.clear();
+                      }
+                    });
+                  },
                 ),
               ],
               bottom: TabBar(
@@ -308,27 +386,33 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
                           _buildPendingTab(),
                         ],
                       ),
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                      if (_isAdmin) {
-                        if (tabController.index == 0) {
-                          _showAddCategoryDialog();
-                        } else {
-                          _showAddSubcategoryForAnyCategory();
-                        }
-                      } else {
-                        _showProposeSubcategoryForAnyCategory();
-                      }
-                    },
+            floatingActionButton: FloatingActionButton(
+              onPressed: _isLoading ? null : () => _openFabMenu(tabController.index),
               backgroundColor: _blue,
               foregroundColor: Colors.white,
-              icon: const Icon(Icons.add),
-              label: Text(_isAdmin 
-                ? (tabController.index == 0 ? 'Tambah Kategori' : 'Tambah Subkategori') 
-                : 'Usulkan Subkategori'),
-              isExtended: true,
+              shape: const CircleBorder(),
+              elevation: 4,
+              child: const Icon(Icons.add, size: 30),
+            ),
+            floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+            bottomNavigationBar: BottomAppBar(
+              shape: const CircularNotchedRectangle(),
+              notchMargin: 8,
+              color: Colors.white,
+              elevation: 8,
+              child: SizedBox(
+                height: 64,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _KategoriNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
+                    _KategoriNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
+                    const SizedBox(width: 48),
+                    _KategoriNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
+                    _KategoriNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
+                  ],
+                ),
+              ),
             ),
           );
         },
@@ -362,6 +446,15 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
   }
 
   Widget _buildMainListTab() {
+    final filteredCategories = _categories.where((cat) {
+      if (_searchQuery.isEmpty) return true;
+      final searchLower = _searchQuery.toLowerCase();
+      final catMatch = cat.name.toLowerCase().contains(searchLower) || 
+                       (cat.code?.toLowerCase().contains(searchLower) ?? false);
+      final subMatch = cat.subcategories.any((sub) => sub.name.toLowerCase().contains(searchLower));
+      return catMatch || subMatch;
+    }).toList();
+
     return RefreshIndicator(
       onRefresh: _loadData,
       child: ListView(
@@ -369,7 +462,14 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
         children: [
           _buildInfoBanner(),
           const SizedBox(height: 16),
-          ..._categories.map((cat) => _buildRedesignedCategoryCard(cat)),
+          if (filteredCategories.isEmpty && _searchQuery.isNotEmpty)
+            _buildEmptyState(
+              icon: Icons.search_off,
+              title: 'Tidak Ada Hasil',
+              subtitle: 'Kategori atau subkategori tidak ditemukan.',
+            )
+          else
+            ...filteredCategories.map((cat) => _buildRedesignedCategoryCard(cat)),
           if (_isAdmin) ...[
             const SizedBox(height: 16),
             _buildAddMainCategoryButton(),
@@ -404,14 +504,14 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
 
   Widget _buildRedesignedCategoryCard(HazardCategoryData cat) {
     final color = (cat.code == 'TTA') ? _red : (cat.code == 'KTA') ? _orange : _blue;
-    final bgColor = color.withValues(alpha: 0.05);
+    final bgColor = color.withOpacity(0.05);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [
@@ -677,7 +777,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -686,7 +786,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: _blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(color: _blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
                 child: Text(sub.categoryName ?? 'Kategori', style: const TextStyle(color: _blue, fontWeight: FontWeight.bold, fontSize: 10)),
               ),
               const Spacer(),
@@ -695,7 +795,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
               else
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                  decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
                   child: Row(
                     children: [
                       Icon(statusIcon, color: statusColor, size: 12),
@@ -1001,7 +1101,7 @@ class _SubcategoryFormScreenState extends State<_SubcategoryFormScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: DropdownButtonFormField<HazardCategoryData>(
@@ -1030,7 +1130,7 @@ class _SubcategoryFormScreenState extends State<_SubcategoryFormScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: TextField(
@@ -1066,7 +1166,7 @@ class _SubcategoryFormScreenState extends State<_SubcategoryFormScreen> {
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 2,
-          shadowColor: _blue.withValues(alpha: 0.4),
+          shadowColor: _blue.withOpacity(0.4),
         ),
         child: _isLoading 
           ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
@@ -1144,6 +1244,231 @@ class _InputDialog extends StatelessWidget {
           child: const Text('Simpan'),
         ),
       ],
+    );
+  }
+}
+
+// ── Kategori Nav Item ──────────────────────────────────────────────────────────
+class _KategoriNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int index;
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const _KategoriNavItem({
+    required this.icon,
+    required this.label,
+    required this.index,
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = currentIndex == index;
+    return GestureDetector(
+      onTap: () => onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 70,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isActive ? const Color(0xFF1A56C4) : Colors.grey, size: 24),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: isActive ? const Color(0xFF1A56C4) : Colors.grey,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Kategori Menu Tile ─────────────────────────────────────────────────────────
+class _KategoriMenuTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconBgColor;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _KategoriMenuTile({
+    required this.icon,
+    required this.iconBgColor,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: Colors.black87)),
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                        style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20),
+            ],
+          ),
+        ),
+      );
+}
+
+// ── Kategori FAB Menu Sheet ───────────────────────────────────────────────────
+class _KategoriFabMenuSheet extends StatelessWidget {
+  final bool isAdmin;
+  final int currentTabIndex;
+  final VoidCallback onAddCategory;
+  final VoidCallback onAddSubcategory;
+  final VoidCallback onProposeSubcategory;
+  final VoidCallback onRefreshData;
+
+  const _KategoriFabMenuSheet({
+    required this.isAdmin,
+    required this.currentTabIndex,
+    required this.onAddCategory,
+    required this.onAddSubcategory,
+    required this.onProposeSubcategory,
+    required this.onRefreshData,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          Padding(
+            padding: const EdgeInsets.only(top: 12, bottom: 8),
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: Text(
+              'Aksi Kategori',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black87),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          if (isAdmin) ...[
+            _KategoriMenuTile(
+              icon: Icons.category_outlined,
+              iconBgColor: const Color(0xFFE3F2FD),
+              iconColor: const Color(0xFF1E88E5),
+              title: 'Tambah Kategori',
+              subtitle: 'Buat kategori hazard utama baru',
+              onTap: onAddCategory,
+            ),
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _KategoriMenuTile(
+              icon: Icons.subdirectory_arrow_right_rounded,
+              iconBgColor: const Color(0xFFF3E5F5),
+              iconColor: const Color(0xFF8E24AA),
+              title: 'Tambah Subkategori',
+              subtitle: 'Tambahkan item ke kategori yang ada',
+              onTap: onAddSubcategory,
+            ),
+          ] else
+            _KategoriMenuTile(
+              icon: Icons.lightbulb_outline,
+              iconBgColor: const Color(0xFFFFF3E0),
+              iconColor: const Color(0xFFFB8C00),
+              title: 'Usulkan Subkategori',
+              subtitle: 'Kirim usulan subkategori baru',
+              onTap: onProposeSubcategory,
+            ),
+
+          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          _KategoriMenuTile(
+            icon: Icons.refresh_rounded,
+            iconBgColor: const Color(0xFFE8F5E9),
+            iconColor: const Color(0xFF2E7D32),
+            title: 'Refresh Data',
+            subtitle: 'Muat ulang daftar kategori',
+            onTap: onRefreshData,
+          ),
+          const SizedBox(height: 8),
+
+          // Cancel
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
+                child: const Text('Batal', style: TextStyle(fontSize: 14)),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

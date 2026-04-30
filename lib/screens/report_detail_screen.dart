@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/report.dart';
 import '../data/report_store.dart';
+import 'package:sapahse/main.dart';
 
 class ReportDetailScreen extends StatefulWidget {
   final Report report;
@@ -142,6 +143,18 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
+  void _onTabTapped(int index) {
+    if (index == 4) {
+      Navigator.pop(context);
+      return;
+    }
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => MainScreen(initialIndex: index)),
+      (route) => false,
+    );
+  }
+
   void _showUpdateStatusModal() {
     showModalBottomSheet(
       context: context,
@@ -250,7 +263,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.65),
+                          Colors.black.withOpacity(0.65),
                           Colors.transparent
                         ],
                       ),
@@ -678,7 +691,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                           color: _blueLight,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: _blue.withValues(alpha: 0.15),
+                            color: _blue.withOpacity(0.15),
                           ),
                         ),
                         child: Row(
@@ -719,35 +732,38 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            )
-          ],
-        ),
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () => _showUpdateStatusModal(),
-            icon: const Icon(Icons.edit_outlined, size: 18),
-            label: const Text('Update Status'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _blue,
+      floatingActionButton: widget.isDialog
+          ? null
+          : FloatingActionButton(
+              onPressed: _showUpdateStatusModal,
+              backgroundColor: const Color(0xFF1A56C4),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
+              shape: const CircleBorder(),
+              elevation: 4,
+              child: const Icon(Icons.edit_outlined, size: 26),
             ),
-          ),
-        ),
-      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: widget.isDialog
+          ? null
+          : BottomAppBar(
+              shape: const CircularNotchedRectangle(),
+              notchMargin: 8,
+              color: Colors.white,
+              elevation: 8,
+              child: SizedBox(
+                height: 64,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _ReportNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: -1, onTap: _onTabTapped),
+                    _ReportNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: -1, onTap: _onTabTapped),
+                    const SizedBox(width: 48),
+                    _ReportNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: -1, onTap: _onTabTapped),
+                    _ReportNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: -1, onTap: _onTabTapped),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
@@ -782,7 +798,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               decoration: BoxDecoration(
                 color: isCurrentGroup
                     ? statusColor
-                    : statusColor.withValues(alpha: 0.1),
+                    : statusColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -800,7 +816,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             const SizedBox(width: 8),
             Expanded(
                 child: Container(
-                    height: 1, color: statusColor.withValues(alpha: 0.2))),
+                    height: 1, color: statusColor.withOpacity(0.2))),
           ]),
         ),
       );
@@ -883,7 +899,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 boxShadow: isCur
                     ? [
                         BoxShadow(
-                            color: color.withValues(alpha: 0.35),
+                            color: color.withOpacity(0.35),
                             blurRadius: 8,
                             spreadRadius: 1)
                       ]
@@ -920,7 +936,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 6,
                 offset: const Offset(0, 2))
           ],
@@ -1753,10 +1769,54 @@ class _SectionHeader extends StatelessWidget {
         Expanded(
           child: Container(
             height: 1,
-            color: const Color(0xFF1A56C4).withValues(alpha: 0.15),
+            color: const Color(0xFF1A56C4).withOpacity(0.15),
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Nav Item for ReportDetailScreen ──────────────────────────────────────────
+class _ReportNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int index;
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const _ReportNavItem({
+    required this.icon,
+    required this.label,
+    required this.index,
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = currentIndex == index;
+    return GestureDetector(
+      onTap: () => onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 70,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isActive ? const Color(0xFF1A56C4) : Colors.grey, size: 24),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: isActive ? const Color(0xFF1A56C4) : Colors.grey,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -3,6 +3,7 @@ import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../services/company_service.dart';
 import '../models/company_model.dart';
+import 'package:sapahse/main.dart';
 
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});
@@ -22,6 +23,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   String _searchQuery = '';
   String _selectedFilter = 'Semua';
   bool _isSuperadmin = false;
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -227,6 +230,38 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     }
   }
 
+  void _onTabTapped(int index) {
+    if (index == 4) {
+      Navigator.pop(context);
+      return;
+    }
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => MainScreen(initialIndex: index)),
+      (route) => false,
+    );
+  }
+
+  void _openFabMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _UserFabMenuSheet(
+        onAddUser: () {
+          Navigator.pop(context);
+          _navigateToUserForm();
+        },
+        onRefreshData: () {
+          Navigator.pop(context);
+          _fetchUsers();
+          _fetchUnapprovedUsers();
+          _fetchRejectedUsers();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_isSuperadmin) {
@@ -247,27 +282,50 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF5F6FA),
         appBar: AppBar(
-          title: const Text('User Management', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87)),
+          title: _isSearching 
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                onChanged: (val) => setState(() => _searchQuery = val),
+                decoration: const InputDecoration(
+                  hintText: 'Cari user...',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+                style: const TextStyle(color: Colors.black87, fontSize: 16),
+              )
+            : const Text('User Management', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87)),
           backgroundColor: Colors.white,
           elevation: 0,
           centerTitle: false,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black87),
-            onPressed: () => Navigator.pop(context),
-          ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: CircleAvatar(
-                backgroundColor: Colors.blue.shade50,
-                radius: 16,
-                child: IconButton(
-                  icon: const Icon(Icons.add, size: 16, color: _blue),
-                  padding: EdgeInsets.zero,
-                  onPressed: () => _navigateToUserForm(),
-                ),
+          leading: _isSearching
+            ? IconButton(
+                icon: const Icon(Icons.close, color: Colors.black87),
+                onPressed: () {
+                  setState(() {
+                    _isSearching = false;
+                    _searchQuery = '';
+                    _searchController.clear();
+                  });
+                },
+              )
+            : IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                onPressed: () => Navigator.pop(context),
               ),
-            )
+          actions: [
+            IconButton(
+              icon: Icon(_isSearching ? Icons.search : Icons.search, color: _blue),
+              onPressed: () {
+                setState(() {
+                  _isSearching = !_isSearching;
+                  if (!_isSearching) {
+                    _searchQuery = '';
+                    _searchController.clear();
+                  }
+                });
+              },
+            ),
           ],
           bottom: TabBar(
             labelColor: _blue,
@@ -303,6 +361,34 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             _buildApprovalTab(),
             _buildRejectedHistoryTab(),
           ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _openFabMenu,
+          backgroundColor: const Color(0xFF1A56C4),
+          foregroundColor: Colors.white,
+          shape: const CircleBorder(),
+          elevation: 4,
+          child: const Icon(Icons.add, size: 30),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        bottomNavigationBar: BottomAppBar(
+          shape: const CircularNotchedRectangle(),
+          notchMargin: 8,
+          color: Colors.white,
+          elevation: 8,
+          child: SizedBox(
+            height: 60,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _UserNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
+                _UserNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
+                const SizedBox(width: 48),
+                _UserNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
+                _UserNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -347,29 +433,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     ),
                   );
                 }).toList(),
-              ),
-            ),
-          ),
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-            child: TextField(
-              onChanged: (val) => setState(() => _searchQuery = val),
-              decoration: InputDecoration(
-                hintText: 'Search by name, NIK, departemen...',
-                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                prefixIcon: const Icon(Icons.search, color: Colors.blue),
-                filled: true,
-                fillColor: Colors.grey.shade50,
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
-                ),
               ),
             ),
           ),
@@ -795,6 +858,28 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     }
   }
 
+  void _openDetailFabMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _DetailFabMenuSheet(
+        onEdit: () async {
+          Navigator.pop(context);
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => UserFormScreen(userToEdit: widget.user)),
+          );
+          if (result == true && mounted) Navigator.pop(context, true);
+        },
+        onDelete: () {
+          Navigator.pop(context);
+          _deleteUser();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final name = widget.user['full_name'] ?? 'Unknown';
@@ -819,24 +904,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.grey),
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => UserFormScreen(userToEdit: widget.user)),
-              );
-              if (result == true) Navigator.pop(context, true);
-            },
-            tooltip: 'Edit Data',
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
-            onPressed: _deleteUser,
-            tooltip: 'Hapus User',
-          ),
-        ],
+        actions: const [],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -1002,6 +1070,46 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openDetailFabMenu,
+        backgroundColor: const Color(0xFF1A56C4),
+        foregroundColor: Colors.white,
+        shape: const CircleBorder(),
+        elevation: 4,
+        child: const Icon(Icons.add, size: 30),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        color: Colors.white,
+        elevation: 8,
+        child: SizedBox(
+          height: 60,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _UserNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onDetailTabTapped),
+              _UserNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onDetailTabTapped),
+              const SizedBox(width: 48),
+              _UserNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onDetailTabTapped),
+              _UserNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onDetailTabTapped),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _onDetailTabTapped(int index) {
+    if (index == 4) {
+      Navigator.pop(context);
+      return;
+    }
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => MainScreen(initialIndex: index)),
+      (route) => false,
     );
   }
 
@@ -1416,6 +1524,305 @@ class _UserFormScreenState extends State<UserFormScreen> {
               }).toList(),
             ),
           )
+        ],
+      ),
+    );
+  }
+}
+
+// ── NAV ITEM ──────────────────────────────────────────────────────────────────
+class _UserNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int index;
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const _UserNavItem({
+    required this.icon,
+    required this.label,
+    required this.index,
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = currentIndex == index;
+    return GestureDetector(
+      onTap: () => onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 70,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isActive ? const Color(0xFF1A56C4) : Colors.grey, size: 24),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: isActive ? const Color(0xFF1A56C4) : Colors.grey,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── MENU TILE ─────────────────────────────────────────────────────────────────
+class _UserMenuTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconBgColor;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _UserMenuTile({
+    required this.icon,
+    required this.iconBgColor,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: Colors.black87)),
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                        style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20),
+            ],
+          ),
+        ),
+      );
+}
+
+// ── FAB BOTTOM SHEET ──────────────────────────────────────────────────────────
+class _UserFabMenuSheet extends StatelessWidget {
+  final VoidCallback onAddUser;
+  final VoidCallback onRefreshData;
+
+  const _UserFabMenuSheet({
+    required this.onAddUser,
+    required this.onRefreshData,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          Padding(
+            padding: const EdgeInsets.only(top: 12, bottom: 8),
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: Text(
+              'Aksi Pengguna',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black87),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Tambah User
+          _UserMenuTile(
+            icon: Icons.person_add_outlined,
+            iconBgColor: const Color(0xFFE3F2FD),
+            iconColor: const Color(0xFF1E88E5),
+            title: 'Tambah Pengguna Baru',
+            subtitle: 'Daftarkan admin atau user baru',
+            onTap: onAddUser,
+          ),
+          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+
+          // Refresh / Read All
+          _UserMenuTile(
+            icon: Icons.refresh_rounded,
+            iconBgColor: const Color(0xFFE8F5E9),
+            iconColor: const Color(0xFF2E7D32),
+            title: 'Refresh Data',
+            subtitle: 'Muat ulang data pengguna terkini',
+            onTap: onRefreshData,
+          ),
+          const SizedBox(height: 8),
+
+          // Cancel
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
+                child: const Text('Batal', style: TextStyle(fontSize: 14)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Detail Screen FAB Menu Sheet ──────────────────────────────────────────────
+class _DetailFabMenuSheet extends StatelessWidget {
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _DetailFabMenuSheet({
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          Padding(
+            padding: const EdgeInsets.only(top: 12, bottom: 8),
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: Text(
+              'Aksi User',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black87),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Edit
+          _UserMenuTile(
+            icon: Icons.edit_outlined,
+            iconBgColor: const Color(0xFFE3F2FD),
+            iconColor: const Color(0xFF1E88E5),
+            title: 'Edit Data Pengguna',
+            subtitle: 'Ubah informasi dan role pengguna ini',
+            onTap: onEdit,
+          ),
+          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+
+          // Delete
+          _UserMenuTile(
+            icon: Icons.delete_outline_rounded,
+            iconBgColor: const Color(0xFFFFEBEE),
+            iconColor: const Color(0xFFE53935),
+            title: 'Hapus Pengguna',
+            subtitle: 'Hapus pengguna ini secara permanen',
+            onTap: onDelete,
+          ),
+          const SizedBox(height: 8),
+
+          // Cancel
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
+                child: const Text('Batal', style: TextStyle(fontSize: 14)),
+              ),
+            ),
+          ),
         ],
       ),
     );

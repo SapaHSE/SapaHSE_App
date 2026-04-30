@@ -169,7 +169,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     if (_selectedPerusahaan == null) return [];
 
     final companyUsers = _usersData.where((u) => 
-        u.company == _selectedPerusahaan && u.role != 'superadmin'
+        u.role != 'superadmin'
     ).toList();
     final depts = companyUsers
         .map((u) => u.department)

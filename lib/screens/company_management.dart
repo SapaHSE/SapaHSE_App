@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/company_model.dart';
 import '../services/company_service.dart';
+import 'package:sapahse/main.dart';
 
 class CompanyManagementScreen extends StatefulWidget {
   const CompanyManagementScreen({super.key});
@@ -17,6 +18,9 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> with 
   late TabController _tabController;
   bool _isLoading = true;
   String? _error;
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   List<CompanyData> _allCompanies = [];
 
@@ -122,21 +126,85 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> with 
     _loadData();
   }
 
+  void _onTabTapped(int index) {
+    if (index == 4) {
+      Navigator.pop(context);
+      return;
+    }
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => MainScreen(initialIndex: index)),
+      (route) => false,
+    );
+  }
+
+  void _openFabMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _CompanyFabMenuSheet(
+        onAddCompany: () {
+          Navigator.pop(context);
+          _navigateToCompanyForm();
+        },
+        onRefreshData: () {
+          Navigator.pop(context);
+          _loadData();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
-        title: const Text('Company Management', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: _isSearching 
+          ? TextField(
+              controller: _searchController,
+              autofocus: true,
+              onChanged: (val) => setState(() => _searchQuery = val),
+              decoration: const InputDecoration(
+                hintText: 'Cari company...',
+                border: InputBorder.none,
+                hintStyle: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+              style: const TextStyle(color: Colors.black87, fontSize: 16),
+            )
+          : const Text('Company Management', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
         centerTitle: true,
+        leading: _isSearching
+          ? IconButton(
+              icon: const Icon(Icons.close, color: Colors.black87),
+              onPressed: () {
+                setState(() {
+                  _isSearching = false;
+                  _searchQuery = '';
+                  _searchController.clear();
+                });
+              },
+            )
+          : IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black87),
+              onPressed: () => Navigator.pop(context),
+            ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
-            onPressed: _loadData,
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchQuery = '';
+                  _searchController.clear();
+                }
+              });
+            },
           ),
         ],
         bottom: TabBar(
@@ -161,22 +229,49 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> with 
                     _buildMainListTab(),
                   ],
                 ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _navigateToCompanyForm(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openFabMenu,
         backgroundColor: _blue,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah Company'),
-        isExtended: true,
+        shape: const CircleBorder(),
+        elevation: 4,
+        child: const Icon(Icons.add, size: 30),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        color: Colors.white,
+        elevation: 8,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _CompanyNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
+              _CompanyNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
+              const SizedBox(width: 48),
+              _CompanyNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
+              _CompanyNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildMainListTab() {
+    final filtered = _allCompanies.where((c) {
+      if (_searchQuery.isEmpty) return true;
+      final searchLower = _searchQuery.toLowerCase();
+      return c.name.toLowerCase().contains(searchLower) || 
+             (c.code?.toLowerCase().contains(searchLower) ?? false);
+    }).toList();
+
     // Group companies by category
-    final owners = _allCompanies.where((c) => c.category == 'owner').toList();
-    final contractors = _allCompanies.where((c) => c.category == 'kontraktor').toList();
-    final subcontraktors = _allCompanies.where((c) => c.category == 'subkontraktor').toList();
+    final owners = filtered.where((c) => c.category == 'owner').toList();
+    final contractors = filtered.where((c) => c.category == 'contractor' || c.category == 'kontraktor').toList();
+    final subcontraktors = filtered.where((c) => c.category == 'sub contractor' || c.category == 'subkontraktor').toList();
 
     return RefreshIndicator(
       onRefresh: _loadData,
@@ -368,7 +463,16 @@ class _CompanyFormScreenState extends State<_CompanyFormScreen> {
   @override
   void initState() {
     super.initState();
-    _category = widget.companyToEdit?.category ?? widget.defaultCategory ?? 'owner';
+    String rawCategory = widget.companyToEdit?.category ?? widget.defaultCategory ?? 'owner';
+    // Normalize Indonesian terms to English for standardized logic and dropdown matching
+    if (rawCategory == 'kontraktor') {
+      _category = 'contractor';
+    } else if (rawCategory == 'subkontraktor') {
+      _category = 'sub contractor';
+    } else {
+      _category = rawCategory;
+    }
+    
     _nameCtrl = TextEditingController(text: widget.companyToEdit?.name ?? '');
     _codeCtrl = TextEditingController(text: widget.companyToEdit?.code ?? '');
   }
@@ -614,8 +718,8 @@ class _CompanyFormScreenState extends State<_CompanyFormScreen> {
         ),
         items: const [
           DropdownMenuItem(value: 'owner', child: Text('Owner', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
-          DropdownMenuItem(value: 'kontraktor', child: Text('Contractor', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
-          DropdownMenuItem(value: 'subkontraktor', child: Text('Sub Contractor', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+          DropdownMenuItem(value: 'contractor', child: Text('Contractor', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+          DropdownMenuItem(value: 'sub contractor', child: Text('Sub Contractor', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
         ],
         onChanged: (v) => setState(() => _category = v!),
       ),
@@ -646,6 +750,199 @@ class _CompanyFormScreenState extends State<_CompanyFormScreen> {
           fillColor: Colors.white,
           counterText: "", // Hide the counter for cleaner UI
         ),
+      ),
+    );
+  }
+}
+
+// ── Nav Item ──────────────────────────────────────────────────────────────────
+class _CompanyNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int index;
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const _CompanyNavItem({
+    required this.icon,
+    required this.label,
+    required this.index,
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = currentIndex == index;
+    return GestureDetector(
+      onTap: () => onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 70,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isActive ? const Color(0xFF1A56C4) : Colors.grey, size: 24),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: isActive ? const Color(0xFF1A56C4) : Colors.grey,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Menu Tile ─────────────────────────────────────────────────────────────────
+class _CompanyMenuTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconBgColor;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _CompanyMenuTile({
+    required this.icon,
+    required this.iconBgColor,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: Colors.black87)),
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                        style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20),
+            ],
+          ),
+        ),
+      );
+}
+
+// ── FAB Bottom Sheet ──────────────────────────────────────────────────────────
+class _CompanyFabMenuSheet extends StatelessWidget {
+  final VoidCallback onAddCompany;
+  final VoidCallback onRefreshData;
+
+  const _CompanyFabMenuSheet({
+    required this.onAddCompany,
+    required this.onRefreshData,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 12, bottom: 8),
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: Text(
+              'Aksi Company',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black87),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _CompanyMenuTile(
+            icon: Icons.business_outlined,
+            iconBgColor: const Color(0xFFE3F2FD),
+            iconColor: const Color(0xFF1E88E5),
+            title: 'Tambah Company Baru',
+            subtitle: 'Daftarkan Owner, Kontraktor, atau Sub-Kont.',
+            onTap: onAddCompany,
+          ),
+          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          _CompanyMenuTile(
+            icon: Icons.refresh_rounded,
+            iconBgColor: const Color(0xFFE8F5E9),
+            iconColor: const Color(0xFF2E7D32),
+            title: 'Refresh Data',
+            subtitle: 'Muat ulang data company terkini',
+            onTap: onRefreshData,
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
+                child: const Text('Batal', style: TextStyle(fontSize: 14)),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
