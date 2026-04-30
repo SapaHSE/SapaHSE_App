@@ -3,6 +3,11 @@ import '../models/department_model.dart';
 import '../services/department_service.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
+import 'package:sapahse/main.dart';
+import 'qr_scan_screen.dart';
+import 'create_hazard_screen.dart';
+import 'create_inspection_screen.dart';
+import 'my_profile.dart';
 
 class DepartmentManagementScreen extends StatefulWidget {
   const DepartmentManagementScreen({super.key});
@@ -150,6 +155,44 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
     );
   }
 
+  void _onTabTapped(int index) {
+    if (index == 4) {
+      Navigator.pop(context);
+      return;
+    }
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => MainScreen(initialIndex: index)),
+      (route) => false,
+    );
+  }
+
+  void _openFabMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _DeptFabMenuSheet(
+        onAddDepartment: () {
+          Navigator.pop(context);
+          _showForm();
+        },
+        onScanQr: () {
+          Navigator.pop(context);
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScanScreen()));
+        },
+        onCreateHazard: () {
+          Navigator.pop(context);
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateHazardScreen()));
+        },
+        onCreateInspection: () {
+          Navigator.pop(context);
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateInspectionScreen()));
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool canEdit = _currentUser?.role == 'superadmin';
@@ -215,13 +258,231 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
                     },
                   ),
                 ),
-      floatingActionButton: (canEdit && !_isLoading) ? FloatingActionButton.extended(
-        onPressed: () => _showForm(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openFabMenu,
         backgroundColor: _blue,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah Department'),
-      ) : null,
+        shape: const CircleBorder(),
+        elevation: 4,
+        child: const Icon(Icons.add, size: 30),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        color: Colors.white,
+        elevation: 8,
+        child: SizedBox(
+          height: 60,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _DeptNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
+              _DeptNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
+              const SizedBox(width: 48),
+              _DeptNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
+              _DeptNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── DEPT FAB MENU SHEET ────────────────────────────────────────────────────────
+class _DeptFabMenuSheet extends StatelessWidget {
+  final VoidCallback onAddDepartment;
+  final VoidCallback onScanQr;
+  final VoidCallback onCreateHazard;
+  final VoidCallback onCreateInspection;
+
+  const _DeptFabMenuSheet({
+    required this.onAddDepartment,
+    required this.onScanQr,
+    required this.onCreateHazard,
+    required this.onCreateInspection,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 12, bottom: 8),
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text('Manajemen Department', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.black87)),
+          ),
+          const SizedBox(height: 8),
+          _DeptFabMenuTile(
+            icon: Icons.add_business_rounded,
+            iconBgColor: const Color(0xFFE8F5E9),
+            iconColor: const Color(0xFF2E7D32),
+            title: 'Tambah Department',
+            subtitle: 'Daftarkan unit atau departemen baru',
+            onTap: onAddDepartment,
+          ),
+          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          _DeptFabMenuTile(
+            icon: Icons.qr_code_scanner_rounded,
+            iconBgColor: const Color(0xFFEFF4FF),
+            iconColor: const Color(0xFF1A56C4),
+            title: 'Scan QR Code',
+            subtitle: 'Pindai QR untuk verifikasi peralatan',
+            onTap: onScanQr,
+          ),
+          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          _DeptFabMenuTile(
+            icon: Icons.warning_amber_rounded,
+            iconBgColor: const Color(0xFFFFEBEE),
+            iconColor: const Color(0xFFF44336),
+            title: 'Buat Laporan Hazard',
+            subtitle: 'Laporkan temuan bahaya di lapangan',
+            onTap: onCreateHazard,
+          ),
+          Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+          _DeptFabMenuTile(
+            icon: Icons.search_rounded,
+            iconBgColor: const Color(0xFFE3F2FD),
+            iconColor: const Color(0xFF1565C0),
+            title: 'Buat Laporan Inspeksi',
+            subtitle: 'Lakukan inspeksi rutin unit kerja',
+            onTap: onCreateInspection,
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey.shade600,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: Colors.grey.shade200)),
+                ),
+                child: const Text('Batal', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeptFabMenuTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconBgColor;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _DeptFabMenuTile({
+    required this.icon,
+    required this.iconBgColor,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(color: iconBgColor, borderRadius: BorderRadius.circular(14)),
+              child: Icon(icon, color: iconColor, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: Colors.grey.shade300, size: 22),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── NAV ITEM ──────────────────────────────────────────────────────────────────
+class _DeptNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int index;
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const _DeptNavItem({
+    required this.icon,
+    required this.label,
+    required this.index,
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = currentIndex == index;
+    return GestureDetector(
+      onTap: () => onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 70,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isActive ? const Color(0xFF1A56C4) : Colors.grey, size: 24),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: isActive ? const Color(0xFF1A56C4) : Colors.grey,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
