@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../services/company_service.dart';
+import '../services/department_service.dart';
 import '../models/company_model.dart';
 import 'package:sapahse/main.dart';
 
@@ -1231,17 +1232,28 @@ class _UserFormScreenState extends State<UserFormScreen> {
   List<String> _ownerList = [];
   List<String> _kontraktorList = [];
   List<String> _subkontraktorList = [];
+  List<String> _departemenList = [];
 
-  final List<String> _departemenList = [
-    'HSE',
-    'IT',
-    'Operasional',
-    'Produksi',
-    'Keuangan',
-    'HR',
-    'Maintenance',
-    'Logistik',
-  ];
+  Future<void> _fetchDepartments() async {
+    try {
+      final depts = await DepartmentService.getDepartments();
+      if (mounted) {
+        setState(() {
+          _departemenList = depts.map((e) => e.name).toList();
+          
+          final d = widget.userToEdit?['department'] ?? '';
+          if (d.isNotEmpty && !_departemenList.contains(d)) {
+            _departemenList.add(d);
+            _selectedDept = d;
+          } else if (d.isNotEmpty) {
+            _selectedDept = d;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching departments: $e');
+    }
+  }
 
   Future<void> _fetchCompanies() async {
     try {
@@ -1290,6 +1302,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
   void initState() {
     super.initState();
     _fetchCompanies();
+    _fetchDepartments();
     _nameCtrl = TextEditingController(text: widget.userToEdit?['full_name'] ?? '');
     _nikCtrl = TextEditingController(text: widget.userToEdit?['employee_id'] ?? '');
     _emailCtrl = TextEditingController(text: widget.userToEdit?['personal_email'] ?? widget.userToEdit?['email'] ?? '');
@@ -1301,10 +1314,6 @@ class _UserFormScreenState extends State<UserFormScreen> {
     
     _tipeAfiliasi = widget.userToEdit?['tipe_afiliasi'] ?? 'Owner';
     if (_tipeAfiliasi == 'Sub-Kontraktor') _tipeAfiliasi = 'Sub-Kont.';
-
-    final dept = widget.userToEdit?['department'] ?? '';
-    if (_departemenList.contains(dept)) _selectedDept = dept;
-    else if (dept.isNotEmpty) { _departemenList.add(dept); _selectedDept = dept; }
 
     if (widget.userToEdit != null) {
       _role = (widget.userToEdit['role'] ?? 'user').toString().toLowerCase();

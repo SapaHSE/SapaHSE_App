@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
+import '../services/company_service.dart';
+import '../services/department_service.dart';
 import 'dashboard_widgets.dart';
 
 class DashboardUsersModule extends StatefulWidget {
@@ -101,35 +103,47 @@ class _DashboardUsersModuleState extends State<DashboardUsersModule> {
     String currentRole = user?.role ?? 'user';
     bool isActive = user?.isActive ?? true;
     bool isLoading = false;
+    StateSetter? setStateModal;
 
-    final List<String> companies = [
-      'PT BUKIT BAIDURI ENERGI',
-      'PT KHOTAI MAKMUR INSAN ABADI'
-    ];
-    final List<String> departments = [
-      'HSE',
-      'IT',
-      'MINING',
-      'HR',
-      'FINANCE',
-      'MAINTENANCE',
-      'OPERATIONAL',
-      'SECURITY',
-      'LOGISTIC'
-    ];
+    List<String> companiesList = [];
+    List<String> departmentsList = [];
 
-    // Ensure selected values are in the list or null
-    if (selectedCompany != null && !companies.contains(selectedCompany)) {
-      companies.add(selectedCompany);
+    Future<void> loadDropdownData() async {
+      try {
+        final cos = await CompanyService.getCompanies(active: true);
+        final depts = await DepartmentService.getDepartments();
+        if (context.mounted) {
+          void update() {
+            companiesList = cos.map((e) => e.name.toUpperCase()).toList();
+            departmentsList = depts.map((e) => e.name.toUpperCase()).toList();
+
+            if (selectedCompany != null && !companiesList.contains(selectedCompany)) {
+              companiesList.add(selectedCompany!);
+            }
+            if (selectedDept != null && !departmentsList.contains(selectedDept)) {
+              departmentsList.add(selectedDept!);
+            }
+          }
+
+          if (setStateModal != null) {
+            setStateModal!(update);
+          } else {
+            update();
+          }
+        }
+      } catch (e) {
+        debugPrint('Error loading dropdown data: $e');
+      }
     }
-    if (selectedDept != null && !departments.contains(selectedDept)) {
-      departments.add(selectedDept);
-    }
+
+    loadDropdownData();
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setModalState) => AlertDialog(
+        builder: (context, setModalState) {
+          setStateModal = setModalState;
+          return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(user == null ? 'Tambah Akun Pengguna' : 'Edit Pengguna',
@@ -170,7 +184,7 @@ class _DashboardUsersModuleState extends State<DashboardUsersModule> {
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12)),
                         ),
-                        items: companies
+                        items: companiesList
                             .map((e) => DropdownMenuItem(
                                 value: e,
                                 child:
@@ -197,7 +211,7 @@ class _DashboardUsersModuleState extends State<DashboardUsersModule> {
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12)),
                         ),
-                        items: departments
+                        items: departmentsList
                             .map((e) => DropdownMenuItem(
                                 value: e,
                                 child:
@@ -313,7 +327,8 @@ class _DashboardUsersModuleState extends State<DashboardUsersModule> {
                   : const Text('Simpan'),
             ),
           ],
-        ),
+        );
+      },
       ),
     );
   }
