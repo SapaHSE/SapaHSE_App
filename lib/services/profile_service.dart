@@ -193,14 +193,16 @@ class ProfileService {
   static Future<SimpleResult> addCertification({
     required String name,
     required String issuer,
-    int? year,
+    String? obtainedAt,
+    String? expiredAt,
     String status = 'active',
     XFile? imageFile,
   }) async {
     final fields = {
       'name': name,
       'issuer': issuer,
-      'year': year?.toString() ?? '',
+      'obtained_at': obtainedAt ?? '',
+      'expired_at': expiredAt ?? '',
       'status': status,
     };
 

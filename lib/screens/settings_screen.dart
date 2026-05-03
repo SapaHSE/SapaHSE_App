@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../services/profile_service.dart';
 import '../services/storage_service.dart';
 import 'login_screen.dart';
@@ -7,6 +8,7 @@ import 'create_hazard_screen.dart';
 import 'create_inspection_screen.dart';
 import 'qr_scan_screen.dart';
 import 'my_profile.dart';
+import 'package:local_auth/local_auth.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -19,8 +21,117 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _selectedLanguage = 'Indonesia';
   bool _isDarkMode = false;
   bool _isPushEnabled = true;
-  bool _isBiometricEnabled = true;
+  bool _isBiometricEnabled = false;
   static const _blue = Color(0xFF1A56C4);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final bioEnabled = await StorageService.isBiometricEnabled();
+    if (mounted) {
+      setState(() {
+        _isBiometricEnabled = bioEnabled;
+      });
+    }
+  }
+
+  Future<void> _toggleBiometric(bool enable) async {
+    if (kIsWeb) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Login Biometrik tidak didukung di platform Web.')));
+      return;
+    }
+
+    if (!enable) {
+      await StorageService.setBiometricEnabled(false);
+      setState(() => _isBiometricEnabled = false);
+      return;
+    }
+
+    final user = await StorageService.getUser();
+    final employeeId = user?['employee_id'] as String?;
+    if (employeeId == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sesi tidak valid.')));
+      return;
+    }
+
+    final localAuth = LocalAuthentication();
+    try {
+      final canCheck = await localAuth.canCheckBiometrics || await localAuth.isDeviceSupported();
+      if (!canCheck) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Perangkat tidak mendukung biometrik.')));
+        return;
+      }
+
+      final authenticated = await localAuth.authenticate(
+        localizedReason: 'Gunakan biometrik untuk mengaktifkan login otomatis',
+        biometricOnly: true,
+        persistAcrossBackgrounding: true,
+      );
+
+      if (authenticated) {
+        if (!mounted) return;
+        final password = await _showPasswordPromptDialog(context);
+        if (password != null && password.isNotEmpty) {
+          await StorageService.saveBiometricCredentials(employeeId, password);
+          await StorageService.setBiometricEnabled(true);
+          setState(() => _isBiometricEnabled = true);
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Login biometrik diaktifkan.')));
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
+  Future<String?> _showPasswordPromptDialog(BuildContext context) {
+    final ctrl = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Konfirmasi Password', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Masukkan password Anda untuk disimpan dengan aman sebagai kredensial biometrik.', style: TextStyle(fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: ctrl,
+              obscureText: true,
+              decoration: InputDecoration(
+                hintText: 'Password',
+                hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1A56C4),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _onTabTapped(int index) {
     if (index == 4) {
@@ -166,7 +277,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 label: 'Login Biometrik',
                 subtitle: 'Face ID / Sidik Jari',
                 value: _isBiometricEnabled,
-                onChanged: (v) => setState(() => _isBiometricEnabled = v),
+                onChanged: _toggleBiometric,
               ),
             ]),
             _buildSectionHeader('AKUN'),
@@ -270,7 +381,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: value,
               onChanged: onChanged,
               activeThumbColor: const Color(0xFF1565C0),
-              activeTrackColor: const Color(0xFF1565C0).withOpacity(0.2),
+              activeTrackColor: const Color(0xFF1565C0).withValues(alpha: 0.2),
             ),
           ],
         ),
@@ -391,7 +502,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: isOutline ? Colors.transparent : color.withOpacity(0.1),
+          color: isOutline ? Colors.transparent : color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
           border: isOutline ? Border.all(color: Colors.grey.shade100) : null,
         ),

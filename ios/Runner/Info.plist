@@ -51,5 +51,7 @@
 	<string>Aplikasi memerlukan akses galeri untuk memilih foto hazard.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Aplikasi memerlukan akses lokasi untuk menentukan titik koordinat hazard.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Aplikasi memerlukan Face ID untuk memfasilitasi login yang cepat dan aman.</string>
 </dict>
 </plist>

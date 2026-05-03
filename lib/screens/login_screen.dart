@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'register_screen.dart';
 import '../main.dart';
 import '../services/auth_service.dart';
+import '../services/storage_service.dart';
+import 'package:local_auth/local_auth.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -38,6 +41,58 @@ class _LoginScreenState extends State<LoginScreen>
       CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut),
     );
     _animCtrl.forward();
+    
+    // Trigger biometric if enabled
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkBiometricLogin();
+    });
+  }
+
+  Future<void> _checkBiometricLogin() async {
+    if (kIsWeb) return;
+
+    final bioEnabled = await StorageService.isBiometricEnabled();
+    if (!bioEnabled) return;
+
+    final credentials = await StorageService.getBiometricCredentials();
+    if (credentials == null) return;
+
+    final localAuth = LocalAuthentication();
+    try {
+      final canCheck = await localAuth.canCheckBiometrics || await localAuth.isDeviceSupported();
+      if (!canCheck) return;
+
+      final authenticated = await localAuth.authenticate(
+        localizedReason: 'Gunakan biometrik untuk login',
+        biometricOnly: true,
+        persistAcrossBackgrounding: true,
+      );
+
+      if (authenticated) {
+        if (!mounted) return;
+        setState(() => _isLoading = true);
+        
+        final result = await AuthService.login(
+          login: credentials['loginId']!,
+          password: credentials['password']!,
+          rememberMe: true,
+        );
+
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+
+        if (result.success) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const MainScreen()),
+            (route) => false,
+          );
+        } else {
+          _showError(result.errorMessage ?? 'Login biometrik gagal.');
+        }
+      }
+    } catch (e) {
+      debugPrint('Biometric error: $e');
+    }
   }
 
   @override
@@ -301,31 +356,56 @@ class _LoginScreenState extends State<LoginScreen>
                           const SizedBox(height: 24),
 
                           // ── Login button ───────────────────────────────
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _login,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1A56C4),
-                                foregroundColor: Colors.white,
-                                disabledBackgroundColor: const Color(0xFF1A56C4)
-                                    .withValues(alpha: 0.6),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                                elevation: 0,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 50,
+                                  child: ElevatedButton(
+                                    onPressed: _isLoading ? null : _login,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF1A56C4),
+                                      foregroundColor: Colors.white,
+                                      disabledBackgroundColor: const Color(0xFF1A56C4).withValues(alpha: 0.6),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      elevation: 0,
+                                    ),
+                                    child: _isLoading
+                                        ? const SizedBox(
+                                            width: 22,
+                                            height: 22,
+                                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                        : const Text('Masuk', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
                               ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: CircularProgressIndicator(
-                                          color: Colors.white, strokeWidth: 2))
-                                  : const Text('Masuk',
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold)),
-                            ),
+                              if (!kIsWeb) FutureBuilder<bool>(
+                                future: StorageService.isBiometricEnabled(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.data == true) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(left: 12),
+                                      child: SizedBox(
+                                        height: 50,
+                                        width: 50,
+                                        child: ElevatedButton(
+                                          onPressed: _isLoading ? null : _checkBiometricLogin,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFFF0F4FA),
+                                            foregroundColor: const Color(0xFF1A56C4),
+                                            padding: EdgeInsets.zero,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                            elevation: 0,
+                                          ),
+                                          child: const Icon(Icons.fingerprint, size: 28),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return const SizedBox();
+                                },
+                              ),
+                            ],
                           ),
                         ],
                       ),
