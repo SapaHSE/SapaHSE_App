@@ -44,7 +44,6 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
     _loadData();
   }
 
-  bool get _isAdmin => _userRole?.toLowerCase() == 'admin' || _userRole?.toLowerCase() == 'superadmin';
   bool get _isSuperAdmin => _userRole?.toLowerCase() == 'superadmin';
 
   @override
@@ -63,7 +62,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
       ]);
       if (mounted) {
         setState(() {
-          _categories = results[0] as List<HazardCategoryData>;
+          _categories = results[0];
           _isLoading = false;
         });
       }
@@ -478,7 +477,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [

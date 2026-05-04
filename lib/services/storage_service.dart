@@ -10,7 +10,7 @@ class StorageService {
   static const _keyBiometricEnabled = 'biometric_enabled';
 
   static SharedPreferences? _prefs;
-  static const _secureStorage = FlutterSecureStorage();
+  static final _secureStorage = const FlutterSecureStorage();
   
   // ── In-Memory Cache ───────────────────────────────────────────────────────
   static String? _cachedToken;

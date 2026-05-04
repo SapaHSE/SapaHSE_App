@@ -30,6 +30,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   final TextEditingController _certIssuerController = TextEditingController();
   DateTime? _certObtainedAt;
   DateTime? _certExpiredAt;
+  XFile? _licenseImage;
+  XFile? _certImage;
 
   @override
   void dispose() {
@@ -146,8 +148,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading)
+    if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -369,26 +372,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     }
   }
 
-  void _showEditForm() {
-    switch (_selectedSubTab) {
-      case 0:
-        _showEditBiodataForm();
-        break;
-      case 1:
-        _showAddLicenseForm();
-        break;
-      case 2:
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Data pelanggaran tidak dapat diedit.')));
-        break;
-      case 3:
-        _showAddCertificationForm();
-        break;
-      case 4:
-        _showEditMedicalForm();
-        break;
-    }
-  }
 
   void _showEditBiodataForm() {
     final phoneCtrl = TextEditingController(text: _profileData?.phoneNumber);
@@ -445,6 +428,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 height: 54,
                 child: ElevatedButton(
                   onPressed: () async {
+                    if (!context.mounted) return;
                     Navigator.pop(context);
                     setState(() => _isLoading = true);
 
@@ -455,15 +439,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                           emailCtrl.text.isNotEmpty ? emailCtrl.text : null,
                     );
 
+                    if (!mounted) return;
                     if (result.success) {
-                      if (mounted) _loadProfile();
+                      _loadProfile();
                     } else {
-                      if (mounted) {
-                        setState(() => _isLoading = false);
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(
-                                result.errorMessage ?? 'Gagal menyimpan')));
-                      }
+                      setState(() => _isLoading = false);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(
+                              result.errorMessage ?? 'Gagal menyimpan')));
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -661,8 +644,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     lastDate:
                         DateTime.now().add(const Duration(days: 365 * 10)),
                   );
-                  if (picked != null)
+                  if (picked != null) {
                     setModalState(() => _licenseSelectedDate = picked);
+                  }
                 },
                 child: Container(
                   padding:
@@ -697,8 +681,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   final picker = ImagePicker();
                   final picked = await picker.pickImage(
                       source: ImageSource.gallery, imageQuality: 70);
-                  if (picked != null)
+                  if (picked != null) {
                     setModalState(() => _licenseImage = picked);
+                  }
                 },
               ),
               const SizedBox(height: 32),
@@ -1001,9 +986,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       ),
     );
   }
-
-  XFile? _licenseImage;
-  XFile? _certImage;
 }
 
 // ── SUB-TAB WIDGETS (INTERNAL) ──────────────────────────────────────────────

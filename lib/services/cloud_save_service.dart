@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';

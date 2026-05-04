@@ -476,7 +476,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   
                   // Type Dropdown
                   DropdownButtonFormField<String>(
-                    value: selectedType,
+                    initialValue: selectedType,
                     decoration: InputDecoration(
                       labelText: 'Tipe Berita',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

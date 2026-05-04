@@ -4,10 +4,6 @@ import '../services/department_service.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
 import 'package:sapahse/main.dart';
-import 'qr_scan_screen.dart';
-import 'create_hazard_screen.dart';
-import 'create_inspection_screen.dart';
-import 'my_profile.dart';
 
 class DepartmentManagementScreen extends StatefulWidget {
   const DepartmentManagementScreen({super.key});

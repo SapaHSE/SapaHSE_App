@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sapahse/main.dart';
-import 'home_screen.dart';
-import 'news_screen.dart';
-import 'inbox_screen.dart';
-import 'profile_screen.dart';
 import 'create_hazard_screen.dart';
 import 'create_inspection_screen.dart';
 import 'qr_scan_screen.dart';
@@ -222,7 +218,7 @@ class _StatistikScreenState extends State<StatistikScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF9C4),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFFBC02D).withOpacity(0.3)),
+                border: Border.all(color: const Color(0xFFFBC02D).withValues(alpha: 0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -372,9 +368,9 @@ class _StatistikScreenState extends State<StatistikScreen> {
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.1)),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: [

@@ -18,12 +18,6 @@ import 'package:sapahse/services/department_service.dart';
 import 'package:sapahse/models/department_model.dart';
 import 'map_picker_screen.dart';
 
-
-
-
-
-
-
 class CreateHazardScreen extends StatefulWidget {
   const CreateHazardScreen({super.key});
 
@@ -84,12 +78,14 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
 
   Future<void> _fetchDynamicData() async {
     try {
-      final companies = await CompanyService.getCompanies(active: true, category: 'owner');
+      final companies =
+          await CompanyService.getCompanies(active: true, category: 'owner');
       final areas = await CompanyService.getAreas(active: true);
       final categories = await ReportService.getHazardCategories();
       final users = await AuthService.getUsers();
       final departments = await DepartmentService.getDepartments();
-      
+
+
       if (mounted) {
         setState(() {
           _companiesData = companies;
@@ -150,7 +146,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   List<String> get _subkategoriList {
     if (_selectedKategori == null) return [];
     try {
-      final category = _categoriesData.firstWhere((c) => c.name == _selectedKategori);
+      final category =
+          _categoriesData.firstWhere((c) => c.name == _selectedKategori);
       return category.subcategories.map((s) => s.name).toList();
     } catch (e) {
       return [];
@@ -160,7 +157,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   List<String> get _lokasiList {
     if (_selectedPerusahaan == null) return [];
     try {
-      final selectedCompany = _companiesData.firstWhere((c) => c.name == _selectedPerusahaan);
+      final selectedCompany =
+          _companiesData.firstWhere((c) => c.name == _selectedPerusahaan);
       return _areasData
           .where((a) => a.companyId == selectedCompany.id)
           .map((a) => a.name)
@@ -171,14 +169,6 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   }
 
   String get _dynamicHseDepartment {
-    try {
-      final hseUser = _usersData.firstWhere(
-        (u) => (u.department?.toLowerCase().contains('hse') ?? false) || 
-               (u.department?.toLowerCase().contains('k3') ?? false),
-      );
-    } catch (e) {
-      // Ignore if not found
-    }
     return 'Departemen HSE';
   }
 
@@ -186,21 +176,28 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     if (_selectedPerusahaan == null) return [];
 
     final List<String> options = [];
-    
+
     // Add dynamic departments
     for (var d in _departmentsData) {
-      if (!d.name.toLowerCase().contains('hse') && !d.name.toLowerCase().contains('k3')) {
+      if (!d.name.toLowerCase().contains('hse') &&
+          !d.name.toLowerCase().contains('k3')) {
+
         options.add('Departemen ${d.name}');
       }
     }
 
     // Add company users
-    final companyUsers = _usersData.where((u) => u.role != 'superadmin').toList();
+    final companyUsers =
+        _usersData.where((u) => u.role != 'superadmin').toList();
+
     for (var u in companyUsers) {
-      final deptStr = (u.department != null && u.department!.isNotEmpty) ? ' (${u.department})' : '';
+      final deptStr = (u.department != null && u.department!.isNotEmpty)
+          ? ' (${u.department})'
+          : '';
       options.add('${u.fullName}$deptStr');
     }
-    
+
+
     return options;
   }
 
@@ -235,7 +232,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   Future<XFile?> _compressAndConvertImage(XFile file) async {
     try {
       final dir = await getTemporaryDirectory();
-      final targetPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_compressed.jpg';
+      final targetPath =
+          '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_compressed.jpg';
 
       final result = await FlutterImageCompress.compressAndGetFile(
         file.path,
@@ -343,12 +341,14 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Konfirmasi Pinpoint', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text('Konfirmasi Pinpoint',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Apakah lokasi kejadian (pinpoint) sudah sesuai?', style: TextStyle(color: Colors.black87)),
+            const Text('Apakah lokasi kejadian (pinpoint) sudah sesuai?',
+                style: TextStyle(color: Colors.black87)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
@@ -386,7 +386,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               backgroundColor: _blue,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Ya, Lanjut', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('Ya, Lanjut',
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -540,7 +541,6 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 color: Colors.black87)),
       );
 
-
   // ── FULLSCREEN PERSON PICKER ──────────────────────────────────────────────
   Future<List<String>?> _showPersonPicker({
     required String title,
@@ -638,13 +638,14 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
         _label('Pelaku Pelanggaran (Opsional)'),
         GestureDetector(
           onTap: () async {
-            final options = _usersData
-                .where((u) => u.role != 'superadmin')
-                .map((u) {
-                  final deptStr = (u.department != null && u.department!.isNotEmpty) ? ' (${u.department})' : '';
-                  return '${u.fullName}$deptStr';
-                })
-                .toList();
+            final options =
+                _usersData.where((u) => u.role != 'superadmin').map((u) {
+              final deptStr = (u.department != null && u.department!.isNotEmpty)
+                  ? ' (${u.department})'
+                  : '';
+              return '${u.fullName}$deptStr';
+            }).toList();
+
             final result = await _showPersonPicker(
               title: 'Tag Pelaku Pelanggaran',
               options: options,
@@ -715,9 +716,11 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             initialValue: _selectedKategori,
             validator: (v) => v == null ? 'Wajib dipilih' : null,
             decoration: _inputDeco(
-                hint: _isLoadingData ? 'Memuat data...' : 'Pilih Kategori', icon: Icons.category_outlined),
+                hint: _isLoadingData ? 'Memuat data...' : 'Pilih Kategori',
+                icon: Icons.category_outlined),
             items: _categoriesData
-                .map((e) => DropdownMenuItem(value: e.name, child: Text(e.name)))
+                .map(
+                    (e) => DropdownMenuItem(value: e.name, child: Text(e.name)))
                 .toList(),
             onChanged: (v) => setState(() {
               _selectedKategori = v;
@@ -748,7 +751,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               enableFilter: true,
               requestFocusOnTap: true,
               initialSelection: _selectedPerusahaan,
-              hintText: _isLoadingData ? 'Memuat data...' : 'Pilih / Cari Perusahaan',
+              hintText:
+                  _isLoadingData ? 'Memuat data...' : 'Pilih / Cari Perusahaan',
               inputDecorationTheme: _dropdownTheme(),
               onSelected: (v) => setState(() {
                 _selectedPerusahaan = v;
@@ -802,9 +806,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     decoration: BoxDecoration(
-                      color: isSelected
-                          ? colors[s]
-                          : Colors.grey.shade200,
+                      color: isSelected ? colors[s] : Colors.grey.shade200,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                           color: isSelected ? colors[s]! : Colors.grey.shade400,
@@ -813,7 +815,9 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                     child: Text(s.name.toUpperCase(),
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.grey.shade600,
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.grey.shade600,
                             fontSize: 12,
                             fontWeight: FontWeight.bold)),
                   ),
@@ -844,9 +848,11 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             initialValue: _selectedLokasi,
             validator: (v) => v == null ? 'Wajib dipilih' : null,
             decoration: _inputDeco(
-                hint: _selectedPerusahaan == null 
-                    ? 'Pilih Perusahaan Dulu' 
-                    : (_isLoadingData ? 'Memuat data...' : 'Pilih Lokasi Kejadian'), 
+                hint: _selectedPerusahaan == null
+                    ? 'Pilih Perusahaan Dulu'
+                    : (_isLoadingData
+                        ? 'Memuat data...'
+                        : 'Pilih Lokasi Kejadian'),
                 icon: Icons.location_city),
             items: _lokasiList
                 .map((e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -950,9 +956,11 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             children: [
               Text('Review Laporan Akhir',
                   key: _step3Key,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16)),
               const Divider(),
-              _previewItem('Kategori', '$_selectedKategori - $_selectedSubkategori'),
+              _previewItem(
+                  'Kategori', '$_selectedKategori - $_selectedSubkategori'),
               _previewItem('Perusahaan', '$_selectedPerusahaan'),
               _previewItem('PIC', _selectedPIC.join(', ')),
               _previewItem('Judul', _titleCtrl.text),
@@ -1308,8 +1316,9 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
   void _toggleSelection(String item) {
     setState(() {
       if (_selectedItems.contains(item)) {
-        // Jangan biarkan auto-tag terhapus jika kita anggap 'Departemen HSE' dsb wajib, 
-        // tapi untuk mempermudah, asumsikan UI checkbox mengizinkan hapus, 
+        // Jangan biarkan auto-tag terhapus jika kita anggap 'Departemen HSE' dsb wajib,
+        // tapi untuk mempermudah, asumsikan UI checkbox mengizinkan hapus,
+
         // validasi ada di layer atas jika diperlukan.
         _selectedItems.remove(item);
       } else {
@@ -1392,16 +1401,27 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
                       if (depts.isNotEmpty) ...[
                         const Padding(
                           padding: EdgeInsets.fromLTRB(0, 16, 0, 8),
-                          child: Text('DEPARTEMEN', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
+                          child: Text('DEPARTEMEN',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                  letterSpacing: 1)),
                         ),
                         ...depts.map((opt) => Column(
                               children: [
                                 ListTile(
                                   contentPadding: EdgeInsets.zero,
-                                  title: Text(opt, style: const TextStyle(fontSize: 14)),
+                                  title: Text(opt,
+                                      style: const TextStyle(fontSize: 14)),
                                   trailing: Icon(
-                                    _selectedItems.contains(opt) ? Icons.check_circle : Icons.add_circle_outline,
-                                    color: _selectedItems.contains(opt) ? Colors.green : const Color(0xFF1A56C4),
+                                    _selectedItems.contains(opt)
+                                        ? Icons.check_circle
+                                        : Icons.add_circle_outline,
+                                    color: _selectedItems.contains(opt)
+                                        ? Colors.green
+                                        : const Color(0xFF1A56C4),
+
                                     size: 24,
                                   ),
                                   onTap: () => _toggleSelection(opt),
@@ -1413,16 +1433,26 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
                       if (pjas.isNotEmpty) ...[
                         const Padding(
                           padding: EdgeInsets.fromLTRB(0, 16, 0, 8),
-                          child: Text('PIC / PJA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
+                          child: Text('PIC / PJA',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                  letterSpacing: 1)),
                         ),
                         ...pjas.map((opt) => Column(
                               children: [
                                 ListTile(
                                   contentPadding: EdgeInsets.zero,
-                                  title: Text(opt, style: const TextStyle(fontSize: 14)),
+                                  title: Text(opt,
+                                      style: const TextStyle(fontSize: 14)),
                                   trailing: Icon(
-                                    _selectedItems.contains(opt) ? Icons.check_circle : Icons.add_circle_outline,
-                                    color: _selectedItems.contains(opt) ? Colors.green : const Color(0xFF1A56C4),
+                                    _selectedItems.contains(opt)
+                                        ? Icons.check_circle
+                                        : Icons.add_circle_outline,
+                                    color: _selectedItems.contains(opt)
+                                        ? Colors.green
+                                        : const Color(0xFF1A56C4),
                                     size: 24,
                                   ),
                                   onTap: () => _toggleSelection(opt),
@@ -1448,7 +1478,9 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
                 ),
               ),
               onPressed: () => Navigator.pop(context, _selectedItems),
-              child: const Text('Simpan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              child: const Text('Simpan',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+
             ),
           )
         ],

@@ -64,8 +64,10 @@ class _LoginScreenState extends State<LoginScreen>
 
       final authenticated = await localAuth.authenticate(
         localizedReason: 'Gunakan biometrik untuk login',
-        biometricOnly: true,
-        persistAcrossBackgrounding: true,
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
       );
 
       if (authenticated) {
