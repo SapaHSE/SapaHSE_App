@@ -71,10 +71,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       final authenticated = await localAuth.authenticate(
         localizedReason: 'Gunakan biometrik untuk mengaktifkan login otomatis',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
+        biometricOnly: true,
+        persistAcrossBackgrounding: true,
       );
 
       if (authenticated) {

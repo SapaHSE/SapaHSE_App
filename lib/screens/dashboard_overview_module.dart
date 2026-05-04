@@ -515,7 +515,7 @@ class _DashboardOverviewModuleState extends State<DashboardOverviewModule> {
                 if (val == 1) text = 'HIGH';
                 if (val == 2) text = 'CRIT';
                 return SideTitleWidget(
-                    meta: meta,
+                    axisSide: meta.axisSide,
                     child: Text(text,
                         style: const TextStyle(
                             color: Color(0xFF94A3B8),
