@@ -3,7 +3,6 @@ import 'login_screen.dart';
 import '../services/auth_service.dart';
 import '../services/company_service.dart';
 import '../services/department_service.dart';
-import '../models/company_model.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -64,9 +63,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _fetchCompanies() async {
     try {
-      final owners = await CompanyService.getCompanies(category: 'owner', active: true);
-      final contractors = await CompanyService.getCompanies(category: 'kontraktor', active: true);
-      final subContractors = await CompanyService.getCompanies(category: 'subkontraktor', active: true);
+      final owners =
+          await CompanyService.getCompanies(category: 'owner', active: true);
+      final contractors = await CompanyService.getCompanies(
+          category: 'kontraktor', active: true);
+      final subContractors = await CompanyService.getCompanies(
+          category: 'subkontraktor', active: true);
 
       if (mounted) {
         setState(() {
@@ -282,58 +284,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildHeader() {
-    if (_currentStep == 1) {
-      return Container(
-        width: double.infinity,
-        color: const Color(0xFF111827),
-        padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child:
-                  const Icon(Icons.shield, color: Colors.blueAccent, size: 32),
+    String title = '';
+    if (_currentStep == 1) title = 'Informasi Pribadi';
+    if (_currentStep == 2) title = 'Informasi Karyawan';
+    if (_currentStep == 3) title = 'Tinjau & Daftar';
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: _prevStep,
+            child: const Icon(Icons.arrow_back),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
-            const Text('Informasi Pengguna',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            const Text('1Sapa · Neztek Platform',
-                style: TextStyle(color: Colors.grey, fontSize: 13)),
-          ],
-        ),
-      );
-    } else {
-      return Container(
-        color: Colors.white,
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: _prevStep,
-              child: const Icon(Icons.arrow_back),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                _currentStep == 2 ? 'Informasi Karyawan' : 'Tinjau & Daftar',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            Text('Langkah $_currentStep/3',
-                style: const TextStyle(color: Colors.grey, fontSize: 13)),
-          ],
-        ),
-      );
-    }
+          ),
+          Text('Langkah $_currentStep/3',
+              style: const TextStyle(color: Colors.grey, fontSize: 13)),
+        ],
+      ),
+    );
   }
 
   Widget _buildStepIndicator() {
@@ -497,20 +473,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 16),
                 _buildTextField(
                     label: 'EMPLOYEE ID *',
-                    hint: 'Masukkan Employee ID',
-                    controller: _empIdCtrl),
+                    hint: 'Min. 10 karakter',
+                    controller: _empIdCtrl,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Wajib diisi';
+                      if (v.length < 10) return 'Minimal 10 karakter';
+                      return null;
+                    }),
                 const SizedBox(height: 16),
                 _buildTextField(
                     label: 'NOMOR HP *',
-                    hint: '+62 8xx-xxxx-xxxx',
+                    hint: 'Contoh: 0812xxxx',
                     controller: _hpCtrl,
-                    keyboardType: TextInputType.phone),
+                    keyboardType: TextInputType.phone,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Wajib diisi';
+                      if (!RegExp(r'^08[0-9]{8,11}$').hasMatch(v)) {
+                        return 'Gunakan format 08 (10-13 digit)';
+                      }
+                      return null;
+                    }),
                 const SizedBox(height: 16),
                 _buildTextField(
                     label: 'EMAIL PRIBADI *',
                     hint: 'email@pribadi.com',
                     controller: _emailCtrl,
-                    keyboardType: TextInputType.emailAddress),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Wajib diisi';
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                          .hasMatch(v)) {
+                        return 'Format email tidak valid';
+                      }
+                      return null;
+                    }),
                 const Padding(
                   padding: EdgeInsets.only(top: 4, bottom: 12),
                   child: Text('Untuk login, reset sandi, dan notifikasi',
@@ -521,6 +517,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   hint: 'Min. 8 karakter',
                   controller: _passCtrl,
                   obscureText: _obscurePass,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Wajib diisi';
+                    if (v.length < 8) return 'Minimal 8 karakter';
+                    return null;
+                  },
                   suffixIcon: IconButton(
                     icon: Icon(
                         _obscurePass ? Icons.visibility_off : Icons.visibility,
@@ -686,7 +687,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       style: TextStyle(color: Color(0xFF1E40AF), fontSize: 12),
                       children: [
                         TextSpan(
-                            text: 'disetujui Supervisor',
+                            text: 'disetujui Superadmin',
                             style: TextStyle(fontWeight: FontWeight.bold)),
                         TextSpan(
                             text:
@@ -993,6 +994,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
     Widget? suffixIcon,
+    String? Function(String?)? validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1021,8 +1023,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             filled: true,
             fillColor: Colors.white,
           ),
-          validator:
-              isRequired ? (v) => v!.isEmpty ? 'Wajib diisi' : null : null,
+          validator: validator ??
+              (isRequired ? (v) => v!.isEmpty ? 'Wajib diisi' : null : null),
         ),
       ],
     );

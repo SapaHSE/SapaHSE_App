@@ -88,6 +88,7 @@ class UserLicense {
   final String id;
   final String name;
   final String licenseNumber;
+  final String? obtainedAt;
   final String? expiredAt;
   final String status;
   final bool isVerified;
@@ -97,6 +98,7 @@ class UserLicense {
     required this.id,
     required this.name,
     required this.licenseNumber,
+    this.obtainedAt,
     this.expiredAt,
     required this.status,
     this.isVerified = false,
@@ -108,6 +110,7 @@ class UserLicense {
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       licenseNumber: json['license_number']?.toString() ?? '',
+      obtainedAt: json['obtained_at']?.toString(),
       expiredAt: json['expired_at']?.toString(),
       status: json['status']?.toString() ?? 'active',
       isVerified: json['is_verified'] == true || json['is_verified'] == 1,
@@ -120,7 +123,6 @@ class UserLicense {
     if (expiredAt != null) {
       try {
         final expiry = DateTime.parse(expiredAt!);
-        // Set to end of day to be safe, or just check if it's before now
         return expiry.isAfter(DateTime.now().subtract(const Duration(days: 1)));
       } catch (_) {
         return true;
@@ -183,6 +185,9 @@ class UserMedical {
   final String? doctorContact;
   final String? facilityName;
   final String? facilityContact;
+  final String? lastMedication;
+  final String? currentMedication;
+  final String? currentIllness;
   final String? doctorNotes;
   final List<MedicalChecklistItem> checklistItems;
 
@@ -202,6 +207,9 @@ class UserMedical {
     this.doctorContact,
     this.facilityName,
     this.facilityContact,
+    this.lastMedication,
+    this.currentMedication,
+    this.currentIllness,
     this.doctorNotes,
     this.checklistItems = const [],
   });
@@ -223,6 +231,9 @@ class UserMedical {
       doctorContact: json['doctor_contact']?.toString(),
       facilityName: json['facility_name']?.toString(),
       facilityContact: json['facility_contact']?.toString(),
+      lastMedication: json['last_medication']?.toString(),
+      currentMedication: json['current_medication']?.toString(),
+      currentIllness: json['current_illness']?.toString(),
       doctorNotes: json['doctor_notes']?.toString(),
       checklistItems: _parseChecklistItems(json['checklist_items']),
     );

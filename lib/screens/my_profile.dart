@@ -23,6 +23,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   // Persistent State for License Form
   final TextEditingController _licenseNameController = TextEditingController();
   final TextEditingController _licenseNumberController = TextEditingController();
+  DateTime? _licenseObtainedAt;
   DateTime? _licenseSelectedDate;
 
   // Persistent State for Certification Form
@@ -477,6 +478,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     final bloodPressureCtrl =
         TextEditingController(text: latest?.bloodPressure);
     final allergiesCtrl = TextEditingController(text: latest?.allergies);
+    final lastMedicationCtrl = TextEditingController(text: latest?.lastMedication);
+    final currentMedicationCtrl = TextEditingController(text: latest?.currentMedication);
+    final currentIllnessCtrl = TextEditingController(text: latest?.currentIllness);
 
     showModalBottomSheet(
       context: context,
@@ -542,6 +546,44 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   controller: allergiesCtrl,
                   decoration: _buildInputDecoration('Contoh: Debu, Seafood...'),
                 ),
+                const SizedBox(height: 16),
+                // 2 kolom: Konsumsi Obat Terakhir & Obat Berjalan
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildFieldLabel('Konsumsi Obat Terakhir'),
+                          TextField(
+                            controller: lastMedicationCtrl,
+                            decoration: _buildInputDecoration('Contoh: Paracetamol'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildFieldLabel('Obat Berjalan'),
+                          TextField(
+                            controller: currentMedicationCtrl,
+                            decoration: _buildInputDecoration('Contoh: Metformin'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildFieldLabel('Penyakit yang Sedang Diderita'),
+                TextField(
+                  controller: currentIllnessCtrl,
+                  maxLines: 2,
+                  decoration: _buildInputDecoration('Contoh: Diabetes, Hipertensi...'),
+                ),
                 const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
@@ -557,6 +599,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         weight: weightCtrl.text,
                         bloodPressure: bloodPressureCtrl.text,
                         allergies: allergiesCtrl.text,
+                        lastMedication: lastMedicationCtrl.text,
+                        currentMedication: currentMedicationCtrl.text,
+                        currentIllness: currentIllnessCtrl.text,
                       );
 
                       if (result.success) {
@@ -633,41 +678,71 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 controller: _licenseNumberController,
                 decoration: _buildInputDecoration('Contoh: SIM-2024-001234'),
               ),
-              _buildFieldLabel('Berlaku Sampai'),
+              const SizedBox(height: 16),
+              _buildFieldLabel('Tanggal Diperoleh'),
               InkWell(
                 onTap: () async {
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: DateTime.now(),
-                    firstDate:
-                        DateTime.now().subtract(const Duration(days: 365 * 5)),
-                    lastDate:
-                        DateTime.now().add(const Duration(days: 365 * 10)),
+                    firstDate: DateTime.now().subtract(const Duration(days: 365 * 10)),
+                    lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
                   );
                   if (picked != null) {
-                    setModalState(() => _licenseSelectedDate = picked);
+                    setModalState(() => _licenseObtainedAt = picked);
                   }
                 },
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today,
-                          size: 18, color: Colors.grey.shade600),
+                      Icon(Icons.calendar_today, size: 18, color: Colors.grey.shade600),
+                      const SizedBox(width: 12),
+                      Text(
+                        _licenseObtainedAt == null
+                            ? 'Pilih Tanggal'
+                            : '${_licenseObtainedAt!.day}/${_licenseObtainedAt!.month}/${_licenseObtainedAt!.year}',
+                        style: TextStyle(
+                            color: _licenseObtainedAt == null ? Colors.grey.shade500 : Colors.black),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildFieldLabel('Berlaku Sampai'),
+              InkWell(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now().subtract(const Duration(days: 365 * 10)),
+                    lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
+                  );
+                  if (picked != null) {
+                    setModalState(() => _licenseSelectedDate = picked);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_today, size: 18, color: Colors.grey.shade600),
                       const SizedBox(width: 12),
                       Text(
                         _licenseSelectedDate == null
                             ? 'Pilih Tanggal'
                             : '${_licenseSelectedDate!.day}/${_licenseSelectedDate!.month}/${_licenseSelectedDate!.year}',
                         style: TextStyle(
-                            color: _licenseSelectedDate == null
-                                ? Colors.grey.shade500
-                                : Colors.black),
+                            color: _licenseSelectedDate == null ? Colors.grey.shade500 : Colors.black),
                       ),
                     ],
                   ),
@@ -705,8 +780,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     final result = await ProfileService.addLicense(
                       name: _licenseNameController.text,
                       licenseNumber: _licenseNumberController.text,
+                      obtainedAt: _licenseObtainedAt != null
+                          ? '${_licenseObtainedAt!.year}-${_licenseObtainedAt!.month.toString().padLeft(2, '0')}-${_licenseObtainedAt!.day.toString().padLeft(2, '0')}'
+                          : null,
                       expiredAt: _licenseSelectedDate != null
-                          ? '${_licenseSelectedDate!.year}-${_licenseSelectedDate!.month}-${_licenseSelectedDate!.day}'
+                          ? '${_licenseSelectedDate!.year}-${_licenseSelectedDate!.month.toString().padLeft(2, '0')}-${_licenseSelectedDate!.day.toString().padLeft(2, '0')}'
                           : null,
                       imageFile: _licenseImage,
                     );
@@ -714,6 +792,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     if (result.success) {
                       _licenseNameController.clear();
                       _licenseNumberController.clear();
+                      _licenseObtainedAt = null;
                       _licenseSelectedDate = null;
                       _licenseImage = null;
                       if (mounted) _loadProfile(); // Refresh
@@ -1186,8 +1265,12 @@ class _LicenseContent extends StatelessWidget {
                         Text('No. ${l.licenseNumber}',
                             style: TextStyle(
                                 color: Colors.grey.shade500, fontSize: 13)),
+                        if (l.obtainedAt != null)
+                          Text('Diperoleh: ${l.obtainedAt}',
+                              style: TextStyle(
+                                  color: Colors.grey.shade400, fontSize: 12)),
                         if (l.expiredAt != null)
-                          Text('Berlaku s/d ${l.expiredAt}',
+                          Text('Berlaku s/d: ${l.expiredAt}',
                               style: TextStyle(
                                   color: Colors.grey.shade400, fontSize: 12)),
                         if (l.fileUrl != null) ...[
@@ -1388,9 +1471,12 @@ class _MedicalContent extends StatelessWidget {
                 _buildMedicalRow(
                     'MCU Berikutnya', latest?.nextCheckupDate ?? '-'),
                 _buildDivider(),
-                _buildMedicalRow('Riwayat Penyakit', '-'),
+                _buildMedicalRow('Konsumsi Obat Terakhir', latest?.lastMedication ?? '-'),
                 _buildDivider(),
-                _buildMedicalRow('Obat Berjalan', '-'),
+                _buildMedicalRow('Obat Berjalan', latest?.currentMedication ?? '-'),
+                _buildDivider(),
+                _buildMedicalRow('Penyakit Diderita', latest?.currentIllness ?? '-',
+                    isBoldValue: true),
               ],
             ),
           ),
@@ -1560,7 +1646,7 @@ class _ViolationContent extends StatelessWidget {
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

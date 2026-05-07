@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'api_service.dart';
@@ -118,6 +117,9 @@ class ProfileService {
     String? weight,
     String? bloodPressure,
     String? allergies,
+    String? lastMedication,
+    String? currentMedication,
+    String? currentIllness,
   }) async {
     final response = await ApiService.post('/profile/medical', {
       'blood_type': bloodType,
@@ -125,6 +127,9 @@ class ProfileService {
       'weight': weight,
       'blood_pressure': bloodPressure,
       'allergies': allergies,
+      'last_medication': lastMedication,
+      'current_medication': currentMedication,
+      'current_illness': currentIllness,
     });
 
     if (!response.success) {
@@ -165,6 +170,7 @@ class ProfileService {
   static Future<SimpleResult> addLicense({
     required String name,
     required String licenseNumber,
+    String? obtainedAt,
     String? expiredAt,
     String status = 'active',
     XFile? imageFile,
@@ -172,6 +178,7 @@ class ProfileService {
     final fields = {
       'name': name,
       'license_number': licenseNumber,
+      'obtained_at': obtainedAt ?? '',
       'expired_at': expiredAt ?? '',
       'status': status,
     };

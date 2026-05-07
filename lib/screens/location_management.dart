@@ -809,7 +809,7 @@ class _AreaFormScreenState extends State<_AreaFormScreen> {
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: DropdownButtonFormField<int>(
-        value: _selectedCompanyId,
+        initialValue: _selectedCompanyId,
         decoration: InputDecoration(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
