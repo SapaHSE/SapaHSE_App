@@ -3,7 +3,6 @@ import 'login_screen.dart';
 import '../services/auth_service.dart';
 import '../services/company_service.dart';
 import '../services/department_service.dart';
-import '../models/company_model.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

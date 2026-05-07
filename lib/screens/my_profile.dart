@@ -90,21 +90,21 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       'icon': Icons.person,
       'color': const Color(0xFF1A56C4)
     },
-    {'label': 'Lisensi', 'icon': Icons.badge, 'color': const Color(0xFF1E88E5)},
+    {'label': 'Lisensi', 'icon': Icons.badge, 'color': const Color(0xFF1A56C4)},
     {
       'label': 'Pelanggaran',
       'icon': Icons.warning_amber_rounded,
-      'color': const Color(0xFFFBC02D)
+      'color': const Color(0xFF1A56C4)
     },
     {
       'label': 'Sertifikat',
       'icon': Icons.workspace_premium,
-      'color': const Color(0xFFF57C00)
+      'color': const Color(0xFF1A56C4)
     },
     {
       'label': 'Medis',
       'icon': Icons.medical_services,
-      'color': const Color(0xFFE91E63)
+      'color': const Color(0xFF1A56C4)
     },
   ];
 
