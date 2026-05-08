@@ -1648,7 +1648,7 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
               controller: _noteCtrl,
               maxLines: 2,
               decoration: InputDecoration(
-                hintText: 'Notes for reviewer...',
+                hintText: 'Tulis Catatan Di Sini...',
                 hintStyle: TextStyle(color: Colors.grey.shade400),
                 filled: true,
                 fillColor: Colors.white,
