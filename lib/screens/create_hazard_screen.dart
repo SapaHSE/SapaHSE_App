@@ -40,8 +40,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   final _step3Key = GlobalKey();
 
   // Step 1
-  String? _selectedKategori;
-  String? _selectedSubkategori;
+  final List<String> _selectedKategori = [];
+  final List<String> _selectedSubkategori = [];
   String? _selectedPerusahaan;
   final List<String> _selectedPIC = [];
 
@@ -144,11 +144,12 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   }
 
   List<String> get _subkategoriList {
-    if (_selectedKategori == null) return [];
+    if (_selectedKategori.isEmpty) return [];
     try {
-      final category =
-          _categoriesData.firstWhere((c) => c.name == _selectedKategori);
-      return category.subcategories.map((s) => s.name).toList();
+      return _categoriesData
+          .where((c) => _selectedKategori.contains(c.name))
+          .expand((c) => c.subcategories.map((s) => s.name))
+          .toList();
     } catch (e) {
       return [];
     }
@@ -285,6 +286,20 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   void _nextStep() {
     if (_currentStep == 0) {
       if (!_formKey1.currentState!.validate()) return;
+      if (_selectedKategori.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Kategori wajib diisi'),
+          backgroundColor: Colors.red,
+        ));
+        return;
+      }
+      if (_selectedSubkategori.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Subkategori wajib diisi'),
+          backgroundColor: Colors.red,
+        ));
+        return;
+      }
       if (_selectedPerusahaan == null || _selectedPIC.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Perusahaan dan PIC wajib diisi'),
@@ -416,8 +431,8 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
       'perusahaan': _selectedPerusahaan,
       'pic': _selectedPIC,
       'severity': _selectedSeverity?.name,
-      'kategori': _selectedKategori,
-      'subkategori': _selectedSubkategori,
+      'kategori': _selectedKategori.isNotEmpty ? _selectedKategori.join(', ') : null,
+      'subkategori': _selectedSubkategori.isNotEmpty ? _selectedSubkategori.join(', ') : null,
       'photoPaths': _photoFiles.map((f) => f.path).toList(),
       'isPublic': _isPublic,
     };
@@ -552,6 +567,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
   Future<List<String>?> _showPersonPicker({
     required String title,
     required List<String> options,
+    Map<String, List<String>>? groupedOptions,
     required List<String> initialSelected,
     String? hint,
   }) async {
@@ -565,6 +581,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
       builder: (context) => _PersonPickerContent(
         title: title,
         options: options,
+        groupedOptions: groupedOptions,
         initialSelected: initialSelected,
         hint: hint ?? 'Cari...',
       ),
@@ -719,36 +736,134 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _label('Kategori Hazard *', key: _step1Key),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedKategori,
-            validator: (v) => v == null ? 'Wajib dipilih' : null,
-            decoration: _inputDeco(
-                hint: _isLoadingData ? 'Memuat data...' : 'Pilih Kategori',
-                icon: Icons.category_outlined),
-            items: _categoriesData
-                .map(
-                    (e) => DropdownMenuItem(value: e.name, child: Text(e.name)))
-                .toList(),
-            onChanged: (v) => setState(() {
-              _selectedKategori = v;
-              _selectedSubkategori = null;
-            }),
+          GestureDetector(
+            onTap: () async {
+              if (_isLoadingData) return;
+              final result = await _showPersonPicker(
+                title: 'Pilih Kategori',
+                options: _categoriesData.map((e) => e.name).toList(),
+                initialSelected: _selectedKategori,
+              );
+              if (result != null) {
+                setState(() {
+                  _selectedKategori.clear();
+                  _selectedKategori.addAll(result);
+                  _selectedSubkategori.clear();
+                });
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FF),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.category_outlined, size: 20, color: Colors.grey),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _isLoadingData ? 'Memuat data...' : 'Ketuk untuk memilih kategori',
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
+                ],
+              ),
+            ),
           ),
+          if (_selectedKategori.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: _selectedKategori.map((kat) {
+                return Chip(
+                  label: Text(kat, style: const TextStyle(fontSize: 12)),
+                  deleteIcon: const Icon(Icons.close, size: 16),
+                  onDeleted: () {
+                    setState(() {
+                      _selectedKategori.remove(kat);
+                      _selectedSubkategori.clear();
+                    });
+                  },
+                  backgroundColor: const Color(0xFFEFF4FF),
+                  side: BorderSide(color: Colors.blue.shade200),
+                );
+              }).toList(),
+            ),
+          ],
           const SizedBox(height: 14),
           _label('Subkategori Hazard *'),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedSubkategori,
-            validator: (v) => v == null ? 'Wajib dipilih' : null,
-            decoration: _inputDeco(
-                hint: 'Pilih Subkategori',
-                icon: Icons.subdirectory_arrow_right),
-            items: _subkategoriList
-                .map((e) => DropdownMenuItem(
-                    value: e,
-                    child: Text(e, style: const TextStyle(fontSize: 13))))
-                .toList(),
-            onChanged: (v) => setState(() => _selectedSubkategori = v),
+          GestureDetector(
+            onTap: () async {
+              if (_selectedKategori.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih Kategori terlebih dahulu')));
+                return;
+              }
+              final Map<String, List<String>> groups = {};
+              for (String kat in _selectedKategori) {
+                try {
+                  final catData = _categoriesData.firstWhere((c) => c.name == kat);
+                  groups[kat] = catData.subcategories.map((s) => s.name).toList();
+                } catch (_) {}
+              }
+
+              final result = await _showPersonPicker(
+                title: 'Pilih Subkategori',
+                options: _subkategoriList,
+                groupedOptions: groups,
+                initialSelected: _selectedSubkategori,
+              );
+              if (result != null) {
+                setState(() {
+                  _selectedSubkategori.clear();
+                  _selectedSubkategori.addAll(result);
+                });
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FF),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.subdirectory_arrow_right, size: 20, color: Colors.grey),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Ketuk untuk memilih subkategori',
+                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
+                ],
+              ),
+            ),
           ),
+          if (_selectedSubkategori.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: _selectedSubkategori.map((sub) {
+                return Chip(
+                  label: Text(sub, style: const TextStyle(fontSize: 12)),
+                  deleteIcon: const Icon(Icons.close, size: 16),
+                  onDeleted: () {
+                    setState(() => _selectedSubkategori.remove(sub));
+                  },
+                  backgroundColor: const Color(0xFFEFF4FF),
+                  side: BorderSide(color: Colors.blue.shade200),
+                );
+              }).toList(),
+            ),
+          ],
           const SizedBox(height: 14),
           _label('Perusahaan (Ketik untuk mencari) *'),
           LayoutBuilder(
@@ -963,7 +1078,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                       fontWeight: FontWeight.bold, fontSize: 16)),
               const Divider(),
               _previewItem(
-                  'Kategori', '$_selectedKategori - $_selectedSubkategori'),
+                  'Kategori', '${_selectedKategori.join(', ')} - ${_selectedSubkategori.join(', ')}'),
               _previewItem('Perusahaan', '$_selectedPerusahaan'),
               _previewItem('PIC', _selectedPIC.join(', ')),
               _previewItem('Judul', _titleCtrl.text),
@@ -1288,12 +1403,14 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
 class _PersonPickerContent extends StatefulWidget {
   final String title;
   final List<String> options;
+  final Map<String, List<String>>? groupedOptions;
   final List<String> initialSelected;
   final String hint;
 
   const _PersonPickerContent({
     required this.title,
     required this.options,
+    this.groupedOptions,
     required this.initialSelected,
     required this.hint,
   });
@@ -1339,9 +1456,22 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
         .where((opt) => opt.toLowerCase().contains(_query.toLowerCase()))
         .toList();
 
-    // Grouping logic
-    final depts = filtered.where((o) => o.startsWith('Departemen')).toList();
-    final pjas = filtered.where((o) => !o.startsWith('Departemen')).toList();
+    Map<String, List<String>> groupsToRender = {};
+
+    if (widget.groupedOptions != null) {
+      widget.groupedOptions!.forEach((key, list) {
+        final f = list.where((opt) => opt.toLowerCase().contains(_query.toLowerCase())).toList();
+        if (f.isNotEmpty) {
+          groupsToRender[key] = f;
+        }
+      });
+    } else {
+      // Default legacy grouping (e.g. for PIC)
+      final depts = filtered.where((o) => o.startsWith('Departemen')).toList();
+      final pjas = filtered.where((o) => !o.startsWith('Departemen')).toList();
+      if (depts.isNotEmpty) groupsToRender['DEPARTEMEN'] = depts;
+      if (pjas.isNotEmpty) groupsToRender['PIC / PJA'] = pjas;
+    }
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
@@ -1403,50 +1533,18 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
                     ),
                   )
                 : ListView(
-                    children: [
-                      if (depts.isNotEmpty) ...[
-                        const Padding(
-                          padding: EdgeInsets.fromLTRB(0, 16, 0, 8),
-                          child: Text('DEPARTEMEN',
-                              style: TextStyle(
+                    children: groupsToRender.entries.expand((entry) {
+                      return [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(0, 16, 0, 8),
+                          child: Text(entry.key.toUpperCase(),
+                              style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.grey,
                                   letterSpacing: 1)),
                         ),
-                        ...depts.map((opt) => Column(
-                              children: [
-                                ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(opt,
-                                      style: const TextStyle(fontSize: 14)),
-                                  trailing: Icon(
-                                    _selectedItems.contains(opt)
-                                        ? Icons.check_circle
-                                        : Icons.add_circle_outline,
-                                    color: _selectedItems.contains(opt)
-                                        ? Colors.green
-                                        : const Color(0xFF1A56C4),
-
-                                    size: 24,
-                                  ),
-                                  onTap: () => _toggleSelection(opt),
-                                ),
-                                const Divider(height: 1),
-                              ],
-                            )),
-                      ],
-                      if (pjas.isNotEmpty) ...[
-                        const Padding(
-                          padding: EdgeInsets.fromLTRB(0, 16, 0, 8),
-                          child: Text('PIC / PJA',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey,
-                                  letterSpacing: 1)),
-                        ),
-                        ...pjas.map((opt) => Column(
+                        ...entry.value.map((opt) => Column(
                               children: [
                                 ListTile(
                                   contentPadding: EdgeInsets.zero,
@@ -1466,8 +1564,8 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
                                 const Divider(height: 1),
                               ],
                             )),
-                      ],
-                    ],
+                      ];
+                    }).toList(),
                   ),
           ),
           // Save Button
@@ -1486,7 +1584,6 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
               onPressed: () => Navigator.pop(context, _selectedItems),
               child: const Text('Simpan',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-
             ),
           )
         ],
