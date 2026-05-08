@@ -22,7 +22,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
   // Persistent State for License Form
   final TextEditingController _licenseNameController = TextEditingController();
-  final TextEditingController _licenseNumberController = TextEditingController();
+  final TextEditingController _licenseNumberController =
+      TextEditingController();
   DateTime? _licenseObtainedAt;
   DateTime? _licenseSelectedDate;
 
@@ -373,7 +374,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     }
   }
 
-
   void _showEditBiodataForm() {
     final phoneCtrl = TextEditingController(text: _profileData?.phoneNumber);
     final emailCtrl = TextEditingController(text: _profileData?.personalEmail);
@@ -446,8 +446,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     } else {
                       setState(() => _isLoading = false);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(
-                              result.errorMessage ?? 'Gagal menyimpan')));
+                          content:
+                              Text(result.errorMessage ?? 'Gagal menyimpan')));
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -478,9 +478,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     final bloodPressureCtrl =
         TextEditingController(text: latest?.bloodPressure);
     final allergiesCtrl = TextEditingController(text: latest?.allergies);
-    final lastMedicationCtrl = TextEditingController(text: latest?.lastMedication);
-    final currentMedicationCtrl = TextEditingController(text: latest?.currentMedication);
-    final currentIllnessCtrl = TextEditingController(text: latest?.currentIllness);
+    final lastMedicationCtrl =
+        TextEditingController(text: latest?.lastMedication);
+    final currentMedicationCtrl =
+        TextEditingController(text: latest?.currentMedication);
+    final currentIllnessCtrl =
+        TextEditingController(text: latest?.currentIllness);
 
     showModalBottomSheet(
       context: context,
@@ -505,7 +508,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               children: [
                 Row(
                   children: [
-                    const Text('Edit Data Medis',
+                    const Text('Edit Information Medis',
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold)),
                     const Spacer(),
@@ -557,7 +560,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                           _buildFieldLabel('Konsumsi Obat Terakhir'),
                           TextField(
                             controller: lastMedicationCtrl,
-                            decoration: _buildInputDecoration('Contoh: Paracetamol'),
+                            decoration:
+                                _buildInputDecoration('Contoh: Paracetamol'),
                           ),
                         ],
                       ),
@@ -570,7 +574,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                           _buildFieldLabel('Obat Berjalan'),
                           TextField(
                             controller: currentMedicationCtrl,
-                            decoration: _buildInputDecoration('Contoh: Metformin'),
+                            decoration:
+                                _buildInputDecoration('Contoh: Metformin'),
                           ),
                         ],
                       ),
@@ -582,7 +587,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 TextField(
                   controller: currentIllnessCtrl,
                   maxLines: 2,
-                  decoration: _buildInputDecoration('Contoh: Diabetes, Hipertensi...'),
+                  decoration:
+                      _buildInputDecoration('Contoh: Diabetes, Hipertensi...'),
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
@@ -621,7 +627,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                           borderRadius: BorderRadius.circular(16)),
                       elevation: 0,
                     ),
-                    child: const Text('Simpan Data Medis',
+                    child: const Text('Simpan Information Medis',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
@@ -685,29 +691,35 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: DateTime.now(),
-                    firstDate: DateTime.now().subtract(const Duration(days: 365 * 10)),
-                    lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
+                    firstDate:
+                        DateTime.now().subtract(const Duration(days: 365 * 10)),
+                    lastDate:
+                        DateTime.now().add(const Duration(days: 365 * 10)),
                   );
                   if (picked != null) {
                     setModalState(() => _licenseObtainedAt = picked);
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 18, color: Colors.grey.shade600),
+                      Icon(Icons.calendar_today,
+                          size: 18, color: Colors.grey.shade600),
                       const SizedBox(width: 12),
                       Text(
                         _licenseObtainedAt == null
                             ? 'Pilih Tanggal'
                             : '${_licenseObtainedAt!.day}/${_licenseObtainedAt!.month}/${_licenseObtainedAt!.year}',
                         style: TextStyle(
-                            color: _licenseObtainedAt == null ? Colors.grey.shade500 : Colors.black),
+                            color: _licenseObtainedAt == null
+                                ? Colors.grey.shade500
+                                : Colors.black),
                       ),
                     ],
                   ),
@@ -720,29 +732,35 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: DateTime.now(),
-                    firstDate: DateTime.now().subtract(const Duration(days: 365 * 10)),
-                    lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
+                    firstDate:
+                        DateTime.now().subtract(const Duration(days: 365 * 10)),
+                    lastDate:
+                        DateTime.now().add(const Duration(days: 365 * 10)),
                   );
                   if (picked != null) {
                     setModalState(() => _licenseSelectedDate = picked);
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 18, color: Colors.grey.shade600),
+                      Icon(Icons.calendar_today,
+                          size: 18, color: Colors.grey.shade600),
                       const SizedBox(width: 12),
                       Text(
                         _licenseSelectedDate == null
                             ? 'Pilih Tanggal'
                             : '${_licenseSelectedDate!.day}/${_licenseSelectedDate!.month}/${_licenseSelectedDate!.year}',
                         style: TextStyle(
-                            color: _licenseSelectedDate == null ? Colors.grey.shade500 : Colors.black),
+                            color: _licenseSelectedDate == null
+                                ? Colors.grey.shade500
+                                : Colors.black),
                       ),
                     ],
                   ),
@@ -875,29 +893,35 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: DateTime.now(),
-                    firstDate: DateTime.now().subtract(const Duration(days: 365 * 10)),
-                    lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
+                    firstDate:
+                        DateTime.now().subtract(const Duration(days: 365 * 10)),
+                    lastDate:
+                        DateTime.now().add(const Duration(days: 365 * 10)),
                   );
                   if (picked != null) {
                     setModalState(() => _certObtainedAt = picked);
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 18, color: Colors.grey.shade600),
+                      Icon(Icons.calendar_today,
+                          size: 18, color: Colors.grey.shade600),
                       const SizedBox(width: 12),
                       Text(
                         _certObtainedAt == null
                             ? 'Pilih Tanggal'
                             : '${_certObtainedAt!.day}/${_certObtainedAt!.month}/${_certObtainedAt!.year}',
                         style: TextStyle(
-                            color: _certObtainedAt == null ? Colors.grey.shade500 : Colors.black),
+                            color: _certObtainedAt == null
+                                ? Colors.grey.shade500
+                                : Colors.black),
                       ),
                     ],
                   ),
@@ -910,29 +934,35 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: DateTime.now(),
-                    firstDate: DateTime.now().subtract(const Duration(days: 365 * 10)),
-                    lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
+                    firstDate:
+                        DateTime.now().subtract(const Duration(days: 365 * 10)),
+                    lastDate:
+                        DateTime.now().add(const Duration(days: 365 * 10)),
                   );
                   if (picked != null) {
                     setModalState(() => _certExpiredAt = picked);
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 18, color: Colors.grey.shade600),
+                      Icon(Icons.calendar_today,
+                          size: 18, color: Colors.grey.shade600),
                       const SizedBox(width: 12),
                       Text(
                         _certExpiredAt == null
                             ? 'Pilih Tanggal'
                             : '${_certExpiredAt!.day}/${_certExpiredAt!.month}/${_certExpiredAt!.year}',
                         style: TextStyle(
-                            color: _certExpiredAt == null ? Colors.grey.shade500 : Colors.black),
+                            color: _certExpiredAt == null
+                                ? Colors.grey.shade500
+                                : Colors.black),
                       ),
                     ],
                   ),
@@ -1439,7 +1469,7 @@ class _MedicalContent extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 8),
-            child: Text('DATA MEDIS',
+            child: Text('INFORMATION MEDIS',
                 style: TextStyle(
                     color: Colors.grey.shade500,
                     fontSize: 11,
@@ -1471,11 +1501,14 @@ class _MedicalContent extends StatelessWidget {
                 _buildMedicalRow(
                     'MCU Berikutnya', latest?.nextCheckupDate ?? '-'),
                 _buildDivider(),
-                _buildMedicalRow('Konsumsi Obat Terakhir', latest?.lastMedication ?? '-'),
+                _buildMedicalRow(
+                    'Konsumsi Obat Terakhir', latest?.lastMedication ?? '-'),
                 _buildDivider(),
-                _buildMedicalRow('Obat Berjalan', latest?.currentMedication ?? '-'),
+                _buildMedicalRow(
+                    'Obat Berjalan', latest?.currentMedication ?? '-'),
                 _buildDivider(),
-                _buildMedicalRow('Penyakit Diderita', latest?.currentIllness ?? '-',
+                _buildMedicalRow(
+                    'Penyakit Diderita', latest?.currentIllness ?? '-',
                     isBoldValue: true),
               ],
             ),
@@ -1493,7 +1526,7 @@ class _MedicalContent extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Data medis dikelola oleh Klinik & Dokter Perusahaan',
+                    'Information medis dikelola oleh Klinik & Dokter Perusahaan',
                     style: TextStyle(
                         color: Colors.indigo.shade800,
                         fontSize: 12,
@@ -1836,7 +1869,7 @@ class _ProfileFabMenuSheet extends StatelessWidget {
             icon: Icons.medical_services_outlined,
             iconBgColor: const Color(0xFFFFEBEE),
             iconColor: const Color(0xFFE53935),
-            title: 'Edit Data Medis',
+            title: 'Edit Information Medis',
             subtitle: 'Perbarui info kesehatan & alergi',
             onTap: onEditMedical,
           ),
