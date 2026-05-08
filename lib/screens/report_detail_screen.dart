@@ -404,7 +404,42 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       _DetailRow(
                           icon: Icons.my_location_outlined,
                           label: 'Koordinat Pelapor',
-                          value: _report.pelaporLocation!),
+                          value: _report.pelaporLocation!,
+                          onTap: () async {
+                            final coords = _report.pelaporLocation!.split(',');
+                            if (coords.length != 2) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Format koordinat tidak valid')),
+                                );
+                              }
+                              return;
+                            }
+                            final lat = double.tryParse(coords[0].trim());
+                            final lng = double.tryParse(coords[1].trim());
+                            if (lat == null || lng == null) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Format koordinat tidak valid')),
+                                );
+                              }
+                              return;
+                            }
+                            final googleMapsUrl = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+                            final appleMapsUrl = Uri.parse('apple:0,0?q=$lat,$lng');
+                            if (await canLaunchUrl(googleMapsUrl)) {
+                              await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
+                            } else if (!kIsWeb && Platform.isIOS && await canLaunchUrl(appleMapsUrl)) {
+                              await launchUrl(appleMapsUrl);
+                            } else {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Tidak dapat membuka aplikasi peta')),
+                                );
+                              }
+                            }
+                          },
+                      ),
                     ],
                     if (_report.id.isNotEmpty) ...[
                       const SizedBox(height: 12),
@@ -546,15 +581,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                             }
                           }
                         },
-                        trailing: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFF4FF),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.map_outlined,
-                              color: Color(0xFF1A56C4), size: 18),
-                        ),
                       ),
                     ],
                   ],
@@ -734,20 +760,22 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       ),
       floatingActionButton: widget.isDialog
           ? null
-          : FloatingActionButton(
-              onPressed: _showUpdateStatusModal,
-              backgroundColor: const Color(0xFF1A56C4),
-              foregroundColor: Colors.white,
-              shape: const CircleBorder(),
-              elevation: 4,
-              child: const Icon(Icons.edit_outlined, size: 26),
+          : SizedBox(
+              width: 68,
+              height: 68,
+              child: FloatingActionButton(
+                onPressed: _showUpdateStatusModal,
+                backgroundColor: const Color(0xFF1A56C4),
+                foregroundColor: Colors.white,
+                shape: const CircleBorder(),
+                elevation: 4,
+                child: const Icon(Icons.edit_outlined, size: 32),
+              ),
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: widget.isDialog
           ? null
           : BottomAppBar(
-              shape: const CircularNotchedRectangle(),
-              notchMargin: 8,
               color: Colors.white,
               elevation: 8,
               child: SizedBox(
@@ -1430,8 +1458,11 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
     final deptList = _taggedItems.where((t) => t.startsWith('Departemen')).map((t) => t.replaceFirst('Departemen ', '')).toList();
     final pjaList = _taggedItems.where((t) => t.endsWith('(PJA)')).map((t) => t.replaceFirst(' (PJA)', '')).toList();
 
-    String? finalNote = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
-    
+    String? finalNote = _noteCtrl.text.trim();
+    if (finalNote.isEmpty) {
+      final statusLabel = _selectedSub?.label ?? _selectedStatus.label;
+      finalNote = 'Status diperbarui menjadi $statusLabel';
+    }
     final updated = ReportStore.instance.updateStatus(
       widget.report.id,
       _selectedStatus,
