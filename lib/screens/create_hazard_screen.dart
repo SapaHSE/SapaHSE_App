@@ -377,6 +377,13 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Batal', style: TextStyle(color: Colors.grey)),
           ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _pickLocationFromMap(_kejadianLocationCtrl);
+            },
+            child: const Text('Ubah di Map', style: TextStyle(color: _blue, fontWeight: FontWeight.bold)),
+          ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
@@ -864,15 +871,11 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           TextFormField(
             controller: _kejadianLocationCtrl,
             readOnly: true,
+            onTap: () => _pickLocationFromMap(_kejadianLocationCtrl),
             validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
             decoration: _inputDeco(
               hint: 'Koordinat Kejadian',
               icon: Icons.place,
-            ).copyWith(
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.map_outlined),
-                onPressed: () => _pickLocationFromMap(_kejadianLocationCtrl),
-              ),
             ),
           ),
           const SizedBox(height: 14),
@@ -1208,7 +1211,9 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 fontSize: 16)),
         centerTitle: true,
       ),
-      body: Stepper(
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stepper(
         type: StepperType.horizontal,
         currentStep: _currentStep,
         elevation: 0,
@@ -1273,6 +1278,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
             content: _buildStep3(),
           ),
         ],
+      ),
       ),
     );
   }

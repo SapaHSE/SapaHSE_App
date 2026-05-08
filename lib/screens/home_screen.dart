@@ -701,6 +701,7 @@ class _ReportCard extends StatelessWidget {
                             child: CachedNetworkImage(
                               imageUrl: report.imageUrl,
                               fit: BoxFit.cover,
+                              width: double.infinity,
                               placeholder: (_, __) => Container(
                                 color: Colors.grey.shade200,
                                 child: const Center(
