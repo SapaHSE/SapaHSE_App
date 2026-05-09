@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sapahse/models/profile_model.dart';
 import 'package:sapahse/services/profile_service.dart';
 import 'package:sapahse/main.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MyProfileScreen extends StatefulWidget {
   final String? initialAction;
@@ -56,7 +57,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     }
     _loadProfile().then((_) {
       if (widget.initialAction == 'edit_biodata') {
-        _showEditBiodataForm();
+        _showEditProfileSheet();
       } else if (widget.initialAction == 'add_license') {
         _showAddLicenseForm();
       } else if (widget.initialAction == 'add_certification') {
@@ -130,7 +131,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       builder: (_) => _ProfileFabMenuSheet(
         onEditBiodata: () {
           Navigator.pop(context);
-          _showEditBiodataForm();
+          _showEditProfileSheet();
         },
         onAddLicense: () {
           Navigator.pop(context);
@@ -374,9 +375,15 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     }
   }
 
-  void _showEditBiodataForm() {
-    final phoneCtrl = TextEditingController(text: _profileData?.phoneNumber);
+  void _showEditProfileSheet() {
+    if (_profileData == null) return;
+
+    final nikCtrl = TextEditingController(text: _profileData?.employeeId);
+    final nameCtrl = TextEditingController(text: _profileData?.fullName);
     final emailCtrl = TextEditingController(text: _profileData?.personalEmail);
+    final phoneCtrl = TextEditingController(text: _profileData?.phoneNumber);
+    final addressCtrl = TextEditingController(text: _profileData?.alamat);
+    XFile? localImageFile;
 
     showModalBottomSheet(
       context: context,
@@ -385,86 +392,184 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: Color(0xFFF5F5F5),
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  const Text('Edit Biodata',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const Spacer(),
-                  IconButton(
+              // Header
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close),
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close)),
-                ],
+                    ),
+                    const Expanded(
+                      child: Text(
+                        'Edit Profil',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 48), // Spacer for balance
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
-              _buildFieldLabel('Nomor Telepon'),
-              TextField(
-                controller: phoneCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: _buildInputDecoration('Contoh: 08123456789'),
-              ),
-              const SizedBox(height: 16),
-              _buildFieldLabel('Email Pribadi'),
-              TextField(
-                controller: emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                decoration: _buildInputDecoration('Contoh: user@email.com'),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (!context.mounted) return;
-                    Navigator.pop(context);
-                    setState(() => _isLoading = true);
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      // Photo
+                      Center(
+                        child: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 50,
+                              backgroundColor: Colors.white,
+                              backgroundImage: localImageFile != null
+                                  ? FileImage(File(localImageFile!.path))
+                                  : (_profileData?.profilePhoto != null
+                                      ? NetworkImage(_profileData!.profilePhoto!)
+                                      : null) as ImageProvider?,
+                              child: (localImageFile == null && _profileData?.profilePhoto == null)
+                                  ? Icon(Icons.person, size: 50, color: Colors.grey.shade400)
+                                  : null,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final picker = ImagePicker();
+                                  final picked = await picker.pickImage(source: ImageSource.gallery);
+                                  if (picked != null) {
+                                    setModalState(() => localImageFile = picked);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF1A56C4),
+                                    shape: BoxShape.circle,
+                                    border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
+                                  ),
+                                  child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // Fields Card
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSheetField('NIK', nikCtrl, enabled: false),
+                            const SizedBox(height: 16),
+                            _buildSheetField('Nama Lengkap', nameCtrl),
+                            const SizedBox(height: 16),
+                            _buildSheetField('Email', emailCtrl, keyboardType: TextInputType.emailAddress),
+                            const SizedBox(height: 16),
+                            _buildSheetField('Nomor Telepon', phoneCtrl, keyboardType: TextInputType.phone),
+                            const SizedBox(height: 16),
+                            _buildSheetField('Alamat', addressCtrl, maxLines: 2),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // Save Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            setState(() => _isLoading = true);
 
-                    final result = await ProfileService.updateProfile(
-                      phoneNumber:
-                          phoneCtrl.text.isNotEmpty ? phoneCtrl.text : null,
-                      personalEmail:
-                          emailCtrl.text.isNotEmpty ? emailCtrl.text : null,
-                    );
+                            final result = await ProfileService.updateProfile(
+                              fullName: nameCtrl.text,
+                              personalEmail: emailCtrl.text,
+                              phoneNumber: phoneCtrl.text,
+                              alamat: addressCtrl.text,
+                              imageFile: localImageFile,
+                            );
 
-                    if (!mounted) return;
-                    if (result.success) {
-                      _loadProfile();
-                    } else {
-                      setState(() => _isLoading = false);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content:
-                              Text(result.errorMessage ?? 'Gagal menyimpan')));
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5C38FF),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
+                            if (mounted) {
+                              if (result.success) {
+                                _loadProfile();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Profil berhasil diperbarui')),
+                                );
+                              } else {
+                                setState(() => _isLoading = false);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(result.errorMessage ?? 'Gagal memperbarui')),
+                                );
+                              }
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1A56C4),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
+                          child: const Text('SIMPAN PERUBAHAN', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                   ),
-                  child: const Text('Simpan',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSheetField(String label, TextEditingController controller,
+      {bool enabled = true, TextInputType? keyboardType, int maxLines = 1}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        TextField(
+          controller: controller,
+          enabled: enabled,
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+          style: const TextStyle(fontSize: 14),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: enabled ? Colors.white : Colors.grey.shade100,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF1A56C4))),
+            disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade200)),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1103,6 +1208,27 @@ class _BiodataContent extends StatelessWidget {
   final ProfileData? data;
   const _BiodataContent({this.data});
 
+  void _copyToClipboard(BuildContext context, String label, String? value) {
+    if (value != null && value != '-' && value.isNotEmpty) {
+      Clipboard.setData(ClipboardData(text: value));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$label berhasil disalin'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  void _launchUrl(String urlString) async {
+    final uri = Uri.parse(urlString);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -1113,15 +1239,24 @@ class _BiodataContent extends StatelessWidget {
           _buildTitle('INFORMATION PERSONAL'),
           _buildCard([
             _buildRow(context, 'NIK', data?.employeeId ?? '-',
-                locked: true, showCopyIcon: true),
+                locked: true, onTap: () => _copyToClipboard(context, 'NIK', data?.employeeId)),
             _buildRow(context, 'Nama Lengkap', data?.fullName ?? '-',
-                locked: true, showCopyIcon: true),
+                locked: true, onTap: () => _copyToClipboard(context, 'Nama Lengkap', data?.fullName)),
             _buildRow(context, 'Email', data?.personalEmail ?? '-',
-                showCopyIcon: true),
+                onTap: () => _launchUrl('mailto:${data?.personalEmail ?? ""}')),
             _buildRow(context, 'Phone', data?.phoneNumber ?? '-',
-                showCopyIcon: true),
-            _buildRow(context, 'Alamat', 'Jl. Kelapa No. 12, BPN',
-                showCopyIcon: true),
+                onTap: () {
+                  final phone = data?.phoneNumber ?? "";
+                  if (phone.isNotEmpty && phone != '-') {
+                    String waNumber = phone;
+                    if (waNumber.startsWith('08')) {
+                      waNumber = '628' + waNumber.substring(2);
+                    }
+                    _launchUrl('https://wa.me/$waNumber');
+                  }
+                }),
+            _buildRow(context, 'Alamat', data?.alamat ?? '-',
+                onTap: () => _copyToClipboard(context, 'Alamat', data?.alamat)),
           ]),
           const SizedBox(height: 24),
           _buildTitle('INFORMATION EMPLOYEE'),
@@ -1184,7 +1319,7 @@ class _BiodataContent extends StatelessWidget {
       );
 
   Widget _buildRow(BuildContext context, String label, String value,
-      {bool locked = false, bool showCopyIcon = false}) {
+      {bool locked = false, VoidCallback? onTap}) {
     Widget content = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
@@ -1207,10 +1342,6 @@ class _BiodataContent extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                           height: 1.3))),
-              if (showCopyIcon) ...[
-                const SizedBox(width: 6),
-                Icon(Icons.copy, color: Colors.grey.shade400, size: 14)
-              ],
               if (locked) ...[
                 const SizedBox(width: 6),
                 const Icon(Icons.lock, color: Colors.orange, size: 14)
@@ -1221,21 +1352,9 @@ class _BiodataContent extends StatelessWidget {
       ),
     );
 
-    if (showCopyIcon) {
+    if (onTap != null) {
       return InkWell(
-        onTap: () async {
-          if (value != '-' && value.isNotEmpty) {
-            await Clipboard.setData(ClipboardData(text: value));
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('$label berhasil disalin'),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            }
-          }
-        },
+        onTap: onTap,
         child: content,
       );
     }
@@ -1842,8 +1961,8 @@ class _ProfileFabMenuSheet extends StatelessWidget {
             icon: Icons.person_outline,
             iconBgColor: const Color(0xFFF3E5F5),
             iconColor: const Color(0xFF8E24AA),
-            title: 'Edit Biodata',
-            subtitle: 'Perbarui nomor telepon & email',
+            title: 'Edit Profil',
+            subtitle: 'Perbarui foto, email, telepon & alamat',
             onTap: onEditBiodata,
           ),
           Divider(height: 1, indent: 72, color: Colors.grey.shade100),
@@ -1852,7 +1971,7 @@ class _ProfileFabMenuSheet extends StatelessWidget {
             iconBgColor: const Color(0xFFE3F2FD),
             iconColor: const Color(0xFF1E88E5),
             title: 'Tambah Lisensi',
-            subtitle: 'Tambahkan SIM/SIO/KIMPER',
+            subtitle: 'Tambahkan SIM/SIO',
             onTap: onAddLicense,
           ),
           Divider(height: 1, indent: 72, color: Colors.grey.shade100),

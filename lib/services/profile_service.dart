@@ -78,22 +78,32 @@ class ProfileService {
     return MedicalsResult.success(medicals);
   }
 
-  // ── Update profile (email, phone, position, department) ──────────────────
+  // ── Update profile (full_name, email, phone, position, department, alamat, photo) ──────────────────
   static Future<ProfileResult> updateProfile({
+    String? fullName,
     String? personalEmail,
     String? workEmail,
     String? phoneNumber,
     String? position,
     String? department,
+    String? alamat,
+    XFile? imageFile,
   }) async {
-    final body = <String, dynamic>{};
-    if (personalEmail != null) body['personal_email'] = personalEmail;
-    if (workEmail != null) body['work_email'] = workEmail;
-    if (phoneNumber != null) body['phone_number'] = phoneNumber;
-    if (position != null) body['position'] = position;
-    if (department != null) body['department'] = department;
+    final fields = <String, dynamic>{};
+    if (fullName != null) fields['full_name'] = fullName;
+    if (personalEmail != null) fields['personal_email'] = personalEmail;
+    if (workEmail != null) fields['work_email'] = workEmail;
+    if (phoneNumber != null) fields['phone_number'] = phoneNumber;
+    if (position != null) fields['position'] = position;
+    if (department != null) fields['department'] = department;
+    if (alamat != null) fields['alamat'] = alamat;
 
-    final response = await ApiService.post('/profile', body);
+    final files = <http.MultipartFile>[];
+    if (imageFile != null) {
+      files.add(await http.MultipartFile.fromPath('profile_photo', imageFile.path));
+    }
+
+    final response = await ApiService.postMultipart('/profile', fields, files);
 
     if (!response.success) {
       return ProfileResult.error(

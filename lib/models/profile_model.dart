@@ -11,6 +11,7 @@ class ProfileData {
   final String? position;
   final String? department;
   final String? company;
+  final String? alamat;
   final String? tipeAfiliasi;
   final String? perusahaanKontraktor;
   final String? subKontraktor;
@@ -32,6 +33,7 @@ class ProfileData {
     this.position,
     this.department,
     this.company,
+    this.alamat,
     this.tipeAfiliasi,
     this.perusahaanKontraktor,
     this.subKontraktor,
@@ -55,6 +57,7 @@ class ProfileData {
       position: json['position']?.toString(),
       department: json['department']?.toString(),
       company: json['company']?.toString(),
+      alamat: json['alamat']?.toString(),
       tipeAfiliasi: json['tipe_afiliasi']?.toString(),
       perusahaanKontraktor: json['perusahaan_kontraktor']?.toString(),
       subKontraktor: json['sub_kontraktor']?.toString(),

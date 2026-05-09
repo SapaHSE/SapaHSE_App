@@ -534,24 +534,6 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     );
   }
 
-  InputDecorationTheme _dropdownTheme() {
-    return InputDecorationTheme(
-      hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-      filled: true,
-      fillColor: const Color(0xFFF8F9FF),
-      border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300)),
-      enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300)),
-      focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: _blue, width: 1.5)),
-      constraints: const BoxConstraints(maxHeight: 50),
-    );
-  }
 
   Widget _label(String text, {Key? key}) => Padding(
         key: key,
@@ -570,6 +552,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
     Map<String, List<String>>? groupedOptions,
     required List<String> initialSelected,
     String? hint,
+    bool isSingleSelect = false,
   }) async {
     return showModalBottomSheet<List<String>>(
       context: context,
@@ -584,6 +567,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
         groupedOptions: groupedOptions,
         initialSelected: initialSelected,
         hint: hint ?? 'Cari...',
+        isSingleSelect: isSingleSelect,
       ),
     );
   }
@@ -619,38 +603,43 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 const Icon(Icons.person_add_outlined,
                     size: 20, color: Colors.grey),
                 const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Ketuk untuk tag orang atau departemen',
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_selectedPIC.isNotEmpty) ...[
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: _selectedPIC.map((e) => Chip(
+                              label: Text(e, style: const TextStyle(fontSize: 12)),
+                              padding: EdgeInsets.zero,
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              onDeleted: e == _dynamicHseDepartment
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        _selectedPIC.remove(e);
+                                      });
+                                    },
+                            )).toList(),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        const Text(
+                          'Ketuk untuk tag orang atau departemen',
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Icon(Icons.arrow_forward_ios,
-                    size: 14, color: Colors.grey.shade400),
-              ],
+                  Icon(Icons.arrow_forward_ios,
+                      size: 14, color: Colors.grey.shade400),
+                ],
+              ),
             ),
           ),
-        ),
-        if (_selectedPIC.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: _selectedPIC
-                .map((e) => Chip(
-                      label: Text(e, style: const TextStyle(fontSize: 12)),
-                      padding: EdgeInsets.zero,
-                      onDeleted: e == _dynamicHseDepartment
-                          ? null
-                          : () {
-                              setState(() {
-                                _selectedPIC.remove(e);
-                              });
-                            },
-                    ))
-                .toList(),
-          ),
-        ],
       ],
     );
   }
@@ -694,36 +683,41 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 const Icon(Icons.person_add_outlined,
                     size: 20, color: Colors.grey),
                 const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Ketuk untuk tag pelaku',
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_selectedPelaku.isNotEmpty) ...[
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: _selectedPelaku.map((e) => Chip(
+                              label: Text(e, style: const TextStyle(fontSize: 12)),
+                              padding: EdgeInsets.zero,
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              onDeleted: () {
+                                setState(() {
+                                  _selectedPelaku.remove(e);
+                                });
+                              },
+                            )).toList(),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        const Text(
+                          'Ketuk untuk tag pelaku',
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Icon(Icons.arrow_forward_ios,
-                    size: 14, color: Colors.grey.shade400),
-              ],
+                  Icon(Icons.arrow_forward_ios,
+                      size: 14, color: Colors.grey.shade400),
+                ],
+              ),
             ),
           ),
-        ),
-        if (_selectedPelaku.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: _selectedPelaku
-                .map((e) => Chip(
-                      label: Text(e, style: const TextStyle(fontSize: 12)),
-                      padding: EdgeInsets.zero,
-                      onDeleted: () {
-                        setState(() {
-                          _selectedPelaku.remove(e);
-                        });
-                      },
-                    ))
-                .toList(),
-          ),
-        ],
       ],
     );
   }
@@ -764,9 +758,38 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                   const Icon(Icons.category_outlined, size: 20, color: Colors.grey),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      _isLoadingData ? 'Memuat data...' : 'Ketuk untuk memilih kategori',
-                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_selectedKategori.isNotEmpty) ...[
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: _selectedKategori.map((kat) {
+                              return Chip(
+                                label: Text(kat, style: const TextStyle(fontSize: 12)),
+                                deleteIcon: const Icon(Icons.close, size: 16),
+                                onDeleted: () {
+                                  setState(() {
+                                    _selectedKategori.remove(kat);
+                                    _selectedSubkategori.clear();
+                                  });
+                                },
+                                backgroundColor: const Color(0xFFEFF4FF),
+                                side: BorderSide(color: Colors.blue.shade200),
+                                padding: EdgeInsets.zero,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        Text(
+                          _isLoadingData ? 'Memuat data...' : 'Ketuk untuk memilih kategori',
+                          style: const TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                      ],
                     ),
                   ),
                   Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
@@ -774,27 +797,6 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               ),
             ),
           ),
-          if (_selectedKategori.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: _selectedKategori.map((kat) {
-                return Chip(
-                  label: Text(kat, style: const TextStyle(fontSize: 12)),
-                  deleteIcon: const Icon(Icons.close, size: 16),
-                  onDeleted: () {
-                    setState(() {
-                      _selectedKategori.remove(kat);
-                      _selectedSubkategori.clear();
-                    });
-                  },
-                  backgroundColor: const Color(0xFFEFF4FF),
-                  side: BorderSide(color: Colors.blue.shade200),
-                );
-              }).toList(),
-            ),
-          ],
           const SizedBox(height: 14),
           _label('Subkategori Hazard *'),
           GestureDetector(
@@ -816,6 +818,7 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 options: _subkategoriList,
                 groupedOptions: groups,
                 initialSelected: _selectedSubkategori,
+                isSingleSelect: true,
               );
               if (result != null) {
                 setState(() {
@@ -835,10 +838,36 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
                 children: [
                   const Icon(Icons.subdirectory_arrow_right, size: 20, color: Colors.grey),
                   const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Ketuk untuk memilih subkategori',
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_selectedSubkategori.isNotEmpty) ...[
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: _selectedSubkategori.map((sub) {
+                              return Chip(
+                                label: Text(sub, style: const TextStyle(fontSize: 12)),
+                                deleteIcon: const Icon(Icons.close, size: 16),
+                                onDeleted: () {
+                                  setState(() => _selectedSubkategori.remove(sub));
+                                },
+                                backgroundColor: const Color(0xFFEFF4FF),
+                                side: BorderSide(color: Colors.blue.shade200),
+                                padding: EdgeInsets.zero,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        const Text(
+                          'Ketuk untuk memilih subkategori',
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                      ],
                     ),
                   ),
                   Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
@@ -846,45 +875,49 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
               ),
             ),
           ),
-          if (_selectedSubkategori.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: _selectedSubkategori.map((sub) {
-                return Chip(
-                  label: Text(sub, style: const TextStyle(fontSize: 12)),
-                  deleteIcon: const Icon(Icons.close, size: 16),
-                  onDeleted: () {
-                    setState(() => _selectedSubkategori.remove(sub));
-                  },
-                  backgroundColor: const Color(0xFFEFF4FF),
-                  side: BorderSide(color: Colors.blue.shade200),
-                );
-              }).toList(),
-            ),
-          ],
           const SizedBox(height: 14),
-          _label('Perusahaan (Ketik untuk mencari) *'),
-          LayoutBuilder(
-            builder: (context, constraints) => DropdownMenu<String>(
-              width: constraints.maxWidth,
-              enableSearch: true,
-              enableFilter: true,
-              requestFocusOnTap: true,
-              initialSelection: _selectedPerusahaan,
-              hintText:
-                  _isLoadingData ? 'Memuat data...' : 'Pilih / Cari Perusahaan',
-              inputDecorationTheme: _dropdownTheme(),
-              onSelected: (v) => setState(() {
-                _selectedPerusahaan = v;
-                _selectedLokasi = null;
-                _selectedPIC.clear();
-                _selectedPIC.add(_dynamicHseDepartment);
-              }),
-              dropdownMenuEntries: _companiesData
-                  .map((e) => DropdownMenuEntry(value: e.name, label: e.name))
-                  .toList(),
+          _label('Perusahaan *'),
+          GestureDetector(
+            onTap: () async {
+              if (_isLoadingData) return;
+              final result = await _showPersonPicker(
+                title: 'Pilih Perusahaan',
+                options: _companiesData.map((e) => e.name).toList(),
+                initialSelected: _selectedPerusahaan != null ? [_selectedPerusahaan!] : [],
+                isSingleSelect: true,
+              );
+              if (result != null && result.isNotEmpty) {
+                setState(() {
+                  _selectedPerusahaan = result.first;
+                  _selectedLokasi = null;
+                  _selectedPIC.clear();
+                  _selectedPIC.add(_dynamicHseDepartment);
+                });
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FF),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.business_outlined, size: 20, color: Colors.grey),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _selectedPerusahaan ?? (_isLoadingData ? 'Memuat data...' : 'Pilih Perusahaan'),
+                      style: TextStyle(
+                        color: _selectedPerusahaan != null ? Colors.black87 : Colors.grey,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 14),
@@ -966,31 +999,75 @@ class _CreateHazardScreenState extends State<CreateHazardScreen> {
           _pelakuTagField(),
           const SizedBox(height: 14),
           _label('Lokasi Kejadian *'),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedLokasi,
-            validator: (v) => v == null ? 'Wajib dipilih' : null,
-            decoration: _inputDeco(
-                hint: _selectedPerusahaan == null
-                    ? 'Pilih Perusahaan Dulu'
-                    : (_isLoadingData
-                        ? 'Memuat data...'
-                        : 'Pilih Lokasi Kejadian'),
-                icon: Icons.location_city),
-            items: _lokasiList
-                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                .toList(),
-            onChanged: (v) => setState(() => _selectedLokasi = v),
+          GestureDetector(
+            onTap: () async {
+              if (_selectedPerusahaan == null) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih Perusahaan terlebih dahulu')));
+                return;
+              }
+              if (_isLoadingData) return;
+              final result = await _showPersonPicker(
+                title: 'Pilih Lokasi Kejadian',
+                options: _lokasiList,
+                initialSelected: _selectedLokasi != null ? [_selectedLokasi!] : [],
+                isSingleSelect: true,
+              );
+              if (result != null && result.isNotEmpty) {
+                setState(() => _selectedLokasi = result.first);
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FF),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.location_city, size: 20, color: Colors.grey),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _selectedLokasi ?? (_selectedPerusahaan == null ? 'Pilih Perusahaan Dulu' : 'Pilih Lokasi Kejadian'),
+                      style: TextStyle(
+                        color: _selectedLokasi != null ? Colors.black87 : Colors.grey,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 14),
           _label('Pinpoint Lokasi Kejadian *'),
-          TextFormField(
-            controller: _kejadianLocationCtrl,
-            readOnly: true,
+          GestureDetector(
             onTap: () => _pickLocationFromMap(_kejadianLocationCtrl),
-            validator: (v) => v!.trim().isEmpty ? 'Wajib diisi' : null,
-            decoration: _inputDeco(
-              hint: 'Koordinat Kejadian',
-              icon: Icons.place,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FF),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.place, size: 20, color: Colors.grey),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _kejadianLocationCtrl.text.isEmpty ? 'Pilih Koordinat' : _kejadianLocationCtrl.text,
+                      style: TextStyle(
+                        color: _kejadianLocationCtrl.text.isNotEmpty ? Colors.black87 : Colors.grey,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.map_outlined, size: 18, color: const Color(0xFF1A56C4).withValues(alpha: 0.7)),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 14),
@@ -1406,6 +1483,7 @@ class _PersonPickerContent extends StatefulWidget {
   final Map<String, List<String>>? groupedOptions;
   final List<String> initialSelected;
   final String hint;
+  final bool isSingleSelect;
 
   const _PersonPickerContent({
     required this.title,
@@ -1413,6 +1491,7 @@ class _PersonPickerContent extends StatefulWidget {
     this.groupedOptions,
     required this.initialSelected,
     required this.hint,
+    this.isSingleSelect = false,
   });
 
   @override
@@ -1438,14 +1517,19 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
 
   void _toggleSelection(String item) {
     setState(() {
-      if (_selectedItems.contains(item)) {
-        // Jangan biarkan auto-tag terhapus jika kita anggap 'Departemen HSE' dsb wajib,
-        // tapi untuk mempermudah, asumsikan UI checkbox mengizinkan hapus,
-
-        // validasi ada di layer atas jika diperlukan.
-        _selectedItems.remove(item);
+      if (widget.isSingleSelect) {
+        if (_selectedItems.contains(item)) {
+          _selectedItems.clear();
+        } else {
+          _selectedItems.clear();
+          _selectedItems.add(item);
+        }
       } else {
-        _selectedItems.add(item);
+        if (_selectedItems.contains(item)) {
+          _selectedItems.remove(item);
+        } else {
+          _selectedItems.add(item);
+        }
       }
     });
   }
@@ -1500,16 +1584,20 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
           // Search Field
           TextField(
             controller: _searchCtrl,
-            autofocus: true,
             onChanged: (v) => setState(() => _query = v),
             decoration: InputDecoration(
               hintText: widget.hint,
-              prefixIcon: const Icon(Icons.search, color: Colors.grey),
+              hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+              prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 22),
               filled: true,
-              fillColor: Colors.grey.shade100,
+              fillColor: const Color(0xFFF1F4F9),
               contentPadding: const EdgeInsets.symmetric(vertical: 0),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
                 borderSide: BorderSide.none,
               ),
             ),
@@ -1552,8 +1640,12 @@ class _PersonPickerContentState extends State<_PersonPickerContent> {
                                       style: const TextStyle(fontSize: 14)),
                                   trailing: Icon(
                                     _selectedItems.contains(opt)
-                                        ? Icons.check_circle
-                                        : Icons.add_circle_outline,
+                                        ? (widget.isSingleSelect
+                                            ? Icons.radio_button_checked
+                                            : Icons.check_circle)
+                                        : (widget.isSingleSelect
+                                            ? Icons.radio_button_off
+                                            : Icons.add_circle_outline),
                                     color: _selectedItems.contains(opt)
                                         ? Colors.green
                                         : const Color(0xFF1A56C4),

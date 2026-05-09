@@ -185,7 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 centerTitle: true,
                               ),
                               backgroundColor: const Color(0xFFF5F5F5),
-                              body: const _AppTab(),
+                              body: _buildWorkspaceTab(),
                               floatingActionButton: FloatingActionButton(
                                 onPressed: _openFabMenu,
                                 backgroundColor: const Color(0xFF1A56C4),
@@ -229,96 +229,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     MaterialPageRoute(builder: (_) => const SettingsScreen()));
               },
             ),
-            if (_profileData?.role.toLowerCase() == 'admin' ||
-                _profileData?.role.toLowerCase() == 'superadmin') ...[
-              _buildSectionHeader('ALAT ADMIN',
-                  badge: 'CHIEF', badgeColor: const Color(0xFFE65100)),
-              _buildMenuItem(
-                icon: Icons.people,
-                iconBg: const Color(0xFFE3F2FD),
-                iconColor: const Color(0xFF1565C0),
-                title: 'User Management',
-                subtitle: 'Roles, access, approvals',
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const UserManagementScreen()));
-                },
-              ),
-              Divider(height: 1, color: Colors.grey.shade100, indent: 70),
-              _buildMenuItem(
-                icon: Icons.folder_special,
-                iconBg: const Color(0xFFFBE9E7),
-                iconColor: const Color(0xFFD84315),
-                title: 'Kategori Laporan',
-                subtitle: 'Daftar TTA, KTA & subkategori',
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const KategoriLaporanScreen()));
-                },
-              ),
-              Divider(height: 1, color: Colors.grey.shade100, indent: 70),
-              _buildMenuItem(
-                icon: Icons.business,
-                iconBg: const Color(0xFFE8F5E9),
-                iconColor: const Color(0xFF2E7D32),
-                title: 'Company Management',
-                subtitle: 'Owner, kontraktor & sub kontraktor',
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const CompanyManagementScreen()));
-                },
-              ),
-              _buildMenuItem(
-                icon: Icons.corporate_fare,
-                iconBg: const Color(0xFFE8EAF6),
-                iconColor: const Color(0xFF3F51B5),
-                title: 'Department Management',
-                subtitle: 'Daftar departemen perusahaan',
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const DepartmentManagementScreen()));
-                },
-              ),
-              Divider(height: 1, color: Colors.grey.shade100, indent: 70),
-              _buildMenuItem(
-                icon: Icons.location_on,
-                iconBg: const Color(0xFFFFF3E0),
-                iconColor: const Color(0xFFEF6C00),
-                title: 'Location Management',
-                subtitle: 'Lokasi kerja tiap perusahaan owner',
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const LocationManagementScreen()));
-                },
-              ),
-            ],
-            if (_profileData?.role.toLowerCase() == 'superadmin') ...[
-              _buildSectionHeader('PLATFORM',
-                  badge: 'NEZTEK ADMIN', badgeColor: const Color(0xFFD32F2F)),
-              _buildMenuItem(
-                icon: Icons.admin_panel_settings,
-                iconBg: const Color(0xFFE8EAF6),
-                iconColor: const Color(0xFF283593),
-                title: 'Neztek Admin Panel',
-                subtitle: 'Tenants, billing, modules',
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const NeztekAdminScreen()));
-                },
-              ),
-            ],
             const SizedBox(height: 80),
           ],
         ),
@@ -508,16 +418,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// APP TAB
-// ══════════════════════════════════════════════════════════════════════════════
-class _AppTab extends StatelessWidget {
-  const _AppTab();
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildWorkspaceTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 80),
       child: Column(
@@ -545,6 +446,98 @@ class _AppTab extends StatelessWidget {
               ),
             ),
           ]),
+          if (_profileData?.role.toLowerCase() == 'admin' ||
+              _profileData?.role.toLowerCase() == 'superadmin') ...[
+            const SizedBox(height: 24),
+            _buildSectionHeader('ALAT ADMIN',
+                badge: 'CHIEF', badgeColor: const Color(0xFFE65100)),
+            _buildMenuItem(
+              icon: Icons.people,
+              iconBg: const Color(0xFFE3F2FD),
+              iconColor: const Color(0xFF1565C0),
+              title: 'User Management',
+              subtitle: 'Roles, access, approvals',
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const UserManagementScreen()));
+              },
+            ),
+            Divider(height: 1, color: Colors.grey.shade100, indent: 70),
+            _buildMenuItem(
+              icon: Icons.folder_special,
+              iconBg: const Color(0xFFFBE9E7),
+              iconColor: const Color(0xFFD84315),
+              title: 'Kategori Laporan',
+              subtitle: 'Daftar TTA, KTA & subkategori',
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const KategoriLaporanScreen()));
+              },
+            ),
+            Divider(height: 1, color: Colors.grey.shade100, indent: 70),
+            _buildMenuItem(
+              icon: Icons.business,
+              iconBg: const Color(0xFFE8F5E9),
+              iconColor: const Color(0xFF2E7D32),
+              title: 'Company Management',
+              subtitle: 'Owner, kontraktor & sub kontraktor',
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const CompanyManagementScreen()));
+              },
+            ),
+            _buildMenuItem(
+              icon: Icons.corporate_fare,
+              iconBg: const Color(0xFFE8EAF6),
+              iconColor: const Color(0xFF3F51B5),
+              title: 'Department Management',
+              subtitle: 'Daftar departemen perusahaan',
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const DepartmentManagementScreen()));
+              },
+            ),
+            Divider(height: 1, color: Colors.grey.shade100, indent: 70),
+            _buildMenuItem(
+              icon: Icons.location_on,
+              iconBg: const Color(0xFFFFF3E0),
+              iconColor: const Color(0xFFEF6C00),
+              title: 'Location Management',
+              subtitle: 'Lokasi kerja tiap perusahaan owner',
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const LocationManagementScreen()));
+              },
+            ),
+          ],
+          if (_profileData?.role.toLowerCase() == 'superadmin') ...[
+            const SizedBox(height: 24),
+            _buildSectionHeader('PLATFORM',
+                badge: 'NEZTEK ADMIN', badgeColor: const Color(0xFFD32F2F)),
+            _buildMenuItem(
+              icon: Icons.admin_panel_settings,
+              iconBg: const Color(0xFFE8EAF6),
+              iconColor: const Color(0xFF283593),
+              title: 'Neztek Admin Panel',
+              subtitle: 'Tenants, billing, modules',
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const NeztekAdminScreen()));
+              },
+            ),
+          ],
         ],
       ),
     );

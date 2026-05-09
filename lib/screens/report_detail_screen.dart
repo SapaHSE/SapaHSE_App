@@ -263,7 +263,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          Colors.black.withOpacity(0.65),
+                          Colors.black.withValues(alpha: 0.65),
                           Colors.transparent
                         ],
                       ),
@@ -717,7 +717,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                           color: _blueLight,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: _blue.withOpacity(0.15),
+                            color: _blue.withValues(alpha: 0.15),
                           ),
                         ),
                         child: Row(
@@ -826,7 +826,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               decoration: BoxDecoration(
                 color: isCurrentGroup
                     ? statusColor
-                    : statusColor.withOpacity(0.1),
+                    : statusColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -844,7 +844,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             const SizedBox(width: 8),
             Expanded(
                 child: Container(
-                    height: 1, color: statusColor.withOpacity(0.2))),
+                    height: 1, color: statusColor.withValues(alpha: 0.2))),
           ]),
         ),
       );
@@ -927,7 +927,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 boxShadow: isCur
                     ? [
                         BoxShadow(
-                            color: color.withOpacity(0.35),
+                            color: color.withValues(alpha: 0.35),
                             blurRadius: 8,
                             spreadRadius: 1)
                       ]
@@ -964,7 +964,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 6,
                 offset: const Offset(0, 2))
           ],
@@ -1213,14 +1213,12 @@ class _DetailRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  final Widget? trailing;
   final VoidCallback? onTap;
 
   const _DetailRow({
     required this.icon,
     required this.label,
     required this.value,
-    this.trailing,
     this.onTap,
   });
 
@@ -1246,10 +1244,6 @@ class _DetailRow extends StatelessWidget {
             ],
           ),
         ),
-        if (trailing != null) ...[
-          const SizedBox(width: 8),
-          trailing!,
-        ],
       ],
     );
 
@@ -1800,7 +1794,7 @@ class _SectionHeader extends StatelessWidget {
         Expanded(
           child: Container(
             height: 1,
-            color: const Color(0xFF1A56C4).withOpacity(0.15),
+            color: const Color(0xFF1A56C4).withValues(alpha: 0.15),
           ),
         ),
       ],
