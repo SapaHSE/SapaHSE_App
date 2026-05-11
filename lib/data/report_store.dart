@@ -4,20 +4,48 @@ import '../data/dummy_data.dart';
 
 // ── Timeline event model ───────────────────────────────────────────────────────
 class TimelineEvent {
+  final String timelineLogId;
   final ReportStatus status;
   final ReportSubStatus? subStatus;
   final DateTime timestamp;
   final String actor;
+  final String? actorPhotoUrl;
+  final String? actorUserId;
   final String? note;
-  final String? photoPath;
+  final List<String> photoPaths;
+  final int replyCount;
 
   const TimelineEvent({
+    this.timelineLogId = '',
     required this.status,
     this.subStatus,
     required this.timestamp,
     required this.actor,
+    this.actorPhotoUrl,
+    this.actorUserId,
     this.note,
-    this.photoPath,
+    this.photoPaths = const [],
+    this.replyCount = 0,
+  });
+}
+
+class TimelineReply {
+  final String id;
+  final String message;
+  final DateTime timestamp;
+  final String actor;
+  final String? actorPhotoUrl;
+  final String? parentReplyId;
+  final List<String> attachmentUrls;
+
+  const TimelineReply({
+    required this.id,
+    required this.message,
+    required this.timestamp,
+    required this.actor,
+    this.actorPhotoUrl,
+    this.parentReplyId,
+    this.attachmentUrls = const [],
   });
 }
 
@@ -34,6 +62,16 @@ class ReportStore {
   // Timeline per report ID — seed awal dari status laporan dummy
   final Map<String, List<TimelineEvent>> _timelines = {};
 
+  // Replies per timeline log ID
+  final Map<String, List<TimelineReply>> _replies = {};
+
+  List<TimelineReply> getReplies(String logId) =>
+      List.unmodifiable(_replies[logId] ?? []);
+
+  void seedExampleReplies(String logId, List<TimelineReply> replies) {
+    _replies[logId] = replies;
+  }
+
   // ── Get timeline untuk satu report ────────────────────────────────────────
   List<TimelineEvent> getTimeline(String reportId) {
     if (!_timelines.containsKey(reportId)) {
@@ -46,10 +84,14 @@ class ReportStore {
   }
 
   // ── Inisialisasi timeline awal dari dummy data ─────────────────────────────
-  static List<TimelineEvent> _seedTimeline(Report r) {
+static List<TimelineEvent> _seedTimeline(Report r) {
     final base = r.createdAt;
+    int logCounter = 1;
+    String nextLogId() => 'seed-log-${logCounter++}';
+
     final events = <TimelineEvent>[
       TimelineEvent(
+        timelineLogId: nextLogId(),
         status: ReportStatus.open,
         subStatus: ReportSubStatus.validating,
         timestamp: base,
@@ -59,10 +101,10 @@ class ReportStore {
     ];
 
     if (r.status == ReportStatus.open) {
-      // Seed sub-steps for open if subStatus tells us how far we are
       final sub = r.subStatus;
       if (sub == ReportSubStatus.approved || sub == ReportSubStatus.assigned) {
         events.add(TimelineEvent(
+          timelineLogId: nextLogId(),
           status: ReportStatus.open,
           subStatus: ReportSubStatus.approved,
           timestamp: base.add(const Duration(hours: 1)),
@@ -72,6 +114,7 @@ class ReportStore {
       }
       if (sub == ReportSubStatus.assigned) {
         events.add(TimelineEvent(
+          timelineLogId: nextLogId(),
           status: ReportStatus.open,
           subStatus: ReportSubStatus.assigned,
           timestamp: base.add(const Duration(hours: 2)),
@@ -81,10 +124,10 @@ class ReportStore {
       }
     }
 
-    if (r.status == ReportStatus.inProgress ||
-        r.status == ReportStatus.closed) {
+    if (r.status == ReportStatus.inProgress || r.status == ReportStatus.closed) {
       events.addAll([
         TimelineEvent(
+          timelineLogId: nextLogId(),
           status: ReportStatus.open,
           subStatus: ReportSubStatus.approved,
           timestamp: base.add(const Duration(hours: 1)),
@@ -92,6 +135,7 @@ class ReportStore {
           note: 'Laporan telah divalidasi dan disetujui.',
         ),
         TimelineEvent(
+          timelineLogId: nextLogId(),
           status: ReportStatus.open,
           subStatus: ReportSubStatus.assigned,
           timestamp: base.add(const Duration(hours: 2)),
@@ -99,6 +143,7 @@ class ReportStore {
           note: 'Laporan ditugaskan kepada tim terkait.',
         ),
         TimelineEvent(
+          timelineLogId: nextLogId(),
           status: ReportStatus.inProgress,
           subStatus: ReportSubStatus.preparing,
           timestamp: base.add(const Duration(hours: 3)),
@@ -108,9 +153,9 @@ class ReportStore {
       ]);
 
       final sub = r.subStatus;
-      if (sub == ReportSubStatus.executing ||
-          sub == ReportSubStatus.reviewing) {
+      if (sub == ReportSubStatus.executing || sub == ReportSubStatus.reviewing) {
         events.add(TimelineEvent(
+          timelineLogId: nextLogId(),
           status: ReportStatus.inProgress,
           subStatus: ReportSubStatus.executing,
           timestamp: base.add(const Duration(hours: 5)),
@@ -120,6 +165,7 @@ class ReportStore {
       }
       if (sub == ReportSubStatus.reviewing) {
         events.add(TimelineEvent(
+          timelineLogId: nextLogId(),
           status: ReportStatus.inProgress,
           subStatus: ReportSubStatus.reviewing,
           timestamp: base.add(const Duration(hours: 7)),
@@ -132,6 +178,7 @@ class ReportStore {
     if (r.status == ReportStatus.closed) {
       events.addAll([
         TimelineEvent(
+          timelineLogId: nextLogId(),
           status: ReportStatus.inProgress,
           subStatus: ReportSubStatus.executing,
           timestamp: base.add(const Duration(hours: 5)),
@@ -139,6 +186,7 @@ class ReportStore {
           note: 'Penanganan sedang dilaksanakan di lapangan.',
         ),
         TimelineEvent(
+          timelineLogId: nextLogId(),
           status: ReportStatus.inProgress,
           subStatus: ReportSubStatus.reviewing,
           timestamp: base.add(const Duration(hours: 7)),
@@ -146,11 +194,12 @@ class ReportStore {
           note: 'Hasil penanganan sedang direview.',
         ),
         TimelineEvent(
+          timelineLogId: nextLogId(),
           status: ReportStatus.closed,
           subStatus: r.subStatus ?? ReportSubStatus.resolved,
           timestamp: base.add(const Duration(days: 1)),
           actor: 'Admin HSE',
-          note: 'Penanganan selesai dan laporan ditutup.',
+          note: 'Penangananan selesai dan laporan ditutup.',
         ),
       ]);
     }
@@ -200,12 +249,13 @@ class ReportStore {
     // Append timeline event
     _timelines.putIfAbsent(id, () => _seedTimeline(old));
     _timelines[id]!.add(TimelineEvent(
+      timelineLogId: 'log-${DateTime.now().millisecondsSinceEpoch}',
       status: newStatus,
       subStatus: newSubStatus,
       timestamp: DateTime.now(),
       actor: actor,
       note: note ?? _defaultNote(newStatus, newSubStatus),
-      photoPath: photoPath,
+      photoPaths: photoPath != null ? [photoPath] : [],
     ));
 
     return updated;
