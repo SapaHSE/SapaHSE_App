@@ -5,6 +5,7 @@ import 'dashboard_screen.dart';
 import 'my_profile.dart';
 import 'statistik.dart';
 import 'user_management.dart';
+import 'violation_management.dart';
 import 'kategori_laporan.dart';
 import 'settings_screen.dart';
 import 'neztek_admin_screen.dart';
@@ -521,6 +522,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         builder: (_) => const LocationManagementScreen()));
               },
             ),
+            if (_profileData?.role.toLowerCase() == 'superadmin' ||
+                (_profileData?.role.toLowerCase() == 'admin' &&
+                    (_profileData?.department?.toLowerCase().contains('hse') ?? false))) ...[
+              Divider(height: 1, color: Colors.grey.shade100, indent: 70),
+              _buildMenuItem(
+                icon: Icons.gavel_outlined,
+                iconBg: const Color(0xFFFFEBEE),
+                iconColor: const Color(0xFFD32F2F),
+                title: 'Pelanggaran User',
+                subtitle: 'Catat & kelola pelanggaran karyawan',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ViolationManagementScreen()),
+                ),
+              ),
+            ],
           ],
           if (_profileData?.role.toLowerCase() == 'superadmin') ...[
             const SizedBox(height: 24),

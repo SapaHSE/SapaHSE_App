@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:sapahse/models/profile_model.dart';
 import 'package:sapahse/services/profile_service.dart';
+import 'package:sapahse/services/department_service.dart';
+import 'package:sapahse/models/department_model.dart';
 import 'package:sapahse/main.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -322,7 +324,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? tab['color'].withOpacity(0.1)
+                    ? tab['color'].withValues(alpha: 0.1)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
@@ -495,9 +497,15 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                             const SizedBox(height: 16),
                             _buildSheetField('Email Kantor (Opsional)', workEmailCtrl, keyboardType: TextInputType.emailAddress),
                             const SizedBox(height: 16),
-                            _buildSheetField('Departemen', deptCtrl),
+                            GestureDetector(
+                              onTap: () => _showDepartmentPicker(
+                                  context, deptCtrl, setModalState),
+                              child: _buildSheetField('Departemen', deptCtrl,
+                                  enabled: false,
+                                  suffixIcon: Icons.arrow_drop_down),
+                            ),
                             const SizedBox(height: 16),
-                            _buildSheetField('Jabatan', jobCtrl),
+                            _buildSheetField('Jabatan', jobCtrl, enabled: false),
                             const SizedBox(height: 16),
                             _buildSheetField('Alamat', addressCtrl, maxLines: 2),
                           ],
@@ -524,16 +532,19 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                               imageFile: localImageFile,
                             );
 
-                            if (mounted) {
+                            if (context.mounted) {
                               if (result.success) {
                                 _loadProfile();
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Profil berhasil diperbarui')),
+                                  const SnackBar(
+                                      content: Text('Profil berhasil diperbarui')),
                                 );
                               } else {
                                 setState(() => _isLoading = false);
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(result.errorMessage ?? 'Gagal memperbarui')),
+                                  SnackBar(
+                                      content: Text(result.errorMessage ??
+                                          'Gagal memperbarui')),
                                 );
                               }
                             }
@@ -560,11 +571,18 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   Widget _buildSheetField(String label, TextEditingController controller,
-      {bool enabled = true, TextInputType? keyboardType, int maxLines = 1}) {
+      {bool enabled = true,
+      TextInputType? keyboardType,
+      int maxLines = 1,
+      IconData? suffixIcon}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
+        Text(label,
+            style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         TextField(
           controller: controller,
@@ -575,13 +593,38 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           decoration: InputDecoration(
             filled: true,
             fillColor: enabled ? Colors.white : Colors.grey.shade100,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF1A56C4))),
-            disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade200)),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFF1A56C4))),
+            disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade200)),
+            suffixIcon: suffixIcon != null ? Icon(suffixIcon) : null,
           ),
         ),
       ],
+    );
+  }
+
+  void _showDepartmentPicker(BuildContext context,
+      TextEditingController controller, StateSetter setModalState) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _DepartmentPickerSheet(
+        initialValue: controller.text,
+        onSelected: (val) {
+          setModalState(() {
+            controller.text = val;
+          });
+        },
+      ),
     );
   }
 
@@ -727,10 +770,10 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         currentIllness: currentIllnessCtrl.text,
                       );
 
-                      if (result.success) {
-                        if (mounted) _loadProfile();
-                      } else {
-                        if (mounted) {
+                      if (context.mounted) {
+                        if (result.success) {
+                          _loadProfile();
+                        } else {
                           setState(() => _isLoading = false);
                           ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text(result.message)));
@@ -1237,7 +1280,20 @@ class _BiodataContent extends StatelessWidget {
   void _launchUrl(String urlString) async {
     final uri = Uri.parse(urlString);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _openMap(String address) async {
+    if (address == '-' || address.isEmpty) return;
+
+    // Use Google Maps search URL which works on both Android and iOS
+    final url =
+        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}';
+    final uri = Uri.parse(url);
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -1251,9 +1307,9 @@ class _BiodataContent extends StatelessWidget {
           _buildTitle('INFORMATION PERSONAL'),
           _buildCard([
             _buildRow(context, 'NIK', data?.employeeId ?? '-',
-                locked: true, onTap: () => _copyToClipboard(context, 'NIK', data?.employeeId)),
+                onTap: () => _copyToClipboard(context, 'NIK', data?.employeeId)),
             _buildRow(context, 'Nama Lengkap', data?.fullName ?? '-',
-                locked: true, onTap: () => _copyToClipboard(context, 'Nama Lengkap', data?.fullName)),
+                onTap: () => _copyToClipboard(context, 'Nama Lengkap', data?.fullName)),
             _buildRow(context, 'Email', data?.personalEmail ?? '-',
                 onTap: () => _launchUrl('mailto:${data?.personalEmail ?? ""}')),
             _buildRow(context, 'Phone', data?.phoneNumber ?? '-',
@@ -1262,34 +1318,29 @@ class _BiodataContent extends StatelessWidget {
                   if (phone.isNotEmpty && phone != '-') {
                     String waNumber = phone;
                     if (waNumber.startsWith('08')) {
-                      waNumber = '628' + waNumber.substring(2);
+                      waNumber = '628${waNumber.substring(2)}';
                     }
                     _launchUrl('https://wa.me/$waNumber');
                   }
                 }),
             _buildRow(context, 'Alamat', data?.alamat ?? '-',
-                onTap: () => _copyToClipboard(context, 'Alamat', data?.alamat)),
+                onTap: () => _openMap(data?.alamat ?? '')),
           ]),
           const SizedBox(height: 24),
           _buildTitle('INFORMATION EMPLOYEE'),
           _buildCard([
-            _buildRow(context, 'Tipe Afiliasi', data?.tipeAfiliasi ?? '-',
-                locked: true),
-            _buildRow(context, 'Perusahaan Owner', data?.company ?? '-',
-                locked: true),
+            _buildRow(context, 'Tipe Afiliasi', data?.tipeAfiliasi ?? '-'),
+            _buildRow(context, 'Perusahaan Owner', data?.company ?? '-'),
             if (data?.tipeAfiliasi == 'Kontraktor' ||
                 data?.tipeAfiliasi == 'Sub-Kontraktor' ||
                 data?.tipeAfiliasi == 'Sub-Kont.')
               _buildRow(context, 'Perusahaan Kontraktor',
-                  data?.perusahaanKontraktor ?? '-',
-                  locked: true),
+                  data?.perusahaanKontraktor ?? '-'),
             if (data?.tipeAfiliasi == 'Sub-Kontraktor' ||
                 data?.tipeAfiliasi == 'Sub-Kont.')
-              _buildRow(context, 'Sub-Kontraktor', data?.subKontraktor ?? '-',
-                  locked: true),
-            _buildRow(context, 'Departemen', data?.department ?? '-',
-                locked: true),
-            _buildRow(context, 'Jabatan', data?.position ?? '-', locked: true),
+              _buildRow(context, 'Sub-Kontraktor', data?.subKontraktor ?? '-'),
+            _buildRow(context, 'Departemen', data?.department ?? '-'),
+            _buildRow(context, 'Jabatan', data?.position ?? '-'),
           ]),
         ],
       ),
@@ -1331,7 +1382,7 @@ class _BiodataContent extends StatelessWidget {
       );
 
   Widget _buildRow(BuildContext context, String label, String value,
-      {bool locked = false, VoidCallback? onTap}) {
+      {VoidCallback? onTap, IconData? icon}) {
     Widget content = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
@@ -1354,9 +1405,9 @@ class _BiodataContent extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                           height: 1.3))),
-              if (locked) ...[
-                const SizedBox(width: 6),
-                const Icon(Icons.lock, color: Colors.orange, size: 14)
+              if (icon != null) ...[
+                const SizedBox(width: 8),
+                Icon(icon, size: 16, color: const Color(0xFF1A56C4)),
               ],
             ],
           )),
@@ -1399,7 +1450,7 @@ class _LicenseContent extends StatelessWidget {
                           isAktif ? Colors.grey.shade200 : Colors.red.shade100),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.02),
+                        color: Colors.black.withValues(alpha: 0.02),
                         blurRadius: 10,
                         offset: const Offset(0, 4))
                   ]),
@@ -1504,7 +1555,7 @@ class _CertificationContent extends StatelessWidget {
                   border: Border.all(color: Colors.grey.shade200),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.02),
+                        color: Colors.black.withValues(alpha: 0.02),
                         blurRadius: 10,
                         offset: const Offset(0, 4))
                   ]),
@@ -1746,7 +1797,7 @@ class _ViolationContent extends StatelessWidget {
                   border: Border.all(color: Colors.grey.shade200),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.02),
+                        color: Colors.black.withValues(alpha: 0.02),
                         blurRadius: 4,
                         offset: const Offset(0, 2))
                   ]),
@@ -2019,6 +2070,214 @@ class _ProfileFabMenuSheet extends StatelessWidget {
                       side: BorderSide(color: Colors.grey.shade200)),
                 ),
                 child: const Text('Batal', style: TextStyle(fontSize: 14)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DepartmentPickerSheet extends StatefulWidget {
+  final String initialValue;
+  final Function(String) onSelected;
+
+  const _DepartmentPickerSheet({
+    required this.initialValue,
+    required this.onSelected,
+  });
+
+  @override
+  State<_DepartmentPickerSheet> createState() => _DepartmentPickerSheetState();
+}
+
+class _DepartmentPickerSheetState extends State<_DepartmentPickerSheet> {
+  List<DepartmentData> _allDepartments = [];
+  List<DepartmentData> _filteredDepartments = [];
+  String? _selectedValue;
+  bool _isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedValue = widget.initialValue;
+    _fetchDepartments();
+  }
+
+  Future<void> _fetchDepartments() async {
+    try {
+      final deps = await DepartmentService.getDepartments();
+      setState(() {
+        _allDepartments = deps;
+        _filteredDepartments = deps;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _filterDepartments(String query) {
+    setState(() {
+      _filteredDepartments = _allDepartments
+          .where((d) => d.name.toLowerCase().contains(query.toLowerCase()))
+          .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          // Handle
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 16, 16),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Pilih Departemen',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A56C4),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          // Search Bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _filterDepartments,
+              decoration: InputDecoration(
+                hintText: 'Cari...',
+                hintStyle: TextStyle(color: Colors.grey.shade400),
+                prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
+                filled: true,
+                fillColor: const Color(0xFFF0F4F8),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Sub-header (Optional style from image)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'DAFTAR DEPARTEMEN',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade400,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // List
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    itemCount: _filteredDepartments.length,
+                    itemBuilder: (context, index) {
+                      final dep = _filteredDepartments[index];
+                      final isSelected = _selectedValue == dep.name;
+                      return InkWell(
+                        onTap: () => setState(() => _selectedValue = dep.name),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
+                          decoration: BoxDecoration(
+                            border: Border(
+                                bottom: BorderSide(color: Colors.grey.shade100)),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  dep.name,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                isSelected
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_off,
+                                color: isSelected
+                                    ? const Color(0xFF4CAF50)
+                                    : const Color(0xFF1A56C4).withValues(alpha: 0.5),
+                                size: 24,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          // Footer Button
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _selectedValue == null
+                    ? null
+                    : () {
+                        widget.onSelected(_selectedValue!);
+                        Navigator.pop(context);
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A56C4),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Simpan',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
             ),
           ),

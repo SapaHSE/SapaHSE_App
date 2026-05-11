@@ -693,6 +693,7 @@ class FabMenuSheet extends StatelessWidget {
   final VoidCallback onAddLicense;
   final VoidCallback onAddCertification;
   final VoidCallback onEditMedical;
+  final VoidCallback? onAddViolation;
 
   const FabMenuSheet({
     super.key,
@@ -707,6 +708,7 @@ class FabMenuSheet extends StatelessWidget {
     required this.onAddLicense,
     required this.onAddCertification,
     required this.onEditMedical,
+    this.onAddViolation,
   });
 
   @override
@@ -792,6 +794,17 @@ class FabMenuSheet extends StatelessWidget {
               title: 'Tambah Berita',
               subtitle: 'Publikasikan pengumuman atau berita terbaru',
               onTap: onAddNews,
+            ),
+          ],
+          if (onAddViolation != null) ...[
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _FabMenuTile(
+              icon: Icons.gavel_rounded,
+              iconBgColor: const Color(0xFFFFF3E0),
+              iconColor: const Color(0xFFE65100),
+              title: 'Tambah Pelanggaran',
+              subtitle: 'Catat pelanggaran user baru',
+              onTap: onAddViolation!,
             ),
           ],
           // Profile specific actions are removed from FAB as per user request to match Home Screen

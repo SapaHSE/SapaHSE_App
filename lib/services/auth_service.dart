@@ -116,6 +116,15 @@ class AuthService {
     );
   }
 
+  // ── Get users list (simplified for tagging/selection) ──────────────────────
+  static Future<ApiResponse> listUsers({String? search}) async {
+    String url = '/users';
+    if (search != null && search.isNotEmpty) {
+      url += '?search=${Uri.encodeComponent(search)}';
+    }
+    return await ApiService.get(url);
+  }
+
   // ── Get users list ────────────────────────────────────────────────────────
   static Future<List<UserModel>> getUsers() async {
     final response = await ApiService.get('/users');
