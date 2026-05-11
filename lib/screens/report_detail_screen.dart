@@ -509,12 +509,18 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
           : FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         heroTag: 'report_detail_fab',
-        onPressed: _showUpdateStatusModal,
-        backgroundColor: const Color(0xFF1A56C4),
+        onPressed: _report.status != ReportStatus.closed
+            ? _showUpdateStatusModal
+            : null,
+        backgroundColor: _report.status != ReportStatus.closed
+            ? const Color(0xFF1A56C4)
+            : Colors.grey.shade400,
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
-        elevation: 4,
-        tooltip: 'Update status laporan',
+        elevation: _report.status != ReportStatus.closed ? 4 : 0,
+        tooltip: _report.status != ReportStatus.closed
+            ? 'Update status laporan'
+            : 'Laporan sudah ditutup',
         child: const Icon(Icons.edit_outlined, size: 26),
       ),
       bottomNavigationBar: widget.isDialog
@@ -3083,16 +3089,44 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
   late ReportStatus _selectedStatus;
   ReportSubStatus? _selectedSub;
   final _noteCtrl = TextEditingController();
+  final Set<String> _selectedDepts = {};
+  final Set<UserEntry> _selectedUsers = {};
   final List<XFile> _attachedPhotos = [];
   bool _isSaving = false;
 
   final _blue = const Color(0xFF1A56C4);
+  final _purple = const Color(0xFF9C27B0);
+  final _grey = const Color(0xFF757575);
+
+  bool _canSelectMainStatus(ReportStatus status) => true;
+  List<ReportSubStatus> _allowedSubStatusesFor(ReportStatus status) =>
+      ReportSubStatusInfo.forStatus(status);
+
+  void _syncSelectedSubStatus() {
+    final allowed = _allowedSubStatusesFor(_selectedStatus);
+    if (allowed.isEmpty) {
+      _selectedSub = null;
+      return;
+    }
+    if (_selectedSub == null || !allowed.contains(_selectedSub)) {
+      _selectedSub = allowed.first;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _selectedStatus = widget.report.status;
     _selectedSub = widget.report.subStatus;
+    _syncSelectedSubStatus();
+    if (widget.report.departemen != null &&
+        widget.report.departemen!.isNotEmpty) {
+      final depts = widget.report.departemen!
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty);
+      _selectedDepts.addAll(depts);
+    }
   }
 
   @override
@@ -3158,12 +3192,16 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
     );
   }
 
+  void _showUnifiedPicker() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Fitur tag belum tersedia di versi prototype.')),
+    );
+  }
+
   Future<void> _handleSave() async {
     setState(() => _isSaving = true);
-
     try {
       await Future.delayed(const Duration(milliseconds: 500));
-
       final updated = ReportStore.instance.updateStatus(
         widget.report.id,
         _selectedStatus,
@@ -3171,7 +3209,6 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
         note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
         actor: 'Budi Santoso',
       );
-
       if (mounted) {
         widget.onUpdate(updated);
         Navigator.pop(context);
@@ -3180,9 +3217,7 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
               Text('Status berhasil diperbarui ke ${_selectedStatus.label}'),
           backgroundColor: _selectedStatus == ReportStatus.open
               ? _blue
-              : (_selectedStatus == ReportStatus.inProgress
-                  ? const Color(0xFF9C27B0)
-                  : const Color(0xFF757575)),
+              : (_selectedStatus == ReportStatus.inProgress ? _purple : _grey),
           behavior: SnackBarBehavior.floating,
         ));
       }
@@ -3227,117 +3262,326 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                     decoration: BoxDecoration(
                         color: Colors.grey.shade300,
                         borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 20),
+            const Text('Perbarui Status Laporan',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            const Text('Update Status Laporan',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            const SizedBox(height: 16),
-            const Text('Status',
-                style: TextStyle(fontSize: 12, color: Colors.grey)),
-            const SizedBox(height: 8),
-            Row(children: [
-              _statusChip(ReportStatus.open, Icons.flag_outlined),
-              const SizedBox(width: 8),
-              _statusChip(ReportStatus.inProgress, Icons.autorenew),
-              const SizedBox(width: 8),
-              _statusChip(ReportStatus.closed, Icons.check_circle_outline),
-            ]),
-            if (_selectedSub != null) ...[
-              const SizedBox(height: 16),
-              const Text('Sub-Status',
-                  style: TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: ReportSubStatusInfo.forStatus(_selectedStatus)
-                    .map((sub) => _subStatusChip(sub))
-                    .toList(),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.blue.shade100),
               ),
-            ],
-            const SizedBox(height: 16),
-            const Text('Catatan',
-                style: TextStyle(fontSize: 12, color: Colors.grey)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _noteCtrl,
-              minLines: 3,
-              maxLines: 5,
-              decoration: InputDecoration(
-                hintText: 'Tambahkan catatan...',
-                hintStyle:
-                    TextStyle(fontSize: 13, color: Colors.grey.shade500),
-                filled: true,
-                fillColor: Colors.grey.shade50,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none),
-                contentPadding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Icon(Icons.history, size: 18, color: _blue),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('STATUS SAAT INI',
+                            style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blueGrey,
+                                letterSpacing: 0.5)),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${widget.report.status.label}${widget.report.subStatus != null ? ' \u2192 ${widget.report.subStatus!.label}' : ''}',
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: _blue),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            InkWell(
+            const SizedBox(height: 24),
+            const Text('STATUS UTAMA',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _StatusBtn(
+                    label: 'Open',
+                    color: _blue,
+                    isSelected: _selectedStatus == ReportStatus.open,
+                    isEnabled: _canSelectMainStatus(ReportStatus.open),
+                    onTap: () => setState(() {
+                          _selectedStatus = ReportStatus.open;
+                          _selectedSub = ReportSubStatusInfo
+                              .forStatus(ReportStatus.open)
+                              .first;
+                        })),
+                const SizedBox(width: 10),
+                _StatusBtn(
+                    label: 'In Progress',
+                    color: _purple,
+                    isSelected: _selectedStatus == ReportStatus.inProgress,
+                    isEnabled: _canSelectMainStatus(ReportStatus.inProgress),
+                    onTap: () => setState(() {
+                          _selectedStatus = ReportStatus.inProgress;
+                          _selectedSub = ReportSubStatusInfo
+                              .forStatus(ReportStatus.inProgress)
+                              .first;
+                        })),
+                const SizedBox(width: 10),
+                _StatusBtn(
+                    label: 'Closed',
+                    color: _grey,
+                    isSelected: _selectedStatus == ReportStatus.closed,
+                    isEnabled: _canSelectMainStatus(ReportStatus.closed),
+                    onTap: () => setState(() {
+                          _selectedStatus = ReportStatus.closed;
+                          _selectedSub = ReportSubStatusInfo
+                              .forStatus(ReportStatus.closed)
+                              .first;
+                        })),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const Text('SUB-STATUS',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 10,
+              children:
+                  ReportSubStatusInfo.forStatus(_selectedStatus).map((sub) {
+                final isSelected = _selectedSub == sub;
+                final isEnabled =
+                    _allowedSubStatusesFor(_selectedStatus).contains(sub);
+                final color = isSelected
+                    ? (_selectedStatus == ReportStatus.open
+                        ? _blue
+                        : (_selectedStatus == ReportStatus.inProgress
+                            ? _purple
+                            : _grey))
+                    : (isEnabled ? Colors.grey.shade400 : Colors.grey.shade300);
+                return SizedBox(
+                  width: (MediaQuery.of(context).size.width - 66) / 3,
+                  child: ChoiceChip(
+                    label: Center(
+                      child: Text(sub.label,
+                          style: TextStyle(
+                              color: !isEnabled
+                                  ? Colors.grey.shade500
+                                  : isSelected
+                                      ? Colors.white
+                                      : Colors.black87,
+                              fontSize: 12),
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                    selected: isSelected,
+                    onSelected: isEnabled
+                        ? (val) =>
+                            setState(() => _selectedSub = val ? sub : null)
+                        : null,
+                    selectedColor: color,
+                    backgroundColor:
+                        isEnabled ? Colors.white : Colors.grey.shade100,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                            color: !isEnabled
+                                ? Colors.grey.shade300
+                                : isSelected
+                                    ? color
+                                    : Colors.grey.shade300)),
+                    showCheckmark: false,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 2, vertical: 8),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 24),
+            if (_selectedSub == ReportSubStatus.assigned ||
+                _selectedSub == ReportSubStatus.deferred) ...[
+              const Text('TAG DEPARTEMEN / PJA',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey)),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: _showUnifiedPicker,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade300)),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 13),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FF),
+                              borderRadius: BorderRadius.circular(8),
+                              border:
+                                  Border.all(color: Colors.grey.shade300)),
+                          child: Row(children: [
+                            const Icon(Icons.person_add_outlined,
+                                size: 20, color: Colors.grey),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                                child: Text(
+                                    'Ketuk untuk tag orang atau departemen',
+                                    style: TextStyle(
+                                        color: Colors.grey, fontSize: 13))),
+                            Icon(Icons.arrow_forward_ios,
+                                size: 14, color: Colors.grey.shade400),
+                          ]),
+                        ),
+                        if (_selectedDepts.isNotEmpty ||
+                            _selectedUsers.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              ..._selectedDepts.map((dept) => Chip(
+                                    label: Text(dept,
+                                        style:
+                                            const TextStyle(fontSize: 11)),
+                                    onDeleted: null,
+                                    backgroundColor:
+                                        _blue.withValues(alpha: 0.1),
+                                    side: BorderSide.none,
+                                    padding: EdgeInsets.zero,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  )),
+                              ..._selectedUsers.map((user) => Chip(
+                                    label: Text('${user.fullName} (PJA)',
+                                        style:
+                                            const TextStyle(fontSize: 11)),
+                                    onDeleted: null,
+                                    backgroundColor:
+                                        _blue.withValues(alpha: 0.1),
+                                    side: BorderSide.none,
+                                    padding: EdgeInsets.zero,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  )),
+                            ],
+                          ),
+                        ],
+                      ]),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('PHOTO EVIDENCE',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey)),
+                if (_selectedSub == ReportSubStatus.reviewing)
+                  const Text('* WAJIB UNTUK REVIEWING',
+                      style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            GestureDetector(
               onTap: _showPhotoOptions,
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.camera_alt_outlined,
-                        size: 20, color: _blue),
-                    const SizedBox(width: 6),
-                    Text('Lampirkan Foto',
-                        style: TextStyle(
-                            fontSize: 13,
-                            color: _blue,
-                            fontWeight: FontWeight.w500)),
-                  ],
+              child: Container(
+                height: 80,
+                width: double.infinity,
+                decoration:
+                    BoxDecoration(borderRadius: BorderRadius.circular(12)),
+                child: CustomPaint(
+                  painter: _DashedRectPainter(color: Colors.grey.shade300),
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _attachedPhotos.isEmpty
+                              ? Icons.camera_alt
+                              : Icons.add_a_photo,
+                          size: 20,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _attachedPhotos.isEmpty
+                              ? 'Tambah foto'
+                              : 'Tambah foto lagi (${_attachedPhotos.length})',
+                          style: TextStyle(
+                              color: Colors.grey.shade500, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
             if (_attachedPhotos.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               SizedBox(
-                height: 52,
+                height: 72,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: _attachedPhotos.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 6),
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
                   itemBuilder: (_, idx) {
+                    final photo = _attachedPhotos[idx];
                     return Stack(
-                      clipBehavior: Clip.none,
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: kIsWeb
                               ? Container(
-                                  width: 52,
-                                  height: 52,
+                                  width: 72,
+                                  height: 72,
                                   color: Colors.blueGrey.shade50,
-                                  child: const Icon(Icons.image, size: 22))
-                              : Image.file(File(_attachedPhotos[idx].path),
-                                  width: 52,
-                                  height: 52,
-                                  fit: BoxFit.cover),
+                                  child: const Icon(Icons.image, size: 28))
+                              : Image.file(
+                                  File(photo.path),
+                                  height: 72,
+                                  width: 72,
+                                  fit: BoxFit.cover,
+                                ),
                         ),
                         Positioned(
                           top: -4,
                           right: -4,
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () => setState(
-                                  () => _attachedPhotos.removeAt(idx)),
-                              customBorder: const CircleBorder(),
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                decoration: const BoxDecoration(
-                                    color: Colors.black87,
-                                    shape: BoxShape.circle),
-                                child: const Icon(Icons.close,
-                                    size: 12, color: Colors.white),
+                          child: InkWell(
+                            onTap: () => setState(
+                                () => _attachedPhotos.removeAt(idx)),
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
                               ),
+                              padding: const EdgeInsets.all(2),
+                              child: const Icon(Icons.close,
+                                  size: 14, color: Colors.white),
                             ),
                           ),
                         ),
@@ -3347,29 +3591,67 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                 ),
               ),
             ],
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isSaving ? null : _handleSave,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _blue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  disabledBackgroundColor: _blue.withValues(alpha: 0.5),
-                ),
-                child: _isSaving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : const Text('Simpan Perubahan',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 24),
+            TextField(
+              controller: _noteCtrl,
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'Tulis Catatan Di Sini...',
+                hintStyle: TextStyle(color: Colors.grey.shade400),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.all(16),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300)),
               ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey.shade100,
+                      foregroundColor: Colors.black87,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text('Batal',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: _isSaving ? null : _handleSave,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _blue,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2))
+                        : const Text('Simpan Perubahan',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
           ],
@@ -3377,74 +3659,101 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
       ),
     );
   }
+}
 
-  Widget _statusChip(ReportStatus status, IconData icon) {
-    final selected = _selectedStatus == status;
-    final Color color;
-    switch (status) {
-      case ReportStatus.open:
-        color = const Color(0xFF2196F3);
-      case ReportStatus.inProgress:
-        color = const Color(0xFF9C27B0);
-      case ReportStatus.closed:
-        color = const Color(0xFF757575);
-    }
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedStatus = status;
-          _selectedSub = null;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? color : color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-              color: selected ? color : color.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon,
-                size: 16,
-                color: selected ? Colors.white : color),
-            const SizedBox(width: 6),
-            Text(status.label,
+class _StatusBtn extends StatelessWidget {
+  final String label;
+  final Color color;
+  final bool isSelected;
+  final bool isEnabled;
+  final VoidCallback onTap;
+  const _StatusBtn(
+      {required this.label,
+      required this.color,
+      required this.isSelected,
+      required this.isEnabled,
+      required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: isEnabled ? onTap : null,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: !isEnabled
+                ? Colors.grey.shade100
+                : isSelected
+                    ? color.withValues(alpha: 0.1)
+                    : Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+                color: !isEnabled
+                    ? Colors.grey.shade300
+                    : isSelected
+                        ? color
+                        : Colors.grey.shade300,
+                width: isSelected ? 2 : 1),
+          ),
+          child: Center(
+            child: Text(label,
                 style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: selected ? Colors.white : color)),
-          ],
+                    color: !isEnabled
+                        ? Colors.grey.shade500
+                        : isSelected
+                            ? color
+                            : Colors.black87,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 14)),
+          ),
         ),
       ),
     );
+  }
+}
+
+class _DashedRectPainter extends CustomPainter {
+  final Color color;
+  _DashedRectPainter({required this.color});
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()
+      ..color = color
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+    const double dashWidth = 5, dashSpace = 5;
+    final Path path = Path();
+    for (double i = 0; i < size.width; i += dashWidth + dashSpace) {
+      path.moveTo(i, 0);
+      path.lineTo(i + dashWidth, 0);
+    }
+    for (double i = 0; i < size.height; i += dashWidth + dashSpace) {
+      path.moveTo(size.width, i);
+      path.lineTo(size.width, i + dashWidth);
+    }
+    for (double i = size.width; i > 0; i -= dashWidth + dashSpace) {
+      path.moveTo(i, size.height);
+      path.lineTo(i - dashWidth, size.height);
+    }
+    for (double i = size.height; i > 0; i -= dashWidth + dashSpace) {
+      path.moveTo(0, i);
+      path.lineTo(0, i - dashWidth);
+    }
+    canvas.drawPath(path, paint);
   }
 
-  Widget _subStatusChip(ReportSubStatus sub) {
-    final selected = _selectedSub == sub;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedSub = sub),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected
-              ? _blue
-              : _blue.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: selected
-                  ? _blue
-                  : _blue.withValues(alpha: 0.2)),
-        ),
-        child: Text(sub.label,
-            style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: selected ? Colors.white : _blue)),
-      ),
-    );
-  }
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+class UserEntry {
+  final String id;
+  final String fullName;
+  final String? department;
+  const UserEntry({
+    required this.id,
+    required this.fullName,
+    this.department,
+  });
 }
