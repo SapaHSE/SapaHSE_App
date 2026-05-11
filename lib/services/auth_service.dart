@@ -52,7 +52,7 @@ class AuthService {
     String? tipeAfiliasi,
     String? perusahaanKontraktor,
     String? subKontraktor,
-    String? simper,
+
   }) async {
     final response = await ApiService.post(
       '/register',
@@ -70,7 +70,7 @@ class AuthService {
         if (tipeAfiliasi != null) 'tipe_afiliasi': tipeAfiliasi,
         if (perusahaanKontraktor != null) 'perusahaan_kontraktor': perusahaanKontraktor,
         if (subKontraktor != null) 'sub_kontraktor': subKontraktor,
-        if (simper != null && simper.isNotEmpty) 'simper': simper,
+
       },
       auth: false,
     );

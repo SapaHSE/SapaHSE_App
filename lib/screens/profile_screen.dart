@@ -184,7 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 elevation: 0,
                                 centerTitle: true,
                               ),
-                              backgroundColor: const Color(0xFFF5F5F5),
+                              backgroundColor: Colors.white,
                               body: _buildWorkspaceTab(),
                               floatingActionButton: FloatingActionButton(
                                 onPressed: _openFabMenu,
@@ -420,32 +420,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
   Widget _buildWorkspaceTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 80),
+      padding: const EdgeInsets.only(bottom: 80),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionHeader(title: 'Aplikasi'),
-          _SettingCard(children: [
-            _MenuRow(
-              icon: Icons.dashboard_outlined,
-              iconColor: const Color(0xFF1A56C4),
-              label: 'Dashboard Laporan',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const DashboardScreen()),
-              ),
+          _buildSectionHeader('APLIKASI'),
+          _buildMenuItem(
+            icon: Icons.dashboard_outlined,
+            iconBg: const Color(0xFFE3F2FD),
+            iconColor: const Color(0xFF1A56C4),
+            title: 'Dashboard Laporan',
+            subtitle: 'Visualisasi data, grafik & ringkasan insiden',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DashboardScreen()),
             ),
-            Divider(height: 1, color: Colors.grey.shade100),
-            _MenuRow(
-              icon: Icons.health_and_safety_outlined,
-              iconColor: const Color(0xFF4CAF50),
-              label: 'Module Plugin',
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Module Plugin akan segera hadir')),
-              ),
+          ),
+          Divider(height: 1, color: Colors.grey.shade100, indent: 70),
+          _buildMenuItem(
+            icon: Icons.health_and_safety_outlined,
+            iconBg: const Color(0xFFE8F5E9),
+            iconColor: const Color(0xFF4CAF50),
+            title: 'Module Plugin',
+            subtitle: 'Fitur tambahan & integrasi sistem',
+            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Module Plugin akan segera hadir')),
             ),
-          ]),
+          ),
           if (_profileData?.role.toLowerCase() == 'admin' ||
               _profileData?.role.toLowerCase() == 'superadmin') ...[
             const SizedBox(height: 24),
@@ -548,87 +550,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 // SHARED HELPER WIDGETS
 // ══════════════════════════════════════════════════════════════════════════════
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
 
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(left: 4, bottom: 8),
-        child: Text(
-          title.toUpperCase(),
-          style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: Colors.grey,
-              letterSpacing: 0.8),
-        ),
-      );
-}
-
-class _SettingCard extends StatelessWidget {
-  final List<Widget> children;
-  const _SettingCard({required this.children});
-
-  @override
-  Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 4,
-                offset: const Offset(0, 2))
-          ],
-        ),
-        child: Column(children: children),
-      );
-}
-
-class _MenuRow extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final VoidCallback onTap;
-
-  const _MenuRow({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) => InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8)),
-                child: Icon(icon, color: iconColor, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(label,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87)),
-              ),
-              Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20),
-            ],
-          ),
-        ),
-      );
-}
 
 class _ProfileNavItem extends StatelessWidget {
   final IconData icon;

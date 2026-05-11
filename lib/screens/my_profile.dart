@@ -382,6 +382,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     final nameCtrl = TextEditingController(text: _profileData?.fullName);
     final emailCtrl = TextEditingController(text: _profileData?.personalEmail);
     final phoneCtrl = TextEditingController(text: _profileData?.phoneNumber);
+    final workEmailCtrl = TextEditingController(text: _profileData?.workEmail);
+    final deptCtrl = TextEditingController(text: _profileData?.department);
+    final jobCtrl = TextEditingController(text: _profileData?.position);
     final addressCtrl = TextEditingController(text: _profileData?.alamat);
     XFile? localImageFile;
 
@@ -490,6 +493,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                             const SizedBox(height: 16),
                             _buildSheetField('Nomor Telepon', phoneCtrl, keyboardType: TextInputType.phone),
                             const SizedBox(height: 16),
+                            _buildSheetField('Email Kantor (Opsional)', workEmailCtrl, keyboardType: TextInputType.emailAddress),
+                            const SizedBox(height: 16),
+                            _buildSheetField('Departemen', deptCtrl),
+                            const SizedBox(height: 16),
+                            _buildSheetField('Jabatan', jobCtrl),
+                            const SizedBox(height: 16),
                             _buildSheetField('Alamat', addressCtrl, maxLines: 2),
                           ],
                         ),
@@ -507,7 +516,10 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                             final result = await ProfileService.updateProfile(
                               fullName: nameCtrl.text,
                               personalEmail: emailCtrl.text,
+                              workEmail: workEmailCtrl.text,
                               phoneNumber: phoneCtrl.text,
+                              department: deptCtrl.text,
+                              position: jobCtrl.text,
                               alamat: addressCtrl.text,
                               imageFile: localImageFile,
                             );
