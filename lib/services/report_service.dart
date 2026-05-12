@@ -120,7 +120,8 @@ class ReportService {
         'description': description,
         'location': location,
         if (severity != null && severity.isNotEmpty) 'severity': severity,
-        if (pic != null && pic.isNotEmpty) 'pic_department': pic.join(', '),
+        if (pic != null && pic.isNotEmpty) 
+          'pic_department': pic.map((e) => e.replaceAll('Departemen ', '')).join(', '),
         if (department != null && department.isNotEmpty)
           'reported_department': department,
         if (hazardCategory != null && hazardCategory.isNotEmpty)

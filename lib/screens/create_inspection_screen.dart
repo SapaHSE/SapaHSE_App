@@ -1,6 +1,7 @@
 import 'dart:math' show Random;
 import 'package:flutter/material.dart';
 import '../services/cloud_save_service.dart';
+import '../services/report_service.dart';
 
 class CreateInspectionScreen extends StatefulWidget {
   const CreateInspectionScreen({super.key});
@@ -91,15 +92,33 @@ class _CreateInspectionScreenState extends State<CreateInspectionScreen> {
       );
     } else {
       // ── ONLINE: kirim ke server ───────────────────────────────────────
-      await Future.delayed(const Duration(seconds: 1));
+      final result = await ReportService.createInspectionReport(
+        title: _titleController.text.trim(),
+        description: _notesController.text.trim(),
+        location: _locationController.text.trim(),
+        area: _selectedArea,
+        inspector: _inspectorController.text.trim(),
+        result: _selectedResult,
+        notes: _notesController.text.trim(),
+        checklistItems: _checklistItems,
+        // imagePath: ... (add if photo picker is implemented)
+      );
+
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      _showResultDialog(
-        isOffline: false,
-        title: 'Inspeksi Terkirim!',
-        message:
-            'Laporan inspeksi Anda telah berhasil dikirim dan akan segera diproses.',
-      );
+
+      if (result.success) {
+        _showResultDialog(
+          isOffline: false,
+          title: 'Inspeksi Terkirim!',
+          message: 'Laporan inspeksi Anda telah berhasil dikirim ke server.',
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(result.errorMessage ?? 'Gagal mengirim inspeksi.'),
+          backgroundColor: Colors.red,
+        ));
+      }
     }
   }
 
