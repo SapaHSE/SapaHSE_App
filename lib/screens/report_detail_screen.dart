@@ -21,77 +21,19 @@ class _FadePageRoute<T> extends PageRouteBuilder<T> {
         );
 }
 
-class _ClampedCurve extends Curve {
-  final Curve curve;
-  const _ClampedCurve(this.curve);
-  @override
-  double transform(double t) => curve.transform(t.clamp(0.0, 1.0));
-}
 
-class _ScrollFabAnchor extends StatefulWidget {
+
+class _ScrollFabAnchor extends StatelessWidget {
   final Widget child;
   const _ScrollFabAnchor({required this.child});
 
   @override
-  State<_ScrollFabAnchor> createState() => _ScrollFabAnchorState();
-}
-
-class _ScrollFabAnchorState extends State<_ScrollFabAnchor> {
-  static const double _baseBottom = 84.0;
-  static const double _idleLift = 28.0;
-
-  ValueListenable<ScaffoldGeometry>? _geometry;
-  double _bottom = _baseBottom;
-  bool _readScheduled = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final next = Scaffold.geometryOf(context);
-    if (_geometry != next) {
-      _geometry?.removeListener(_onGeometryChanged);
-      _geometry = next;
-      _geometry!.addListener(_onGeometryChanged);
-      _scheduleRead();
-    }
-  }
-
-  @override
-  void dispose() {
-    _geometry?.removeListener(_onGeometryChanged);
-    super.dispose();
-  }
-
-  void _onGeometryChanged() => _scheduleRead();
-
-  void _scheduleRead() {
-    if (_readScheduled) return;
-    _readScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _readScheduled = false;
-      if (!mounted || _geometry == null) return;
-      final g = _geometry!.value;
-      final fabArea = g.floatingActionButtonArea;
-      final navTop = g.bottomNavigationBarTop;
-      double newBottom = _baseBottom;
-      if (fabArea != null && navTop != null) {
-        final liftAboveNav = navTop - fabArea.top;
-        final extraLift = (liftAboveNav - _idleLift).clamp(0.0, 1000.0);
-        newBottom = _baseBottom + extraLift;
-      }
-      if ((newBottom - _bottom).abs() > 0.5) {
-        setState(() => _bottom = newBottom);
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedPadding(
-      padding: EdgeInsets.only(bottom: _bottom),
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOut,
-      child: widget.child,
+    // Scaffold.geometryOf() causes exceptions if read outside the paint phase.
+    // Using a fixed padding ensures the FAB stays above the bottom bar safely.
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 84.0),
+      child: child,
     );
   }
 }
@@ -215,12 +157,16 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
     final currentScroll = metrics.pixels;
     final remaining = maxScroll - currentScroll;
     final shouldShow = maxScroll > 300;
-    if (shouldShow != _showScrollToBottom) {
-      setState(() => _showScrollToBottom = shouldShow);
-    }
     final atBottom = remaining < 50;
-    if (atBottom != _isScrolledToBottom) {
-      setState(() => _isScrolledToBottom = atBottom);
+
+    if (shouldShow != _showScrollToBottom || atBottom != _isScrolledToBottom) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _showScrollToBottom = shouldShow;
+          _isScrolledToBottom = atBottom;
+        });
+      });
     }
   }
 
@@ -503,64 +449,91 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
 
     return Scaffold(
       backgroundColor: widget.isDialog ? Colors.white : const Color(0xFFF0F0F0),
-      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
-      floatingActionButtonLocation: widget.isDialog
-          ? FloatingActionButtonLocation.centerFloat
-          : FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'report_detail_fab',
-        onPressed: _report.status != ReportStatus.closed
-            ? _showUpdateStatusModal
-            : null,
-        backgroundColor: _report.status != ReportStatus.closed
-            ? const Color(0xFF1A56C4)
-            : Colors.grey.shade400,
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        elevation: _report.status != ReportStatus.closed ? 4 : 0,
-        tooltip: _report.status != ReportStatus.closed
-            ? 'Update status laporan'
-            : 'Laporan sudah ditutup',
-        child: const Icon(Icons.edit_outlined, size: 26),
-      ),
+      // NOTE: Do NOT use Scaffold's floatingActionButton or BottomAppBar here.
+      // BottomAppBar internally uses _BottomAppBarClipper which calls
+      // Scaffold.geometryOf(). During page-transition snapshots the geometry
+      // notifier is already disposed → Null-check crash → paint-phase cascade.
+      // Instead we place both the navbar and FAB manually inside the body Stack.
       bottomNavigationBar: widget.isDialog
           ? null
-          : BottomAppBar(
-              shape: const CircularNotchedRectangle(),
-              notchMargin: 8,
-              color: Colors.white,
-              elevation: 8,
-              child: SizedBox(
-                height: 60,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _ReportDetailNavItem(
-                        icon: Icons.home,
-                        label: 'Home',
-                        index: 0,
-                        currentIndex: -1,
-                        onTap: _onTabTapped),
-                    _ReportDetailNavItem(
-                        icon: Icons.article_outlined,
-                        label: 'News',
-                        index: 1,
-                        currentIndex: -1,
-                        onTap: _onTabTapped),
-                    const SizedBox(width: 48),
-                    _ReportDetailNavItem(
-                        icon: Icons.inbox_outlined,
-                        label: 'Inbox',
-                        index: 3,
-                        currentIndex: -1,
-                        onTap: _onTabTapped),
-                    _ReportDetailNavItem(
-                        icon: Icons.menu,
-                        label: 'Menu',
-                        index: 4,
-                        currentIndex: -1,
-                        onTap: _onTabTapped),
-                  ],
+          : Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: SizedBox(
+                  height: 80, // Final height adjustment to match Home screen perfectly
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.center,
+                    children: [
+                      // ── Navbar icons ──
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            _ReportDetailNavItem(
+                                icon: Icons.home,
+                                label: 'Home',
+                                index: 0,
+                                currentIndex: -1,
+                                onTap: _onTabTapped),
+                            _ReportDetailNavItem(
+                                icon: Icons.article_outlined,
+                                label: 'News',
+                                index: 1,
+                                currentIndex: -1,
+                                onTap: _onTabTapped),
+                            const SizedBox(width: 48), // Matching main.dart exactly
+                            _ReportDetailNavItem(
+                                icon: Icons.inbox_outlined,
+                                label: 'Inbox',
+                                index: 3,
+                                currentIndex: -1,
+                                onTap: _onTabTapped),
+                            _ReportDetailNavItem(
+                                icon: Icons.menu,
+                                label: 'Menu',
+                                index: 4,
+                                currentIndex: -1,
+                                onTap: _onTabTapped),
+                          ],
+                        ),
+                      ),
+                      // ── Docked FAB ──
+                      Positioned(
+                        top: -28, // Perfect overlap for 80 height
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: FloatingActionButton(
+                            heroTag: 'report_detail_fab',
+                            onPressed: _report.status != ReportStatus.closed
+                                ? _showUpdateStatusModal
+                                : null,
+                            backgroundColor:
+                                _report.status != ReportStatus.closed
+                                    ? const Color(0xFF1A56C4)
+                                    : Colors.grey.shade400,
+                            foregroundColor: Colors.white,
+                            shape: const CircleBorder(),
+                            elevation: 4,
+                            child: const Icon(Icons.edit_outlined, size: 30),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1198,28 +1171,16 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
             child: _ScrollFabAnchor(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 320),
-                switchInCurve: const _ClampedCurve(Curves.easeOutBack),
-                switchOutCurve: const _ClampedCurve(Curves.easeInCubic),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
                 transitionBuilder: (child, animation) {
-                  final clampedAnim = CurvedAnimation(
-                    parent: animation,
-                    curve: const _ClampedCurve(Curves.linear),
-                  );
                   final slide = Tween<Offset>(
                     begin: const Offset(0, 0.22),
                     end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: animation,
-                    curve: const _ClampedCurve(Curves.easeOutCubic),
-                  ));
-                  final scale = Tween<double>(begin: 0.9, end: 1.0).animate(
-                    CurvedAnimation(
-                      parent: animation,
-                      curve: const _ClampedCurve(Curves.easeOutBack),
-                    ),
-                  );
+                  ).animate(animation);
+                  final scale = Tween<double>(begin: 0.9, end: 1.0).animate(animation);
                   return FadeTransition(
-                    opacity: clampedAnim,
+                    opacity: animation,
                     child: SlideTransition(
                       position: slide,
                       child: ScaleTransition(scale: scale, child: child),
@@ -3047,21 +3008,21 @@ class _ReportDetailNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final active = index == currentIndex;
-    return InkWell(
-      onTap: () => onTap(index),
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onTap(index),
+        behavior: HitTestBehavior.opaque,
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon,
-                size: 22,
+                size: 24,
                 color: active ? const Color(0xFF1A56C4) : Colors.grey),
             const SizedBox(height: 2),
             Text(label,
                 style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     color: active ? const Color(0xFF1A56C4) : Colors.grey,
                     fontWeight:
                         active ? FontWeight.w600 : FontWeight.normal)),
