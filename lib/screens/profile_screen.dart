@@ -204,6 +204,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     context,
                     MaterialPageRoute(
                         builder: (context) => Scaffold(
+                              extendBody: true,
                               appBar: AppBar(
                                 title: const Text('Workspace',
                                     style: TextStyle(
@@ -216,13 +217,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               backgroundColor: Colors.white,
                               body: _buildWorkspaceTab(),
+                              floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
                               floatingActionButton: FloatingActionButton(
                                 onPressed: _openFabMenu,
                                 backgroundColor: const Color(0xFF1A56C4),
                                 foregroundColor: Colors.white,
                                 shape: const CircleBorder(),
-                                elevation: 0,
-                                child: const Icon(Icons.add, size: 30),
+                                elevation: 4,
+                                tooltip: 'Buka menu workspace',
+                                child: const Icon(Icons.add, size: 26),
                               ),
                               floatingActionButtonLocation:
                                   FloatingActionButtonLocation.centerDocked,

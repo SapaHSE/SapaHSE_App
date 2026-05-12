@@ -479,93 +479,65 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
 
     return Scaffold(
       backgroundColor: widget.isDialog ? Colors.white : const Color(0xFFF0F0F0),
-      // NOTE: Do NOT use Scaffold's floatingActionButton or BottomAppBar here.
-      // BottomAppBar internally uses _BottomAppBarClipper which calls
-      // Scaffold.geometryOf(). During page-transition snapshots the geometry
-      // notifier is already disposed → Null-check crash → paint-phase cascade.
-      // Instead we place both the navbar and FAB manually inside the body Stack.
+      extendBody: !widget.isDialog,
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
+      floatingActionButtonLocation: widget.isDialog
+          ? FloatingActionButtonLocation.centerFloat
+          : FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'report_detail_fab',
+        onPressed: _report.status != ReportStatus.closed
+            ? _showUpdateStatusModal
+            : null,
+        backgroundColor: _report.status != ReportStatus.closed
+            ? const Color(0xFF1A56C4)
+            : Colors.grey.shade400,
+        foregroundColor: Colors.white,
+        shape: const CircleBorder(),
+        elevation: _report.status != ReportStatus.closed ? 4 : 0,
+        tooltip: _report.status != ReportStatus.closed
+            ? 'Update status laporan'
+            : 'Anda tidak berwenang mengubah status laporan ini',
+        child: const Icon(Icons.edit_outlined, size: 26),
+      ),
       bottomNavigationBar: widget.isDialog
           ? null
-          : Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                top: false,
-                child: SizedBox(
-                  height:
-                      80, // Final height adjustment to match Home screen perfectly
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    alignment: Alignment.center,
-                    children: [
-                      // ── Navbar icons ──
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            _ReportDetailNavItem(
-                                icon: Icons.home,
-                                label: 'Home',
-                                index: 0,
-                                currentIndex: -1,
-                                onTap: _onTabTapped),
-                            _ReportDetailNavItem(
-                                icon: Icons.article_outlined,
-                                label: 'News',
-                                index: 1,
-                                currentIndex: -1,
-                                onTap: _onTabTapped),
-                            const SizedBox(
-                                width: 48), // Matching main.dart exactly
-                            _ReportDetailNavItem(
-                                icon: Icons.inbox_outlined,
-                                label: 'Inbox',
-                                index: 3,
-                                currentIndex: -1,
-                                onTap: _onTabTapped),
-                            _ReportDetailNavItem(
-                                icon: Icons.menu,
-                                label: 'Menu',
-                                index: 4,
-                                currentIndex: -1,
-                                onTap: _onTabTapped),
-                          ],
-                        ),
-                      ),
-                      // ── Docked FAB ──
-                      Positioned(
-                        top: -28, // Perfect overlap for 80 height
-                        left: 0,
-                        right: 0,
-                        child: Center(
-                          child: FloatingActionButton(
-                            heroTag: 'report_detail_fab',
-                            onPressed: _report.status != ReportStatus.closed
-                                ? _showUpdateStatusModal
-                                : null,
-                            backgroundColor:
-                                _report.status != ReportStatus.closed
-                                    ? const Color(0xFF1A56C4)
-                                    : Colors.grey.shade400,
-                            foregroundColor: Colors.white,
-                            shape: const CircleBorder(),
-                            elevation: 0,
-                            child: const Icon(Icons.edit_outlined, size: 30),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+          : BottomAppBar(
+              shape: const CircularNotchedRectangle(),
+              notchMargin: 8,
+              color: Colors.white,
+              elevation: 8,
+              child: SizedBox(
+                height: 60,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _ReportDetailNavItem(
+                        icon: Icons.home,
+                        label: 'Home',
+                        index: 0,
+                        currentIndex: -1,
+                        onTap: _onTabTapped),
+                    _ReportDetailNavItem(
+                        icon: Icons.article_outlined,
+                        label: 'News',
+                        index: 1,
+                        currentIndex: -1,
+                        onTap: _onTabTapped),
+                    const SizedBox(width: 48),
+                    _ReportDetailNavItem(
+                        icon: Icons.inbox_outlined,
+                        label: 'Inbox',
+                        index: 3,
+                        currentIndex: -1,
+                        onTap: _onTabTapped),
+                    _ReportDetailNavItem(
+                        icon: Icons.menu,
+                        label: 'Menu',
+                        index: 4,
+                        currentIndex: -1,
+                        onTap: _onTabTapped),
+                  ],
                 ),
               ),
             ),

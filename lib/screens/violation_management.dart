@@ -261,6 +261,7 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: const Text('Manajemen Pelanggaran',
@@ -329,6 +330,7 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
           ),
         ],
       ),
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
       floatingActionButton: _hasFullAccess
           ? FloatingActionButton(
               onPressed: _openFabMenu,
@@ -336,7 +338,8 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
               foregroundColor: Colors.white,
               shape: const CircleBorder(),
               elevation: 4,
-              child: const Icon(Icons.add, size: 30),
+              tooltip: 'Buka menu pelanggaran',
+              child: const Icon(Icons.add, size: 26),
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

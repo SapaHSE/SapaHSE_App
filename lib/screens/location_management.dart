@@ -185,6 +185,7 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> wit
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
         title: _isSearching 
@@ -255,13 +256,15 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> wit
                     _buildMainListTab(),
                   ],
                 ),
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
       floatingActionButton: FloatingActionButton(
         onPressed: _openFabMenu,
         backgroundColor: _blue,
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
         elevation: 4,
-        child: const Icon(Icons.add, size: 30),
+        tooltip: 'Buka menu lokasi',
+        child: const Icon(Icons.add, size: 26),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
