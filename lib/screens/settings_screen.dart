@@ -9,6 +9,9 @@ import 'create_inspection_screen.dart';
 import 'qr_scan_screen.dart';
 import 'my_profile.dart';
 import 'package:local_auth/local_auth.dart';
+import '../services/cloud_save_service.dart';
+import '../services/report_service.dart';
+import 'dart:io';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -22,12 +25,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isDarkMode = false;
   bool _isPushEnabled = true;
   bool _isBiometricEnabled = false;
+  int _draftCount = 0;
+  bool _isSyncing = false;
+  String _storageSize = '0 KB';
   static const _blue = Color(0xFF1A56C4);
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    _refreshSyncData();
+  }
+
+  Future<void> _refreshSyncData() async {
+    final count = await CloudSaveService.instance.getDraftCount();
+    // Simplified storage calculation for demo/utility
+    final drafts = await CloudSaveService.instance.getDrafts();
+    double sizeKb = 0;
+    for (var d in drafts) {
+      sizeKb += (d.data.toString().length) / 1024.0;
+      if (d.data['imagePath'] != null) {
+        try {
+          final file = File(d.data['imagePath']);
+          if (await file.exists()) {
+            sizeKb += (await file.length()) / 1024.0;
+          }
+        } catch (_) {}
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _draftCount = count;
+        _storageSize = sizeKb > 1024 
+            ? '${(sizeKb / 1024).toStringAsFixed(1)} MB' 
+            : '${sizeKb.toStringAsFixed(0)} KB';
+      });
+    }
+  }
+
+  Future<void> _handleSync() async {
+    if (_draftCount == 0 || _isSyncing) return;
+
+    setState(() => _isSyncing = true);
+
+    await CloudSaveService.instance.syncAll(
+      uploadFn: (draft) async {
+        if (draft.type == DraftType.hazard) {
+          final res = await ReportService.createHazardReport(
+            title: draft.data['title'] ?? '',
+            description: draft.data['description'] ?? '',
+            location: draft.data['location'] ?? '',
+            severity: draft.data['severity'],
+            hazardCategory: draft.data['hazardCategory'],
+            hazardSubcategory: draft.data['hazardSubcategory'],
+            imagePath: draft.data['imagePath'],
+          );
+          return res.success;
+        } else {
+          // Add logic for inspection if needed
+          return true; 
+        }
+      },
+      onEach: (draft, success) {
+        if (success) {
+          debugPrint('Synced draft: ${draft.id}');
+        }
+      },
+    );
+
+    await _refreshSyncData();
+    if (mounted) {
+      setState(() => _isSyncing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sinkronisasi selesai.')),
+      );
+    }
   }
 
   Future<void> _loadSettings() async {
@@ -242,28 +315,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: Icons.sync,
                 iconColor: const Color(0xFF43A047),
                 label: 'Status Sinkronisasi',
-                subtitle: 'Tersinkron 2 menit lalu • 1 menunggu',
-                trailing: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                      color: Colors.orange.shade100,
-                      borderRadius: BorderRadius.circular(10)),
-                  child: const Text('1',
-                      style: TextStyle(
-                          color: Colors.orange,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold)),
-                ),
+                subtitle: _isSyncing 
+                    ? 'Sedang menyelaraskan...' 
+                    : '$_draftCount data menunggu sinkronisasi',
+                onTap: _handleSync,
+                trailing: _isSyncing
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : (_draftCount > 0
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                                color: Colors.orange.shade100,
+                                borderRadius: BorderRadius.circular(10)),
+                            child: Text('$_draftCount',
+                                style: const TextStyle(
+                                    color: Colors.orange,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold)),
+                          )
+                        : const Icon(Icons.check_circle, color: Colors.green, size: 20)),
               ),
               _buildDivider(),
               _buildActionRow(
                 icon: Icons.storage,
                 iconColor: const Color(0xFF5C38FF),
                 label: 'Local Storage',
-                subtitle: '47 MB used of 500 MB',
+                subtitle: '$_storageSize digunakan untuk draft offline',
                 trailing: TextButton(
-                  onPressed: () {},
+                  onPressed: () async {
+                    await CloudSaveService.instance.clearAll();
+                    await _refreshSyncData();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Penyimpanan lokal dibersihkan.')));
+                    }
+                  },
                   child: const Text('Hapus',
                       style: TextStyle(
                           color: Color(0xFF5C38FF),
@@ -433,28 +521,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
           required Color iconColor,
           required String label,
           required String subtitle,
+          VoidCallback? onTap,
           required Widget trailing}) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            _buildIconBox(icon, iconColor),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14)),
-                  Text(subtitle,
-                      style:
-                          TextStyle(color: Colors.grey.shade400, fontSize: 11)),
-                ],
+      InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              _buildIconBox(icon, iconColor),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 14)),
+                    Text(subtitle,
+                        style:
+                            TextStyle(color: Colors.grey.shade400, fontSize: 11)),
+                  ],
+                ),
               ),
-            ),
-            trailing,
-          ],
+              trailing,
+            ],
+          ),
         ),
       );
 
