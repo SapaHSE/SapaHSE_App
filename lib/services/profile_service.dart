@@ -180,6 +180,7 @@ class ProfileService {
   static Future<SimpleResult> addLicense({
     required String name,
     required String licenseNumber,
+    String? issuer,
     String? obtainedAt,
     String? expiredAt,
     String status = 'active',
@@ -188,6 +189,7 @@ class ProfileService {
     final fields = {
       'name': name,
       'license_number': licenseNumber,
+      'issuer': issuer ?? '',
       'obtained_at': obtainedAt ?? '',
       'expired_at': expiredAt ?? '',
       'status': status,
@@ -206,9 +208,44 @@ class ProfileService {
     return SimpleResult.success('Lisensi berhasil ditambahkan.');
   }
 
+  static Future<SimpleResult> updateLicense({
+    required String id,
+    String? name,
+    String? licenseNumber,
+    String? issuer,
+    String? obtainedAt,
+    String? expiredAt,
+    String? status,
+    XFile? imageFile,
+  }) async {
+    final fields = <String, String>{};
+    if (name != null) fields['name'] = name;
+    if (licenseNumber != null) fields['license_number'] = licenseNumber;
+    if (issuer != null) fields['issuer'] = issuer;
+    if (obtainedAt != null) fields['obtained_at'] = obtainedAt;
+    if (expiredAt != null) fields['expired_at'] = expiredAt;
+    if (status != null) fields['status'] = status;
+
+    final files = <http.MultipartFile>[];
+    if (imageFile != null) {
+      files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+    }
+
+    fields['_method'] = 'PUT';
+    final response =
+        await ApiService.postMultipart('/profile/license/$id', fields, files);
+
+    if (!response.success) {
+      return SimpleResult.error(
+          response.errorMessage ?? 'Gagal memperbarui lisensi.');
+    }
+    return SimpleResult.success('Lisensi berhasil diperbarui.');
+  }
+
   // ── Add Certification ───────────────────────────────────────────────────────
   static Future<SimpleResult> addCertification({
     required String name,
+    String? certificationNumber,
     required String issuer,
     String? obtainedAt,
     String? expiredAt,
@@ -217,6 +254,7 @@ class ProfileService {
   }) async {
     final fields = {
       'name': name,
+      'certification_number': certificationNumber ?? '',
       'issuer': issuer,
       'obtained_at': obtainedAt ?? '',
       'expired_at': expiredAt ?? '',
@@ -234,6 +272,40 @@ class ProfileService {
       return SimpleResult.error(response.errorMessage ?? 'Gagal menambah sertifikasi.');
     }
     return SimpleResult.success('Sertifikasi berhasil ditambahkan.');
+  }
+
+  static Future<SimpleResult> updateCertification({
+    required String id,
+    String? name,
+    String? certificationNumber,
+    String? issuer,
+    String? obtainedAt,
+    String? expiredAt,
+    String? status,
+    XFile? imageFile,
+  }) async {
+    final fields = <String, String>{};
+    if (name != null) fields['name'] = name;
+    if (certificationNumber != null) fields['certification_number'] = certificationNumber;
+    if (issuer != null) fields['issuer'] = issuer;
+    if (obtainedAt != null) fields['obtained_at'] = obtainedAt;
+    if (expiredAt != null) fields['expired_at'] = expiredAt;
+    if (status != null) fields['status'] = status;
+
+    final files = <http.MultipartFile>[];
+    if (imageFile != null) {
+      files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+    }
+
+    fields['_method'] = 'PUT';
+    final response =
+        await ApiService.postMultipart('/profile/certification/$id', fields, files);
+
+    if (!response.success) {
+      return SimpleResult.error(
+          response.errorMessage ?? 'Gagal memperbarui sertifikasi.');
+    }
+    return SimpleResult.success('Sertifikasi berhasil diperbarui.');
   }
 }
 

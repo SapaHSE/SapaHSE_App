@@ -599,9 +599,9 @@ class _InboxScreenState extends State<InboxScreen>
                     indicatorWeight: 2.5,
                     indicatorSize: TabBarIndicatorSize.tab,
                     labelStyle: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 14),
+                        fontWeight: FontWeight.w600, fontSize: 13), // Slightly smaller font for safety
                     unselectedLabelStyle: const TextStyle(
-                        fontWeight: FontWeight.normal, fontSize: 14),
+                        fontWeight: FontWeight.normal, fontSize: 13),
                     tabs: [
                       Tab(
                         child: Row(

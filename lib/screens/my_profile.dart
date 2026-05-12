@@ -8,6 +8,9 @@ import 'package:sapahse/services/department_service.dart';
 import 'package:sapahse/models/department_model.dart';
 import 'package:sapahse/main.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'license_detail_screen.dart';
+import 'violation_detail_screen.dart';
+import 'certification_detail_screen.dart';
 
 class MyProfileScreen extends StatefulWidget {
   final String? initialAction;
@@ -28,11 +31,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   final TextEditingController _licenseNameController = TextEditingController();
   final TextEditingController _licenseNumberController =
       TextEditingController();
+  final TextEditingController _licenseIssuerController =
+      TextEditingController();
   DateTime? _licenseObtainedAt;
   DateTime? _licenseSelectedDate;
 
   // Persistent State for Certification Form
   final TextEditingController _certNameController = TextEditingController();
+  final TextEditingController _certNumberController = TextEditingController();
   final TextEditingController _certIssuerController = TextEditingController();
   DateTime? _certObtainedAt;
   DateTime? _certExpiredAt;
@@ -43,7 +49,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   void dispose() {
     _licenseNameController.dispose();
     _licenseNumberController.dispose();
+    _licenseIssuerController.dispose();
     _certNameController.dispose();
+    _certNumberController.dispose();
     _certIssuerController.dispose();
     super.dispose();
   }
@@ -89,11 +97,34 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     }
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
-    final picked =
-        await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (picked != null) setState(() => _avatarFile = picked);
+    final picked = await picker.pickImage(source: source, imageQuality: 80);
+    if (picked != null) {
+      setState(() {
+        _avatarFile = picked;
+        _isLoading = true;
+        _loadingMessage = 'Mengunggah Foto...';
+      });
+
+      // Automatically save after picking
+      final result = await ProfileService.updateProfile(imageFile: picked);
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (result.success) {
+          _loadProfile(silent: true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Foto profil berhasil diperbarui')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(result.errorMessage ?? 'Gagal memperbarui foto')),
+          );
+        }
+      }
+    }
   }
 
   final List<Map<String, dynamic>> _subTabs = [
@@ -119,6 +150,116 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       'color': const Color(0xFF1A56C4)
     },
   ];
+
+  void _showImageSourcePicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: Text(
+                'Pilih Sumber Foto',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Color(0xFF1A56C4)),
+              title: const Text('Kamera'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading:
+                  const Icon(Icons.photo_library, color: Color(0xFF1A56C4)),
+              title: const Text('Galeri'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFullScreenProfileImage() {
+    final imageProvider = _getAvatarImage();
+    if (imageProvider == null) {
+      _showImageSourcePicker();
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.9),
+      builder: (context) => Stack(
+        children: [
+          Center(
+            child: InteractiveViewer(
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                padding: const EdgeInsets.all(20),
+                child: Image(
+                  image: imageProvider,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 40,
+            right: 20,
+            child: Material(
+              color: Colors.transparent,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 40,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Material(
+                color: Colors.transparent,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _showImageSourcePicker();
+                  },
+                  icon: const Icon(Icons.edit, size: 18),
+                  label: const Text('Ubah Foto'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      side: const BorderSide(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _onTabTapped(int index) {
     if (index == 4) {
@@ -196,7 +337,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             elevation: 4,
             child: const Icon(Icons.add, size: 30),
           ),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerDocked,
           bottomNavigationBar: BottomAppBar(
             shape: const CircularNotchedRectangle(),
             notchMargin: 8,
@@ -297,25 +439,28 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         children: [
           Stack(
             children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundColor: const Color(0xFF1A56C4),
-                backgroundImage: _getAvatarImage(),
-                child: _avatarFile == null &&
-                        (_profileData?.profilePhoto == null ||
-                            _profileData!.profilePhoto!.isEmpty)
-                    ? Text(initials,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold))
-                    : null,
+              GestureDetector(
+                onTap: _showFullScreenProfileImage,
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: const Color(0xFF1A56C4),
+                  backgroundImage: _getAvatarImage(),
+                  child: _avatarFile == null &&
+                          (_profileData?.profilePhoto == null ||
+                              _profileData!.profilePhoto!.isEmpty)
+                      ? Text(initials,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold))
+                      : null,
+                ),
               ),
               Positioned(
                 bottom: 0,
                 right: 0,
                 child: GestureDetector(
-                  onTap: _pickImage,
+                  onTap: _showImageSourcePicker,
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: const BoxDecoration(
@@ -336,7 +481,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               '${_profileData?.position ?? "-"} — Dept. ${_profileData?.department ?? "-"}',
               style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
           const SizedBox(height: 4),
-          Text(_profileData?.company ?? '-',
+          Text(_profileData?.formattedCompany ?? '-',
               style: TextStyle(
                   color: Colors.grey.shade500,
                   fontSize: 13,
@@ -412,6 +557,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         return _LicenseContent(
           licenses: _profileData?.licenses ?? [],
           onAdd: _showAddLicenseForm,
+          onRefresh: () => _loadProfile(silent: true),
         );
       case 2:
         return _ViolationContent(violations: _profileData?.violations ?? []);
@@ -419,6 +565,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         return _CertificationContent(
           certifications: _profileData?.certifications ?? [],
           onAdd: _showAddCertificationForm,
+          onRefresh: (newData) {
+            setState(() {
+              _profileData = newData;
+            });
+          },
         );
       case 4:
         return _MedicalContent(medicals: _profileData?.medicals ?? []);
@@ -458,7 +609,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             children: [
               // Header
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -473,7 +625,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       child: Text(
                         'Edit Profil',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ),
                     const SizedBox(width: 48), // Spacer for balance
@@ -495,10 +648,13 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                               backgroundImage: localImageFile != null
                                   ? FileImage(File(localImageFile!.path))
                                   : (_profileData?.profilePhoto != null
-                                      ? NetworkImage(_profileData!.profilePhoto!)
+                                      ? NetworkImage(
+                                          _profileData!.profilePhoto!)
                                       : null) as ImageProvider?,
-                              child: (localImageFile == null && _profileData?.profilePhoto == null)
-                                  ? Icon(Icons.person, size: 50, color: Colors.grey.shade400)
+                              child: (localImageFile == null &&
+                                      _profileData?.profilePhoto == null)
+                                  ? Icon(Icons.person,
+                                      size: 50, color: Colors.grey.shade400)
                                   : null,
                             ),
                             Positioned(
@@ -507,9 +663,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                               child: GestureDetector(
                                 onTap: () async {
                                   final picker = ImagePicker();
-                                  final picked = await picker.pickImage(source: ImageSource.gallery);
+                                  final picked = await picker.pickImage(
+                                      source: ImageSource.gallery);
                                   if (picked != null) {
-                                    setModalState(() => localImageFile = picked);
+                                    setModalState(
+                                        () => localImageFile = picked);
                                   }
                                 },
                                 child: Container(
@@ -517,9 +675,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   decoration: const BoxDecoration(
                                     color: Color(0xFF1A56C4),
                                     shape: BoxShape.circle,
-                                    border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
+                                    border: Border.fromBorderSide(BorderSide(
+                                        color: Colors.white, width: 2)),
                                   ),
-                                  child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+                                  child: const Icon(Icons.camera_alt,
+                                      color: Colors.white, size: 16),
                                 ),
                               ),
                             ),
@@ -541,11 +701,15 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                             const SizedBox(height: 16),
                             _buildSheetField('Nama Lengkap', nameCtrl),
                             const SizedBox(height: 16),
-                            _buildSheetField('Email', emailCtrl, keyboardType: TextInputType.emailAddress),
+                            _buildSheetField('Email', emailCtrl,
+                                keyboardType: TextInputType.emailAddress),
                             const SizedBox(height: 16),
-                            _buildSheetField('Nomor Telepon', phoneCtrl, keyboardType: TextInputType.phone),
+                            _buildSheetField('Nomor Telepon', phoneCtrl,
+                                keyboardType: TextInputType.phone),
                             const SizedBox(height: 16),
-                            _buildSheetField('Email Kantor (Opsional)', workEmailCtrl, keyboardType: TextInputType.emailAddress),
+                            _buildSheetField(
+                                'Email Kantor (Opsional)', workEmailCtrl,
+                                keyboardType: TextInputType.emailAddress),
                             const SizedBox(height: 16),
                             GestureDetector(
                               onTap: () => _showDepartmentPicker(
@@ -555,9 +719,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   suffixIcon: Icons.arrow_drop_down),
                             ),
                             const SizedBox(height: 16),
-                            _buildSheetField('Jabatan', jobCtrl, enabled: false),
+                            _buildSheetField('Jabatan', jobCtrl,
+                                enabled: false),
                             const SizedBox(height: 16),
-                            _buildSheetField('Alamat', addressCtrl, maxLines: 2),
+                            _buildSheetField('Alamat', addressCtrl,
+                                maxLines: 2),
                           ],
                         ),
                       ),
@@ -590,7 +756,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                 _loadProfile(silent: true);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                      content: Text('Profil berhasil diperbarui')),
+                                      content:
+                                          Text('Profil berhasil diperbarui')),
                                 );
                               } else {
                                 setState(() => _isLoading = false);
@@ -605,10 +772,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1A56C4),
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                             elevation: 0,
                           ),
-                          child: const Text('SIMPAN PERUBAHAN', style: TextStyle(fontWeight: FontWeight.bold)),
+                          child: const Text('SIMPAN PERUBAHAN',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -688,8 +857,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     final bloodTypeCtrl = TextEditingController(text: latest?.bloodType);
     final heightCtrl = TextEditingController(text: latest?.height);
     final weightCtrl = TextEditingController(text: latest?.weight);
-    final bloodPressureCtrl =
-        TextEditingController(text: latest?.bloodPressure);
     final allergiesCtrl = TextEditingController(text: latest?.allergies);
     final lastMedicationCtrl =
         TextEditingController(text: latest?.lastMedication);
@@ -697,6 +864,17 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         TextEditingController(text: latest?.currentMedication);
     final currentIllnessCtrl =
         TextEditingController(text: latest?.currentIllness);
+
+    // Split blood pressure for separate inputs
+    String systolic = '';
+    String diastolic = '';
+    if (latest?.bloodPressure != null && latest!.bloodPressure!.contains('/')) {
+      final parts = latest.bloodPressure!.split('/');
+      systolic = parts[0].trim();
+      diastolic = parts.length > 1 ? parts[1].trim() : '';
+    }
+    final systolicCtrl = TextEditingController(text: systolic);
+    final diastolicCtrl = TextEditingController(text: diastolic);
 
     showModalBottomSheet(
       context: context,
@@ -732,16 +910,55 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 ),
                 const SizedBox(height: 20),
                 _buildFieldLabel('Golongan Darah'),
-                TextField(
-                  controller: bloodTypeCtrl,
-                  decoration: _buildInputDecoration('Contoh: O, A, B, AB'),
+                InkWell(
+                  onTap: () => _showBloodTypePicker(context, bloodTypeCtrl, setModalState),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          bloodTypeCtrl.text.isEmpty ? 'Pilih Golongan Darah' : bloodTypeCtrl.text,
+                          style: TextStyle(
+                            color: bloodTypeCtrl.text.isEmpty ? Colors.grey.shade400 : Colors.black,
+                            fontSize: 14
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(Icons.arrow_drop_down, color: Colors.grey.shade400),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 _buildFieldLabel('Tinggi Badan (cm)'),
-                TextField(
-                  controller: heightCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: _buildInputDecoration('Contoh: 170'),
+                InkWell(
+                  onTap: () => _showHeightPicker(context, heightCtrl, setModalState),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          heightCtrl.text.isEmpty ? 'Pilih Tinggi Badan' : '${heightCtrl.text} cm',
+                          style: TextStyle(
+                            color: heightCtrl.text.isEmpty ? Colors.grey.shade400 : Colors.black,
+                            fontSize: 14
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(Icons.arrow_drop_down, color: Colors.grey.shade400),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 _buildFieldLabel('Berat Badan (kg)'),
@@ -751,10 +968,28 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   decoration: _buildInputDecoration('Contoh: 65'),
                 ),
                 const SizedBox(height: 16),
-                _buildFieldLabel('Tekanan Darah'),
-                TextField(
-                  controller: bloodPressureCtrl,
-                  decoration: _buildInputDecoration('Contoh: 120/80'),
+                _buildFieldLabel('Tekanan Darah (Sistolik / Diastolik)'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: systolicCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: _buildInputDecoration('Sistolik (ex: 120)'),
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('/', style: TextStyle(fontSize: 20, color: Colors.grey)),
+                    ),
+                    Expanded(
+                      child: TextField(
+                        controller: diastolicCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: _buildInputDecoration('Diastolik (ex: 80)'),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 _buildFieldLabel('Alergi'),
@@ -819,7 +1054,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         bloodType: bloodTypeCtrl.text,
                         height: heightCtrl.text,
                         weight: weightCtrl.text,
-                        bloodPressure: bloodPressureCtrl.text,
+                        bloodPressure: systolicCtrl.text.isNotEmpty && diastolicCtrl.text.isNotEmpty 
+                            ? '${systolicCtrl.text}/${diastolicCtrl.text}' 
+                            : '',
                         allergies: allergiesCtrl.text,
                         lastMedication: lastMedicationCtrl.text,
                         currentMedication: currentMedicationCtrl.text,
@@ -850,6 +1087,66 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showBloodTypePicker(BuildContext context, TextEditingController ctrl, StateSetter setModalState) {
+    final types = ['A', 'B', 'AB', 'O'];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Pilih Golongan Darah', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            ...types.map((t) => ListTile(
+              title: Text(t, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w600)),
+              onTap: () {
+                setModalState(() => ctrl.text = t);
+                Navigator.pop(context);
+              },
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showHeightPicker(BuildContext context, TextEditingController ctrl, StateSetter setModalState) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          children: [
+            const Text('Pilih Tinggi Badan (cm)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView.builder(
+                itemCount: 251, // 50 to 300
+                itemBuilder: (context, index) {
+                  final h = (index + 50).toString();
+                  return ListTile(
+                    title: Text('$h cm', textAlign: TextAlign.center),
+                    onTap: () {
+                      setModalState(() => ctrl.text = h);
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -888,7 +1185,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              _buildFieldLabel('Nama Lisensi (SIM/SIO/SIMPER)'),
+              _buildFieldLabel('Nama Lisensi'),
               TextField(
                 controller: _licenseNameController,
                 decoration:
@@ -901,86 +1198,119 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 decoration: _buildInputDecoration('Contoh: SIM-2024-001234'),
               ),
               const SizedBox(height: 16),
-              _buildFieldLabel('Tanggal Diperoleh'),
-              InkWell(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate:
-                        DateTime.now().subtract(const Duration(days: 365 * 10)),
-                    lastDate:
-                        DateTime.now().add(const Duration(days: 365 * 10)),
-                  );
-                  if (picked != null) {
-                    setModalState(() => _licenseObtainedAt = picked);
-                  }
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.calendar_today,
-                          size: 18, color: Colors.grey.shade600),
-                      const SizedBox(width: 12),
-                      Text(
-                        _licenseObtainedAt == null
-                            ? 'Pilih Tanggal'
-                            : '${_licenseObtainedAt!.day}/${_licenseObtainedAt!.month}/${_licenseObtainedAt!.year}',
-                        style: TextStyle(
-                            color: _licenseObtainedAt == null
-                                ? Colors.grey.shade500
-                                : Colors.black),
-                      ),
-                    ],
-                  ),
-                ),
+              _buildFieldLabel('Lembaga Penerbit (Opsional)'),
+              TextField(
+                controller: _licenseIssuerController,
+                decoration: _buildInputDecoration('Contoh: POLRI, BNSP...'),
               ),
               const SizedBox(height: 16),
-              _buildFieldLabel('Berlaku Sampai'),
-              InkWell(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate:
-                        DateTime.now().subtract(const Duration(days: 365 * 10)),
-                    lastDate:
-                        DateTime.now().add(const Duration(days: 365 * 10)),
-                  );
-                  if (picked != null) {
-                    setModalState(() => _licenseSelectedDate = picked);
-                  }
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildFieldLabel('Tanggal Diperoleh'),
+                        InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime.now()
+                                  .subtract(const Duration(days: 365 * 10)),
+                              lastDate: DateTime.now()
+                                  .add(const Duration(days: 365 * 10)),
+                            );
+                            if (picked != null) {
+                              setModalState(() => _licenseObtainedAt = picked);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.calendar_today,
+                                    size: 16, color: Colors.grey.shade600),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _licenseObtainedAt == null
+                                        ? 'Pilih'
+                                        : '${_licenseObtainedAt!.day}/${_licenseObtainedAt!.month}/${_licenseObtainedAt!.year}',
+                                    style: TextStyle(
+                                        fontSize: 13,
+                                        color: _licenseObtainedAt == null
+                                            ? Colors.grey.shade500
+                                            : Colors.black),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.calendar_today,
-                          size: 18, color: Colors.grey.shade600),
-                      const SizedBox(width: 12),
-                      Text(
-                        _licenseSelectedDate == null
-                            ? 'Pilih Tanggal'
-                            : '${_licenseSelectedDate!.day}/${_licenseSelectedDate!.month}/${_licenseSelectedDate!.year}',
-                        style: TextStyle(
-                            color: _licenseSelectedDate == null
-                                ? Colors.grey.shade500
-                                : Colors.black),
-                      ),
-                    ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildFieldLabel('Berlaku Sampai'),
+                        InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime.now()
+                                  .subtract(const Duration(days: 365 * 10)),
+                              lastDate: DateTime.now()
+                                  .add(const Duration(days: 365 * 10)),
+                            );
+                            if (picked != null) {
+                              setModalState(
+                                  () => _licenseSelectedDate = picked);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.calendar_today,
+                                    size: 16, color: Colors.grey.shade600),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _licenseSelectedDate == null
+                                        ? 'Pilih'
+                                        : '${_licenseSelectedDate!.day}/${_licenseSelectedDate!.month}/${_licenseSelectedDate!.year}',
+                                    style: TextStyle(
+                                        fontSize: 13,
+                                        color: _licenseSelectedDate == null
+                                            ? Colors.grey.shade500
+                                            : Colors.black),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 16),
               _buildFieldLabel('Foto Lisensi'),
@@ -1017,6 +1347,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     final result = await ProfileService.addLicense(
                       name: _licenseNameController.text,
                       licenseNumber: _licenseNumberController.text,
+                      issuer: _licenseIssuerController.text,
                       obtainedAt: _licenseObtainedAt != null
                           ? '${_licenseObtainedAt!.year}-${_licenseObtainedAt!.month.toString().padLeft(2, '0')}-${_licenseObtainedAt!.day.toString().padLeft(2, '0')}'
                           : null,
@@ -1026,19 +1357,19 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       imageFile: _licenseImage,
                     );
 
+                    if (!mounted) return;
                     if (result.success) {
                       _licenseNameController.clear();
                       _licenseNumberController.clear();
+                      _licenseIssuerController.clear();
                       _licenseObtainedAt = null;
                       _licenseSelectedDate = null;
                       _licenseImage = null;
-                      if (mounted) _loadProfile(silent: true); // Refresh
+                      _loadProfile(silent: true);
                     } else {
-                      if (mounted) {
-                        setState(() => _isLoading = false);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(result.message)));
-                      }
+                      setState(() => _isLoading = false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(result.message)));
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -1095,98 +1426,169 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               _buildFieldLabel('Nama Sertifikat'),
               TextField(
                 controller: _certNameController,
-                decoration: _buildInputDecoration(
-                    'Contoh: Ahli K3 Umum, Basic Safety...'),
+                decoration: InputDecoration(
+                  hintText: 'Contoh: Ahli K3 Umum, Basic Safety...',
+                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildFieldLabel('Nomor Sertifikat'),
+              TextField(
+                controller: _certNumberController,
+                decoration: InputDecoration(
+                  hintText: 'Contoh: 123/CERT/2024...',
+                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               _buildFieldLabel('Lembaga Penerbit'),
               TextField(
                 controller: _certIssuerController,
-                decoration:
-                    _buildInputDecoration('Contoh: Kemnaker RI, BNSP...'),
-              ),
-              const SizedBox(height: 16),
-              _buildFieldLabel('Sertifikat Diperoleh'),
-              InkWell(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate:
-                        DateTime.now().subtract(const Duration(days: 365 * 10)),
-                    lastDate:
-                        DateTime.now().add(const Duration(days: 365 * 10)),
-                  );
-                  if (picked != null) {
-                    setModalState(() => _certObtainedAt = picked);
-                  }
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
+                decoration: InputDecoration(
+                  hintText: 'Contoh: Kemnaker RI, BNSP...',
+                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.calendar_today,
-                          size: 18, color: Colors.grey.shade600),
-                      const SizedBox(width: 12),
-                      Text(
-                        _certObtainedAt == null
-                            ? 'Pilih Tanggal'
-                            : '${_certObtainedAt!.day}/${_certObtainedAt!.month}/${_certObtainedAt!.year}',
-                        style: TextStyle(
-                            color: _certObtainedAt == null
-                                ? Colors.grey.shade500
-                                : Colors.black),
-                      ),
-                    ],
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              _buildFieldLabel('Berlaku Sampai'),
-              InkWell(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate:
-                        DateTime.now().subtract(const Duration(days: 365 * 10)),
-                    lastDate:
-                        DateTime.now().add(const Duration(days: 365 * 10)),
-                  );
-                  if (picked != null) {
-                    setModalState(() => _certExpiredAt = picked);
-                  }
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildFieldLabel('Tanggal Diperoleh'),
+                        InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime.now()
+                                  .subtract(const Duration(days: 365 * 10)),
+                              lastDate: DateTime.now()
+                                  .add(const Duration(days: 365 * 10)),
+                            );
+                            if (!context.mounted) return;
+                            if (picked != null) {
+                              setModalState(() => _certObtainedAt = picked);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 14),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.calendar_today,
+                                    size: 16, color: Colors.grey.shade600),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _certObtainedAt == null
+                                        ? 'Pilih'
+                                        : '${_certObtainedAt!.day}/${_certObtainedAt!.month}/${_certObtainedAt!.year}',
+                                    style: TextStyle(
+                                        fontSize: 13,
+                                        color: _certObtainedAt == null
+                                            ? Colors.grey.shade500
+                                            : Colors.black),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.calendar_today,
-                          size: 18, color: Colors.grey.shade600),
-                      const SizedBox(width: 12),
-                      Text(
-                        _certExpiredAt == null
-                            ? 'Pilih Tanggal'
-                            : '${_certExpiredAt!.day}/${_certExpiredAt!.month}/${_certExpiredAt!.year}',
-                        style: TextStyle(
-                            color: _certExpiredAt == null
-                                ? Colors.grey.shade500
-                                : Colors.black),
-                      ),
-                    ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildFieldLabel('Berlaku Sampai'),
+                        InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime.now()
+                                  .subtract(const Duration(days: 365 * 10)),
+                              lastDate: DateTime.now()
+                                  .add(const Duration(days: 365 * 10)),
+                            );
+                            if (picked != null) {
+                              setModalState(() => _certExpiredAt = picked);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 14),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.calendar_today,
+                                    size: 16, color: Colors.grey.shade600),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _certExpiredAt == null
+                                        ? 'Pilih'
+                                        : '${_certExpiredAt!.day}/${_certExpiredAt!.month}/${_certExpiredAt!.year}',
+                                    style: TextStyle(
+                                        fontSize: 13,
+                                        color: _certExpiredAt == null
+                                            ? Colors.grey.shade500
+                                            : Colors.black),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
+
               const SizedBox(height: 16),
               _buildFieldLabel('Foto Sertifikat'),
               _buildImagePicker(
@@ -1219,6 +1621,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
                     final result = await ProfileService.addCertification(
                       name: _certNameController.text,
+                      certificationNumber: _certNumberController.text,
                       issuer: _certIssuerController.text,
                       obtainedAt: _certObtainedAt != null
                           ? '${_certObtainedAt!.year}-${_certObtainedAt!.month.toString().padLeft(2, '0')}-${_certObtainedAt!.day.toString().padLeft(2, '0')}'
@@ -1229,19 +1632,19 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       imageFile: _certImage,
                     );
 
+                    if (!mounted) return;
                     if (result.success) {
                       _certNameController.clear();
+                      _certNumberController.clear();
                       _certIssuerController.clear();
                       _certObtainedAt = null;
                       _certExpiredAt = null;
                       _certImage = null;
-                      if (mounted) _loadProfile(silent: true); // Refresh
+                      _loadProfile(silent: true);
                     } else {
-                      if (mounted) {
-                        setState(() => _isLoading = false);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(result.message)));
-                      }
+                      setState(() => _isLoading = false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(result.message)));
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -1369,22 +1772,23 @@ class _BiodataContent extends StatelessWidget {
           _buildTitle('INFORMATION PERSONAL'),
           _buildCard([
             _buildRow(context, 'NIK', data?.employeeId ?? '-',
-                onTap: () => _copyToClipboard(context, 'NIK', data?.employeeId)),
+                onTap: () =>
+                    _copyToClipboard(context, 'NIK', data?.employeeId)),
             _buildRow(context, 'Nama Lengkap', data?.fullName ?? '-',
-                onTap: () => _copyToClipboard(context, 'Nama Lengkap', data?.fullName)),
+                onTap: () =>
+                    _copyToClipboard(context, 'Nama Lengkap', data?.fullName)),
             _buildRow(context, 'Email', data?.personalEmail ?? '-',
                 onTap: () => _launchUrl('mailto:${data?.personalEmail ?? ""}')),
-            _buildRow(context, 'Phone', data?.phoneNumber ?? '-',
-                onTap: () {
-                  final phone = data?.phoneNumber ?? "";
-                  if (phone.isNotEmpty && phone != '-') {
-                    String waNumber = phone;
-                    if (waNumber.startsWith('08')) {
-                      waNumber = '628${waNumber.substring(2)}';
-                    }
-                    _launchUrl('https://wa.me/$waNumber');
-                  }
-                }),
+            _buildRow(context, 'Phone', data?.phoneNumber ?? '-', onTap: () {
+              final phone = data?.phoneNumber ?? "";
+              if (phone.isNotEmpty && phone != '-') {
+                String waNumber = phone;
+                if (waNumber.startsWith('08')) {
+                  waNumber = '628${waNumber.substring(2)}';
+                }
+                _launchUrl('https://wa.me/$waNumber');
+              }
+            }),
             _buildRow(context, 'Alamat', data?.alamat ?? '-',
                 onTap: () => _openMap(data?.alamat ?? '')),
           ]),
@@ -1491,7 +1895,12 @@ class _BiodataContent extends StatelessWidget {
 class _LicenseContent extends StatelessWidget {
   final List<UserLicense> licenses;
   final VoidCallback onAdd;
-  const _LicenseContent({required this.licenses, required this.onAdd});
+  final VoidCallback onRefresh;
+  const _LicenseContent({
+    required this.licenses, 
+    required this.onAdd,
+    required this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1501,93 +1910,116 @@ class _LicenseContent extends StatelessWidget {
         children: [
           ...licenses.map((l) {
             final isAktif = l.isActive;
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                      color:
-                          isAktif ? Colors.grey.shade200 : Colors.red.shade100),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4))
-                  ]),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE3F2FD),
-                      borderRadius: BorderRadius.circular(12),
+            return InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LicenseDetailScreen(
+                      license: l,
+                      onRefresh: onRefresh,
                     ),
-                    child: const Icon(Icons.badge_outlined,
-                        color: Color(0xFF1E88E5), size: 24),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(l.name,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 15)),
-                        const SizedBox(height: 4),
-                        Text('No. ${l.licenseNumber}',
-                            style: TextStyle(
-                                color: Colors.grey.shade500, fontSize: 13)),
-                        if (l.obtainedAt != null)
-                          Text('Diperoleh: ${l.obtainedAt}',
-                              style: TextStyle(
-                                  color: Colors.grey.shade400, fontSize: 12)),
-                        if (l.expiredAt != null)
-                          Text('Berlaku s/d: ${l.expiredAt}',
-                              style: TextStyle(
-                                  color: Colors.grey.shade400, fontSize: 12)),
-                        if (l.fileUrl != null) ...[
-                          const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
+                );
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: isAktif
+                            ? Colors.grey.shade200
+                            : Colors.red.shade100),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4))
+                    ]),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3F2FD),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: l.fileUrl != null
+                          ? Image.network(
                               l.fileUrl!,
-                              height: 60,
-                              width: 100,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
-                                  const SizedBox(),
-                            ),
-                          ),
+                                  const Icon(Icons.badge_outlined,
+                                      color: Color(0xFF1E88E5), size: 24),
+                            )
+                          : const Icon(Icons.badge_outlined,
+                              color: Color(0xFF1E88E5), size: 24),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(l.name,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 15)),
+                          if (l.issuer != null && l.issuer!.isNotEmpty)
+                            Text('Lembaga: ${l.issuer}',
+                                style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500)),
+                          const SizedBox(height: 4),
+                          Text('No. ${l.licenseNumber}',
+                              style: TextStyle(
+                                  color: Colors.grey.shade500, fontSize: 13)),
+                          if (l.obtainedAt != null)
+                            Text('Diperoleh: ${l.obtainedAt}',
+                                style: TextStyle(
+                                    color: Colors.grey.shade400, fontSize: 12)),
+                          if (l.expiredAt != null)
+                            Text('Berlaku s/d: ${l.expiredAt}',
+                                style: TextStyle(
+                                    color: Colors.grey.shade400, fontSize: 12)),
                         ],
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isAktif
-                          ? const Color(0xFFE8F5E9)
-                          : const Color(0xFFFFEBEE),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      isAktif ? 'Aktif' : 'Expired',
-                      style: TextStyle(
-                        color: isAktif
-                            ? const Color(0xFF2E7D32)
-                            : const Color(0xFFD32F2F),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
                       ),
                     ),
-                  ),
-                ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: !l.isVerified
+                            ? const Color(0xFFFFF3E0)
+                            : isAktif
+                                ? const Color(0xFFE8F5E9)
+                                : const Color(0xFFFFEBEE),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        !l.isVerified
+                            ? 'Tunggu Verifikasi'
+                            : isAktif ? 'Aktif' : 'Expired',
+                        style: TextStyle(
+                          color: !l.isVerified
+                              ? const Color(0xFFEF6C00)
+                              : isAktif
+                                  ? const Color(0xFF2E7D32)
+                                  : const Color(0xFFD32F2F),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
-          }),
+          }).toList(),
         ],
       ),
     );
@@ -1597,8 +2029,13 @@ class _LicenseContent extends StatelessWidget {
 class _CertificationContent extends StatelessWidget {
   final List<UserCertification> certifications;
   final VoidCallback onAdd;
-  const _CertificationContent(
-      {required this.certifications, required this.onAdd});
+  final Function(ProfileData) onRefresh;
+
+  const _CertificationContent({
+    required this.certifications,
+    required this.onAdd,
+    required this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1608,88 +2045,109 @@ class _CertificationContent extends StatelessWidget {
         children: [
           ...certifications.map((c) {
             final isAktif = c.isActive;
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4))
-                  ]),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3E5F5),
-                      borderRadius: BorderRadius.circular(12),
+            return InkWell(
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CertificationDetailScreen(
+                      certification: c,
+                      onRefresh: () async {
+                        final res = await ProfileService.getProfile();
+                        if (res.success && res.data != null) {
+                          onRefresh(res.data!);
+                        }
+                      },
                     ),
-                    child: const Icon(Icons.workspace_premium_outlined,
-                        color: Color(0xFF6A1B9A), size: 24),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(c.name,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 15)),
-                        const SizedBox(height: 4),
-                        Text(c.issuer,
-                            style: TextStyle(
-                                color: Colors.grey.shade500, fontSize: 13)),
-                        if (c.obtainedAt != null)
-                          Text('Diperoleh: ${c.obtainedAt}',
-                              style: TextStyle(
-                                  color: Colors.grey.shade400, fontSize: 12)),
-                        if (c.expiredAt != null)
-                          Text('Berlaku s/d: ${c.expiredAt}',
-                              style: TextStyle(
-                                  color: Colors.grey.shade400, fontSize: 12)),
-                        if (c.fileUrl != null) ...[
-                          const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
+                );
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4))
+                    ]),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3E5F5),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: c.fileUrl != null
+                          ? Image.network(
                               c.fileUrl!,
-                              height: 60,
-                              width: 100,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
-                                  const SizedBox(),
-                            ),
-                          ),
+                                  const Icon(Icons.workspace_premium_outlined,
+                                      color: Color(0xFF6A1B9A), size: 24),
+                            )
+                          : const Icon(Icons.workspace_premium_outlined,
+                              color: Color(0xFF6A1B9A), size: 24),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(c.name,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 15)),
+                          const SizedBox(height: 4),
+                          Text(c.issuer,
+                              style: TextStyle(
+                                  color: Colors.grey.shade500, fontSize: 13)),
+                          if (c.obtainedAt != null)
+                            Text('Diperoleh: ${c.obtainedAt}',
+                                style: TextStyle(
+                                    color: Colors.grey.shade400, fontSize: 12)),
+                          if (c.expiredAt != null)
+                            Text('Berlaku s/d: ${c.expiredAt}',
+                                style: TextStyle(
+                                    color: Colors.grey.shade400, fontSize: 12)),
                         ],
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isAktif
-                          ? const Color(0xFFE8F5E9)
-                          : const Color(0xFFFFF3E0),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      isAktif ? 'Aktif' : 'Renew',
-                      style: TextStyle(
-                        color: isAktif
-                            ? const Color(0xFF2E7D32)
-                            : const Color(0xFFEF6C00),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
                       ),
                     ),
-                  ),
-                ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: !c.isVerified
+                            ? const Color(0xFFFFF3E0)
+                            : isAktif
+                                ? const Color(0xFFE8F5E9)
+                                : const Color(0xFFFFF3E0),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        !c.isVerified
+                            ? 'Tunggu Verifikasi'
+                            : isAktif ? 'Aktif' : 'Renew',
+                        style: TextStyle(
+                          color: !c.isVerified
+                              ? const Color(0xFFEF6C00)
+                              : isAktif
+                                  ? const Color(0xFF2E7D32)
+                                  : const Color(0xFFEF6C00),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           }),
@@ -1851,76 +2309,95 @@ class _ViolationContent extends StatelessWidget {
             final color = isAktif ? Colors.red.shade700 : Colors.grey.shade700;
             final bgColor = isAktif ? Colors.red.shade50 : Colors.grey.shade100;
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2))
-                  ]),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                v.title,
-                                style: TextStyle(
-                                  color: color,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${v.location ?? "-"} · ${v.dateOfViolation ?? "-"}',
-                                style: TextStyle(
-                                    color: Colors.grey.shade500, fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: bgColor,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            v.status,
-                            style: TextStyle(
-                                color: color,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
+            return InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ViolationDetailScreen(violation: v),
                   ),
-                  if (v.sanction != null && v.sanction!.isNotEmpty) ...[
-                    Divider(height: 1, color: Colors.grey.shade100),
+                );
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2))
+                    ]),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Text(
-                        'Sanksi: ${v.sanction}',
-                        style: TextStyle(color: color, fontSize: 13),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  v.title,
+                                  style: TextStyle(
+                                    color: color,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${v.location ?? "-"} · ${v.dateOfViolation ?? "-"}',
+                                  style: TextStyle(
+                                      color: Colors.grey.shade500, fontSize: 13),
+                                ),
+                                if (v.expiredAt != null && v.expiredAt!.isNotEmpty)
+                                  Text(
+                                    'Berlaku s/d: ${v.expiredAt}',
+                                    style: TextStyle(
+                                        color: Colors.red.shade300,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: bgColor,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              v.status,
+                              style: TextStyle(
+                                  color: color,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                    if (v.sanction != null && v.sanction!.isNotEmpty) ...[
+                      Divider(height: 1, color: Colors.grey.shade100),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          'Sanksi: ${v.sanction}',
+                          style: TextStyle(color: color, fontSize: 13),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             );
           }),
@@ -2096,7 +2573,7 @@ class _ProfileFabMenuSheet extends StatelessWidget {
             iconBgColor: const Color(0xFFE3F2FD),
             iconColor: const Color(0xFF1E88E5),
             title: 'Tambah Lisensi',
-            subtitle: 'Tambahkan SIM/SIO',
+            subtitle: 'Tambahkan Lisensi',
             onTap: onAddLicense,
           ),
           Divider(height: 1, indent: 72, color: Colors.grey.shade100),
@@ -2286,7 +2763,8 @@ class _DepartmentPickerSheetState extends State<_DepartmentPickerSheet> {
                               horizontal: 16, vertical: 16),
                           decoration: BoxDecoration(
                             border: Border(
-                                bottom: BorderSide(color: Colors.grey.shade100)),
+                                bottom:
+                                    BorderSide(color: Colors.grey.shade100)),
                           ),
                           child: Row(
                             children: [
@@ -2306,7 +2784,8 @@ class _DepartmentPickerSheetState extends State<_DepartmentPickerSheet> {
                                     : Icons.radio_button_off,
                                 color: isSelected
                                     ? const Color(0xFF4CAF50)
-                                    : const Color(0xFF1A56C4).withValues(alpha: 0.5),
+                                    : const Color(0xFF1A56C4)
+                                        .withValues(alpha: 0.5),
                                 size: 24,
                               ),
                             ],

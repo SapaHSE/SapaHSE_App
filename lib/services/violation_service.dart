@@ -1,10 +1,13 @@
 import 'api_service.dart';
 
 class ViolationService {
-  static Future<ViolationListResult> getViolations({int page = 1, String? search}) async {
+  static Future<ViolationListResult> getViolations({int page = 1, String? search, String? status}) async {
     String url = '/admin/violations?page=$page';
     if (search != null && search.isNotEmpty) {
       url += '&search=${Uri.encodeComponent(search)}';
+    }
+    if (status != null && status != 'Semua') {
+      url += '&status=${Uri.encodeComponent(status)}';
     }
 
     final response = await ApiService.get(url);

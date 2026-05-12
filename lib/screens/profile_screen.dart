@@ -16,6 +16,7 @@ import 'create_hazard_screen.dart';
 import 'create_inspection_screen.dart';
 import 'qr_scan_screen.dart';
 import 'department_management.dart';
+import 'document_approval_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -67,33 +68,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
         currentIndex: 4,
         onScanQr: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const QrScanScreen()));
+          Navigator.push(
+              context, MaterialPageRoute(builder: (_) => const QrScanScreen()));
         },
         onCreateHazard: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateHazardScreen()));
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const CreateHazardScreen()));
         },
         onCreateInspection: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateInspectionScreen()));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const CreateInspectionScreen()));
         },
-        onAddCarousel: () { Navigator.pop(context); },
-        onAddNews: () { Navigator.pop(context); },
+        onAddCarousel: () {
+          Navigator.pop(context);
+        },
+        onAddNews: () {
+          Navigator.pop(context);
+        },
         onEditBiodata: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen(initialAction: 'edit_biodata')));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) =>
+                      const MyProfileScreen(initialAction: 'edit_biodata')));
         },
         onAddLicense: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen(initialAction: 'add_license')));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) =>
+                      const MyProfileScreen(initialAction: 'add_license')));
         },
         onAddCertification: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen(initialAction: 'add_certification')));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const MyProfileScreen(
+                      initialAction: 'add_certification')));
         },
         onEditMedical: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProfileScreen(initialAction: 'edit_medical')));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) =>
+                      const MyProfileScreen(initialAction: 'edit_medical')));
         },
       ),
     );
@@ -179,7 +205,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     MaterialPageRoute(
                         builder: (context) => Scaffold(
                               appBar: AppBar(
-                                title: const Text('Workspace', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                                title: const Text('Workspace',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18)),
                                 backgroundColor: Colors.white,
                                 foregroundColor: Colors.black,
                                 elevation: 0,
@@ -195,7 +224,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 elevation: 0,
                                 child: const Icon(Icons.add, size: 30),
                               ),
-                              floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+                              floatingActionButtonLocation:
+                                  FloatingActionButtonLocation.centerDocked,
                               bottomNavigationBar: BottomAppBar(
                                 shape: const CircularNotchedRectangle(),
                                 notchMargin: 8,
@@ -204,13 +234,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: SizedBox(
                                   height: 64,
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceAround,
                                     children: [
-                                      _ProfileNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
-                                      _ProfileNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
+                                      _ProfileNavItem(
+                                          icon: Icons.home,
+                                          label: 'Home',
+                                          index: 0,
+                                          currentIndex: 4,
+                                          onTap: _onTabTapped),
+                                      _ProfileNavItem(
+                                          icon: Icons.article_outlined,
+                                          label: 'News',
+                                          index: 1,
+                                          currentIndex: 4,
+                                          onTap: _onTabTapped),
                                       const SizedBox(width: 48),
-                                      _ProfileNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
-                                      _ProfileNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
+                                      _ProfileNavItem(
+                                          icon: Icons.inbox_outlined,
+                                          label: 'Inbox',
+                                          index: 3,
+                                          currentIndex: 4,
+                                          onTap: _onTabTapped),
+                                      _ProfileNavItem(
+                                          icon: Icons.menu,
+                                          label: 'Menu',
+                                          index: 4,
+                                          currentIndex: 4,
+                                          onTap: _onTabTapped),
                                     ],
                                   ),
                                 ),
@@ -248,7 +299,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final name = _profileData?.fullName ?? 'No Name';
     final position = _profileData?.position ?? 'Safety Officer';
-    final company = _profileData?.company ?? 'PT. BBE';
+    final company = _profileData?.formattedCompany ?? 'PT. BBE';
     final initials = name
         .split(' ')
         .take(2)
@@ -256,75 +307,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
         .join()
         .toUpperCase();
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 34,
-            backgroundColor: const Color(0xFF5C38FF),
-            backgroundImage: (_profileData?.profilePhoto != null &&
-                    _profileData!.profilePhoto!.isNotEmpty)
-                ? NetworkImage(_profileData!.profilePhoto!)
-                : null,
-            child: (_profileData?.profilePhoto == null ||
-                    _profileData!.profilePhoto!.isEmpty)
-                ? Text(initials,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24))
-                : null,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
-                        color: Colors.black87)),
-                const SizedBox(height: 4),
-                Text('$position — $company',
-                    style:
-                        TextStyle(fontSize: 13, color: Colors.grey.shade500)),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                          color: const Color(0xFFF3E5F5),
-                          borderRadius: BorderRadius.circular(12)),
-                      child: Text(_profileData?.role.toUpperCase() ?? 'USER',
-                          style: const TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF6A1B9A),
-                              fontWeight: FontWeight.w700)),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                          color: _profileData?.isActive == true ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
-                          borderRadius: BorderRadius.circular(12)),
-                      child: Text(_profileData?.isActive == true ? 'Karyawan : Aktif' : 'Karyawan : Nonaktif',
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: _profileData?.isActive == true ? const Color(0xFF2E7D32) : const Color(0xFFD32F2F),
-                              fontWeight: FontWeight.w700)),
-                    ),
-                  ],
-                ),
-              ],
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const MyProfileScreen()),
+        ).then((_) => _loadProfile());
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 34,
+              backgroundColor: const Color(0xFF5C38FF),
+              backgroundImage: (_profileData?.profilePhoto != null &&
+                      _profileData!.profilePhoto!.isNotEmpty)
+                  ? NetworkImage(_profileData!.profilePhoto!)
+                  : null,
+              child: (_profileData?.profilePhoto == null ||
+                      _profileData!.profilePhoto!.isEmpty)
+                  ? Text(initials,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24))
+                  : null,
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                          color: Colors.black87)),
+                  const SizedBox(height: 4),
+                  Text('$position — $company',
+                      style:
+                          TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                            color: const Color(0xFFF3E5F5),
+                            borderRadius: BorderRadius.circular(12)),
+                        child: Text(_profileData?.role.toUpperCase() ?? 'USER',
+                            style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF6A1B9A),
+                                fontWeight: FontWeight.w700)),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                            color: _profileData?.isActive == true
+                                ? const Color(0xFFE8F5E9)
+                                : const Color(0xFFFFEBEE),
+                            borderRadius: BorderRadius.circular(12)),
+                        child: Text(
+                            _profileData?.isActive == true
+                                ? 'Karyawan : Aktif'
+                                : 'Karyawan : Nonaktif',
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: _profileData?.isActive == true
+                                    ? const Color(0xFF2E7D32)
+                                    : const Color(0xFFD32F2F),
+                                fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -419,6 +485,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
   Widget _buildWorkspaceTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 80),
@@ -445,10 +512,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: 'Module Plugin',
             subtitle: 'Fitur tambahan & integrasi sistem',
             onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Module Plugin akan segera hadir')),
+              const SnackBar(content: Text('Module Plugin akan segera hadir')),
             ),
           ),
+          if (_profileData?.role.toLowerCase() == 'superadmin' ||
+              (_profileData?.role.toLowerCase() == 'admin' &&
+                  (_profileData?.department?.toLowerCase().contains('hse') ??
+                      false))) ...[
+            Divider(height: 1, color: Colors.grey.shade100, indent: 70),
+            _buildMenuItem(
+              icon: Icons.gavel_outlined,
+              iconBg: const Color(0xFFFFEBEE),
+              iconColor: const Color(0xFFD32F2F),
+              title: 'Pelanggaran User',
+              subtitle: 'Catat & kelola pelanggaran karyawan',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ViolationManagementScreen()),
+              ),
+            ),
+          ],
           if (_profileData?.role.toLowerCase() == 'admin' ||
               _profileData?.role.toLowerCase() == 'superadmin') ...[
             const SizedBox(height: 24),
@@ -465,6 +549,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     context,
                     MaterialPageRoute(
                         builder: (_) => const UserManagementScreen()));
+              },
+            ),
+            Divider(height: 1, color: Colors.grey.shade100, indent: 70),
+            _buildMenuItem(
+              icon: Icons.assignment_turned_in_outlined,
+              iconBg: const Color(0xFFE8F5E9),
+              iconColor: const Color(0xFF2E7D32),
+              title: 'Approval Dokumen',
+              subtitle: 'Lisensi & sertifikasi karyawan',
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const DocumentApprovalScreen()));
               },
             ),
             Divider(height: 1, color: Colors.grey.shade100, indent: 70),
@@ -522,23 +620,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         builder: (_) => const LocationManagementScreen()));
               },
             ),
-            if (_profileData?.role.toLowerCase() == 'superadmin' ||
-                (_profileData?.role.toLowerCase() == 'admin' &&
-                    (_profileData?.department?.toLowerCase().contains('hse') ?? false))) ...[
-              Divider(height: 1, color: Colors.grey.shade100, indent: 70),
-              _buildMenuItem(
-                icon: Icons.gavel_outlined,
-                iconBg: const Color(0xFFFFEBEE),
-                iconColor: const Color(0xFFD32F2F),
-                title: 'Pelanggaran User',
-                subtitle: 'Catat & kelola pelanggaran karyawan',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const ViolationManagementScreen()),
-                ),
-              ),
-            ],
           ],
           if (_profileData?.role.toLowerCase() == 'superadmin') ...[
             const SizedBox(height: 24),
@@ -568,8 +649,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 // SHARED HELPER WIDGETS
 // ══════════════════════════════════════════════════════════════════════════════
 
-
-
 class _ProfileNavItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -596,7 +675,9 @@ class _ProfileNavItem extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isActive ? const Color(0xFF1A56C4) : Colors.grey, size: 24),
+            Icon(icon,
+                color: isActive ? const Color(0xFF1A56C4) : Colors.grey,
+                size: 24),
             const SizedBox(height: 2),
             Text(
               label,

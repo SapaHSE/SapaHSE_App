@@ -26,6 +26,7 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
   final TextEditingController _searchController = TextEditingController();
   String? _userRole;
   String? _userDept;
+  String _selectedStatus = 'Semua';
 
   bool get _hasFullAccess {
     if (_userRole == 'superadmin') return true;
@@ -185,7 +186,7 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color),
@@ -227,6 +228,7 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
     final result = await ViolationService.getViolations(
       page: _currentPage,
       search: _searchController.text,
+      status: _selectedStatus,
     );
 
     if (mounted) {
@@ -298,8 +300,10 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
                 ],
               ),
             )
-          else
+          else ...[
             _buildSearchBar(),
+            _buildFilterRow(),
+          ],
           Expanded(
             child: _isLoading && _violations.isEmpty
                 ? const Center(child: CircularProgressIndicator())
@@ -378,6 +382,53 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
     );
   }
 
+  Widget _buildFilterRow() {
+    final statuses = ['Semua', 'Aktif', 'Selesai'];
+    return Container(
+      height: 50,
+      color: Colors.white,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: statuses.length,
+        itemBuilder: (context, index) {
+          final status = statuses[index];
+          final isSelected = _selectedStatus == status;
+          
+          Color color = Colors.blue;
+          if (status == 'Aktif') color = Colors.red;
+          if (status == 'Selesai') color = Colors.green;
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            child: ChoiceChip(
+              label: Text(
+                status,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+              selected: isSelected,
+              selectedColor: color,
+              backgroundColor: color.withOpacity(0.05),
+              side: BorderSide(color: isSelected ? color : color.withOpacity(0.2)),
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() {
+                    _selectedStatus = status;
+                  });
+                  _fetchViolations(refresh: true);
+                }
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -407,7 +458,7 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -630,9 +681,11 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
       });
 
       _fetchViolations(refresh: true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$successCount data berhasil dihapus')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$successCount data berhasil dihapus')),
+        );
+      }
     }
   }
 
@@ -660,11 +713,15 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
       setState(() => _isLoading = false);
       if (result.success) {
         _fetchViolations(refresh: true);
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pelanggaran berhasil dihapus')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Pelanggaran berhasil dihapus')));
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(result.errorMessage ?? 'Gagal menghapus data')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(result.errorMessage ?? 'Gagal menghapus data')));
+        }
       }
     }
   }
@@ -677,7 +734,7 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -710,7 +767,6 @@ class _ViolationFormSheetState extends State<ViolationFormSheet> {
 
   Map<String, dynamic>? _selectedUser;
   List<Map<String, dynamic>> _userResults = [];
-  bool _isSearchingUser = false;
   bool _isSaving = false;
 
   @override
@@ -723,6 +779,8 @@ class _ViolationFormSheetState extends State<ViolationFormSheet> {
       _sanctionController.text = widget.item!.sanction ?? '';
       _status = widget.item!.status;
       _selectedUser = widget.item!.user;
+    } else {
+      _searchUsers('', updater: setState);
     }
   }
 
@@ -732,21 +790,19 @@ class _ViolationFormSheetState extends State<ViolationFormSheet> {
     super.dispose();
   }
 
-  Future<void> _searchUsers(String query) async {
+  Future<void> _searchUsers(String query, {void Function(void Function())? updater}) async {
+    final update = updater ?? setState;
     if (_debounce?.isActive ?? false) _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () async {
-      if (query.length < 3) {
-        setState(() => _userResults = []);
+      if (query.isNotEmpty && query.length < 2) {
         return;
       }
-      setState(() => _isSearchingUser = true);
       final response = await AuthService.listUsers(search: query);
-      setState(() {
-        _isSearchingUser = false;
-        if (response.success) {
+      if (response.success) {
+        update(() {
           _userResults = List<Map<String, dynamic>>.from(response.data['data']);
-        }
-      });
+        });
+      }
     });
   }
 
@@ -794,12 +850,16 @@ class _ViolationFormSheetState extends State<ViolationFormSheet> {
 
     if (result.success) {
       widget.onSuccess();
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pelanggaran berhasil disimpan')));
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pelanggaran berhasil disimpan')));
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(result.errorMessage ?? 'Gagal menyimpan data')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(result.errorMessage ?? 'Gagal menyimpan data')));
+      }
     }
   }
 
@@ -814,8 +874,8 @@ class _ViolationFormSheetState extends State<ViolationFormSheet> {
               onPressed: () => Navigator.pop(ctx, false),
               child: const Text('Batal')),
           TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Hapus', style: TextStyle(color: Colors.red))),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus', style: TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -826,9 +886,11 @@ class _ViolationFormSheetState extends State<ViolationFormSheet> {
       setState(() => _isSaving = false);
       if (result.success) {
         widget.onSuccess();
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pelanggaran berhasil dihapus')));
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Pelanggaran berhasil dihapus')));
+        }
       }
     }
   }
@@ -922,91 +984,153 @@ class _ViolationFormSheetState extends State<ViolationFormSheet> {
         const Text('User / Karyawan',
             style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        if (_selectedUser != null)
-          Container(
-            padding: const EdgeInsets.all(12),
+        InkWell(
+          onTap: widget.item == null ? _showUserSelectionModal : null,
+          child: Container(
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
+              color: const Color(0xFFF1F4F9),
               borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: const Color(0xFF1A56C4).withOpacity(0.3)),
+              border: Border.all(
+                color: _selectedUser != null 
+                  ? const Color(0xFF1A56C4).withValues(alpha: 0.3) 
+                  : Colors.transparent
+              ),
             ),
             child: Row(
               children: [
-                CircleAvatar(
-                    child: Text(_selectedUser!['full_name']?[0] ?? '?')),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                if (_selectedUser != null) ...[
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: const Color(0xFFE3F2FD),
+                    child: Text(
+                      _selectedUser!['full_name']?[0] ?? '?',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1A56C4)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_selectedUser!['full_name'] ?? '',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text(_selectedUser!['employee_id'] ?? '',
+                            style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  const Icon(Icons.person_add_alt_1_outlined, color: Colors.grey, size: 20),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text('Pilih User / Karyawan', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                  ),
+                ],
+                if (widget.item == null)
+                  Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showUserSelectionModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.75,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: const BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Color(0xFFF5F5F5))),
+                  ),
+                  child: Row(
                     children: [
-                      Text(_selectedUser!['full_name'] ?? '',
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text(_selectedUser!['employee_id'] ?? '',
-                          style: const TextStyle(
-                              fontSize: 12, color: Colors.grey)),
+                      const Text('Tag User / Karyawan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const Spacer(),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
                     ],
                   ),
                 ),
-                if (widget.item == null)
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 20),
-                    onPressed: () => setState(() => _selectedUser = null),
+                
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Cari nama atau ID...',
+                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F4F9),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                    onChanged: (q) => _searchUsers(q, updater: setModalState),
                   ),
+                ),
+
+                Expanded(
+                  child: _userResults.isEmpty 
+                    ? const Center(child: Text('Tidak ada data', style: TextStyle(color: Colors.grey)))
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: _userResults.length,
+                        separatorBuilder: (ctx, idx) => const Divider(height: 1, indent: 48),
+                        itemBuilder: (ctx, idx) {
+                          final u = _userResults[idx];
+                          final name = u['full_name'] ?? '';
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                            leading: CircleAvatar(
+                              backgroundColor: const Color(0xFFE3F2FD),
+                              child: Text(name[0], style: const TextStyle(color: Color(0xFF1A56C4), fontWeight: FontWeight.bold)),
+                            ),
+                            title: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                            subtitle: Text(u['employee_id'] ?? '', style: const TextStyle(fontSize: 12)),
+                            trailing: Icon(Icons.add_circle_outline, color: const Color(0xFF1A56C4).withValues(alpha: 0.8), size: 22),
+                            onTap: () {
+                              setState(() {
+                                _selectedUser = u;
+                              });
+                              Navigator.pop(context);
+                            },
+                          );
+                        },
+                      ),
+                ),
+                
+                // Bottom Button
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1A56C4),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Simpan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ),
               ],
             ),
-          )
-        else
-          Column(
-            children: [
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Cari nama atau ID karyawan...',
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: const Color(0xFFF8F9FA),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none),
-                ),
-                onChanged: _searchUsers,
-              ),
-              if (_isSearchingUser)
-                const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: LinearProgressIndicator()),
-              if (_userResults.isNotEmpty)
-                Container(
-                  constraints: const BoxConstraints(maxHeight: 200),
-                  margin: const EdgeInsets.only(top: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _userResults.length,
-                    itemBuilder: (ctx, idx) {
-                      final u = _userResults[idx];
-                      return ListTile(
-                        leading: CircleAvatar(
-                            radius: 14, child: Text(u['full_name']?[0] ?? '')),
-                        title: Text(u['full_name'] ?? '',
-                            style: const TextStyle(fontSize: 14)),
-                        subtitle: Text(u['employee_id'] ?? '',
-                            style: const TextStyle(fontSize: 12)),
-                        onTap: () => setState(() {
-                          _selectedUser = u;
-                          _userResults = [];
-                        }),
-                      );
-                    },
-                  ),
-                ),
-            ],
-          ),
-      ],
+          );
+        }
+      ),
     );
   }
 

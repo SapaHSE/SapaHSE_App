@@ -108,25 +108,28 @@ class _SapaHseHeaderState extends State<SapaHseHeader>
               ),
             ),
             const SizedBox(width: 10),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'SapaHse',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: _blue,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'SapaHse',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: _blue,
+                    ),
                   ),
-                ),
-                Text(
-                  'PT. Bukit Baiduri Energi',
-                  style: TextStyle(fontSize: 10, color: Colors.grey),
-                ),
-              ],
+                  Text(
+                    'PT. Bukit Baiduri Energi',
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ],
+              ),
             ),
-            const Spacer(),
           ] else ...[
             Expanded(
               child: TextField(

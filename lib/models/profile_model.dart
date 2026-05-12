@@ -11,6 +11,7 @@ class ProfileData {
   final String? position;
   final String? department;
   final String? company;
+  final String? companyCode;
   final String? alamat;
   final String? tipeAfiliasi;
   final String? perusahaanKontraktor;
@@ -33,6 +34,7 @@ class ProfileData {
     this.position,
     this.department,
     this.company,
+    this.companyCode,
     this.alamat,
     this.tipeAfiliasi,
     this.perusahaanKontraktor,
@@ -57,6 +59,7 @@ class ProfileData {
       position: json['position']?.toString(),
       department: json['department']?.toString(),
       company: json['company']?.toString(),
+      companyCode: json['company_code']?.toString(),
       alamat: json['alamat']?.toString(),
       tipeAfiliasi: json['tipe_afiliasi']?.toString(),
       perusahaanKontraktor: json['perusahaan_kontraktor']?.toString(),
@@ -85,12 +88,39 @@ class ProfileData {
   }
 
   String get email => workEmail ?? personalEmail;
+
+  String get formattedCompany {
+    final ownerCode = companyCode ?? _getFallbackCode(company);
+    final tipe = tipeAfiliasi?.trim().toLowerCase() ?? '';
+
+    if (tipe == 'kontraktor') {
+      return '${perusahaanKontraktor ?? "-"} ($ownerCode)';
+    } else if (tipe == 'sub-kontraktor' ||
+        tipe == 'sub-kont.' ||
+        tipe == 'sub kontraktor' ||
+        tipe == 'subkontraktor') {
+      return '${subKontraktor ?? "-"} ($ownerCode)';
+    }
+    return company ?? '-';
+  }
+
+  String? _getFallbackCode(String? name) {
+    if (name == null || name.isEmpty) return null;
+    String cleaned =
+        name.replaceAll(RegExp(r'^(PT|CV|PT\.|CV\.)\s+', caseSensitive: false), '');
+    List<String> words = cleaned.split(' ').where((w) => w.isNotEmpty).toList();
+    if (words.length >= 2) {
+      return words.take(3).map((w) => w[0].toUpperCase()).join();
+    }
+    return name.length > 3 ? name.substring(0, 3).toUpperCase() : name.toUpperCase();
+  }
 }
 
 class UserLicense {
   final String id;
   final String name;
   final String licenseNumber;
+  final String? issuer;
   final String? obtainedAt;
   final String? expiredAt;
   final String status;
@@ -101,6 +131,7 @@ class UserLicense {
     required this.id,
     required this.name,
     required this.licenseNumber,
+    this.issuer,
     this.obtainedAt,
     this.expiredAt,
     required this.status,
@@ -113,6 +144,7 @@ class UserLicense {
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       licenseNumber: json['license_number']?.toString() ?? '',
+      issuer: json['issuer']?.toString(),
       obtainedAt: json['obtained_at']?.toString(),
       expiredAt: json['expired_at']?.toString(),
       status: json['status']?.toString() ?? 'active',
@@ -138,6 +170,7 @@ class UserLicense {
 class UserCertification {
   final String id;
   final String name;
+  final String? certificationNumber;
   final String issuer;
   final String? obtainedAt;
   final String? expiredAt;
@@ -148,6 +181,7 @@ class UserCertification {
   UserCertification({
     required this.id,
     required this.name,
+    this.certificationNumber,
     required this.issuer,
     this.obtainedAt,
     this.expiredAt,
@@ -160,6 +194,7 @@ class UserCertification {
     return UserCertification(
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
+      certificationNumber: json['certification_number']?.toString(),
       issuer: json['issuer']?.toString() ?? '',
       obtainedAt: json['obtained_at']?.toString(),
       expiredAt: json['expired_at']?.toString(),
@@ -290,6 +325,7 @@ class UserViolation {
   final String title;
   final String? location;
   final String? dateOfViolation;
+  final String? expiredAt;
   final String status;
   final String? sanction;
 
@@ -298,6 +334,7 @@ class UserViolation {
     required this.title,
     this.location,
     this.dateOfViolation,
+    this.expiredAt,
     required this.status,
     this.sanction,
   });
@@ -308,6 +345,7 @@ class UserViolation {
       title: json['title']?.toString() ?? '',
       location: json['location']?.toString(),
       dateOfViolation: json['date_of_violation']?.toString(),
+      expiredAt: json['expired_at']?.toString(),
       status: json['status']?.toString() ?? 'Aktif',
       sanction: json['sanction']?.toString(),
     );
