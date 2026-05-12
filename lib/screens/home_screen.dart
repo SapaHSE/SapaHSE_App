@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedType = 'All Report';
   String _statusFilter = 'Aktif';
 
-  int _displayedCount = 5;
+  int _displayedCount = 25;
   bool _isLoadingMore = false;
   final ScrollController _scrollController = ScrollController();
 
@@ -674,13 +674,7 @@ class _ReportCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: [],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),

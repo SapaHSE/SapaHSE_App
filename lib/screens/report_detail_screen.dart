@@ -559,7 +559,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                                     : Colors.grey.shade400,
                             foregroundColor: Colors.white,
                             shape: const CircleBorder(),
-                            elevation: 4,
+                            elevation: 0,
                             child: const Icon(Icons.edit_outlined, size: 30),
                           ),
                         ),
@@ -573,7 +573,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
           ? null
           : AppBar(
               backgroundColor: Colors.white,
-              elevation: 0.5,
+              elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.black87),
                 onPressed: () => Navigator.pop(context),
