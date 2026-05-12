@@ -1,5 +1,5 @@
 import 'dart:io' show File, Platform;
-import 'package:flutter/foundation.dart' show kIsWeb, ValueListenable;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
@@ -20,8 +20,6 @@ class _FadePageRoute<T> extends PageRouteBuilder<T> {
           transitionDuration: const Duration(milliseconds: 200),
         );
 }
-
-
 
 class _ScrollFabAnchor extends StatelessWidget {
   final Widget child;
@@ -104,12 +102,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
           actorPhotoUrl:
               'https://i.pravatar.cc/150?img=${((rng + i) % 60) + 1}',
           parentReplyId: i > 0 ? 'reply-$logId-${i - 1}' : null,
-          attachmentUrls:
-              i == count - 1 && count > 1
-                  ? [
-                      'https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=200&q=60',
-                    ]
-                  : [],
+          attachmentUrls: i == count - 1 && count > 1
+              ? [
+                  'https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=200&q=60',
+                ]
+              : [],
         ));
       }
       ReportStore.instance.seedExampleReplies(logId, replies);
@@ -239,8 +236,18 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
 
   String _formatDate(DateTime dt) {
     final m = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des'
     ];
     return '${dt.day} ${m[dt.month - 1]} ${dt.year}, '
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
@@ -248,8 +255,18 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
 
   String _formatDateShort(DateTime dt) {
     final m = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des'
     ];
     return '${dt.day} ${m[dt.month - 1]} ${dt.year}';
   }
@@ -305,6 +322,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                     setPreviewState(() => isZoomed = zoomed);
                   }
                 }
+
                 c.addListener(listener);
                 controllers[i] = c;
                 listeners[i] = listener;
@@ -321,10 +339,22 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                   final x = -doubleTapPosition.dx * (s - 1);
                   final y = -doubleTapPosition.dy * (s - 1);
                   c.value = Matrix4(
-                    s, 0, 0, 0,
-                    0, s, 0, 0,
-                    0, 0, 1, 0,
-                    x, y, 0, 1,
+                    s,
+                    0,
+                    0,
+                    0,
+                    0,
+                    s,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    x,
+                    y,
+                    0,
+                    1,
                   );
                 }
               }
@@ -461,7 +491,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 10,
                     offset: const Offset(0, -2),
                   ),
@@ -470,7 +500,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
               child: SafeArea(
                 top: false,
                 child: SizedBox(
-                  height: 80, // Final height adjustment to match Home screen perfectly
+                  height:
+                      80, // Final height adjustment to match Home screen perfectly
                   child: Stack(
                     clipBehavior: Clip.none,
                     alignment: Alignment.center,
@@ -494,7 +525,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                                 index: 1,
                                 currentIndex: -1,
                                 onTap: _onTabTapped),
-                            const SizedBox(width: 48), // Matching main.dart exactly
+                            const SizedBox(
+                                width: 48), // Matching main.dart exactly
                             _ReportDetailNavItem(
                                 icon: Icons.inbox_outlined,
                                 label: 'Inbox',
@@ -604,8 +636,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                                 color: const Color(0xFF37474F),
                                 child: const Center(
                                     child: CircularProgressIndicator(
-                                        color: Colors.white38,
-                                        strokeWidth: 2)),
+                                        color: Colors.white38, strokeWidth: 2)),
                               ),
                               errorWidget: (_, __, ___) => Container(
                                 color: const Color(0xFF37474F),
@@ -638,12 +669,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                         bottom: 12,
                         left: 16,
                         child: Row(children: [
-                          _badge(
-                              _report.status.label,
+                          _badge(_report.status.label,
                               _statusColor(_report.status)),
                           const SizedBox(width: 8),
-                          _badge(
-                              _report.severity.label,
+                          _badge(_report.severity.label,
                               _severityColor(_report.severity)),
                         ]),
                       ),
@@ -1136,16 +1165,14 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                                   timeline.isEmpty)
                                 const Center(
                                   child: Padding(
-                                    padding:
-                                        EdgeInsets.symmetric(vertical: 24),
+                                    padding: EdgeInsets.symmetric(vertical: 24),
                                     child: CircularProgressIndicator(),
                                   ),
                                 )
                               else if (timeline.isEmpty)
                                 const Center(
                                   child: Padding(
-                                    padding:
-                                        EdgeInsets.symmetric(vertical: 24),
+                                    padding: EdgeInsets.symmetric(vertical: 24),
                                     child: Text('Belum ada aktivitas.',
                                         style: TextStyle(color: Colors.grey)),
                                   ),
@@ -1178,7 +1205,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                     begin: const Offset(0, 0.22),
                     end: Offset.zero,
                   ).animate(animation);
-                  final scale = Tween<double>(begin: 0.9, end: 1.0).animate(animation);
+                  final scale =
+                      Tween<double>(begin: 0.9, end: 1.0).animate(animation);
                   return FadeTransition(
                     opacity: animation,
                     child: SlideTransition(
@@ -1421,9 +1449,8 @@ class _TimelineStatusGroupSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: isCurrentGroup
-            ? statusColor
-            : statusColor.withValues(alpha: 0.1),
+        color:
+            isCurrentGroup ? statusColor : statusColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Text(
@@ -1618,6 +1645,7 @@ class _TimelineItem extends StatelessWidget {
                     setPreviewState(() => isZoomed = zoomed);
                   }
                 }
+
                 c.addListener(listener);
                 controllers[i] = c;
                 listeners[i] = listener;
@@ -1634,10 +1662,22 @@ class _TimelineItem extends StatelessWidget {
                   final x = -doubleTapPosition.dx * (s - 1);
                   final y = -doubleTapPosition.dy * (s - 1);
                   c.value = Matrix4(
-                    s, 0, 0, 0,
-                    0, s, 0, 0,
-                    0, 0, 1, 0,
-                    x, y, 0, 1,
+                    s,
+                    0,
+                    0,
+                    0,
+                    0,
+                    s,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    x,
+                    y,
+                    0,
+                    1,
                   );
                 }
               }
@@ -1826,7 +1866,8 @@ class _TimelineThreadCardState extends State<_TimelineThreadCard> {
     });
     try {
       await Future.delayed(const Duration(milliseconds: 200));
-      final replies = ReportStore.instance.getReplies(widget.event.timelineLogId);
+      final replies =
+          ReportStore.instance.getReplies(widget.event.timelineLogId);
       if (!mounted) return;
       setState(() {
         _replies = replies;
@@ -1913,7 +1954,8 @@ class _TimelineThreadCardState extends State<_TimelineThreadCard> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Color(0xFF1A56C4)),
+              leading:
+                  const Icon(Icons.photo_library, color: Color(0xFF1A56C4)),
               title: const Text('Galeri'),
               onTap: () {
                 Navigator.pop(context, ImageSource.gallery);
@@ -2414,8 +2456,7 @@ class _TimelineThreadCardState extends State<_TimelineThreadCard> {
                                   tapTargetSize:
                                       MaterialTapTargetSize.shrinkWrap,
                                   foregroundColor: const Color(0xFF1A56C4),
-                                  disabledForegroundColor:
-                                      Colors.grey.shade700,
+                                  disabledForegroundColor: Colors.grey.shade700,
                                 ),
                                 icon: const Icon(
                                   Icons.reply_rounded,
@@ -2464,8 +2505,7 @@ class _TimelineThreadCardState extends State<_TimelineThreadCard> {
                                 separatorBuilder: (_, __) =>
                                     const SizedBox(width: 8),
                                 itemBuilder: (_, idx) {
-                                  final imageUrl =
-                                      widget.event.photoPaths[idx];
+                                  final imageUrl = widget.event.photoPaths[idx];
                                   return GestureDetector(
                                     onTap: () async =>
                                         widget.openTimelinePreview(
@@ -2671,8 +2711,7 @@ class _TimelineThreadCardState extends State<_TimelineThreadCard> {
                                 ),
                               ),
                               InkWell(
-                                onTap: () =>
-                                    setState(() => _replyingTo = null),
+                                onTap: () => setState(() => _replyingTo = null),
                                 borderRadius: BorderRadius.circular(20),
                                 child: const Padding(
                                   padding: EdgeInsets.all(6),
@@ -2730,7 +2769,8 @@ class _TimelineThreadCardState extends State<_TimelineThreadCard> {
                                         color: Colors.transparent,
                                         child: InkWell(
                                           onTap: () => setState(
-                                            () => _replyAttachments.removeAt(idx),
+                                            () =>
+                                                _replyAttachments.removeAt(idx),
                                           ),
                                           customBorder: const CircleBorder(),
                                           child: Container(
@@ -2941,16 +2981,14 @@ class _DetailRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon,
-              size: 18,
-              color: const Color(0xFF1A56C4).withValues(alpha: 0.7)),
+              size: 18, color: const Color(0xFF1A56C4).withValues(alpha: 0.7)),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label,
-                    style:
-                        const TextStyle(fontSize: 11, color: Colors.grey)),
+                    style: const TextStyle(fontSize: 11, color: Colors.grey)),
                 const SizedBox(height: 2),
                 Text(value,
                     style: TextStyle(
@@ -3024,8 +3062,7 @@ class _ReportDetailNavItem extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 11,
                     color: active ? const Color(0xFF1A56C4) : Colors.grey,
-                    fontWeight:
-                        active ? FontWeight.w600 : FontWeight.normal)),
+                    fontWeight: active ? FontWeight.w600 : FontWeight.normal)),
           ],
         ),
       ),
@@ -3140,7 +3177,8 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Color(0xFF1A56C4)),
+              leading:
+                  const Icon(Icons.photo_library, color: Color(0xFF1A56C4)),
               title: const Text('Galeri'),
               onTap: () {
                 Navigator.pop(ctx);
@@ -3155,7 +3193,8 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
 
   void _showUnifiedPicker() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Fitur tag belum tersedia di versi prototype.')),
+      const SnackBar(
+          content: Text('Fitur tag belum tersedia di versi prototype.')),
     );
   }
 
@@ -3228,8 +3267,7 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
                 borderRadius: BorderRadius.circular(10),
@@ -3280,9 +3318,9 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                     isEnabled: _canSelectMainStatus(ReportStatus.open),
                     onTap: () => setState(() {
                           _selectedStatus = ReportStatus.open;
-                          _selectedSub = ReportSubStatusInfo
-                              .forStatus(ReportStatus.open)
-                              .first;
+                          _selectedSub =
+                              ReportSubStatusInfo.forStatus(ReportStatus.open)
+                                  .first;
                         })),
                 const SizedBox(width: 10),
                 _StatusBtn(
@@ -3292,8 +3330,8 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                     isEnabled: _canSelectMainStatus(ReportStatus.inProgress),
                     onTap: () => setState(() {
                           _selectedStatus = ReportStatus.inProgress;
-                          _selectedSub = ReportSubStatusInfo
-                              .forStatus(ReportStatus.inProgress)
+                          _selectedSub = ReportSubStatusInfo.forStatus(
+                                  ReportStatus.inProgress)
                               .first;
                         })),
                 const SizedBox(width: 10),
@@ -3304,9 +3342,9 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                     isEnabled: _canSelectMainStatus(ReportStatus.closed),
                     onTap: () => setState(() {
                           _selectedStatus = ReportStatus.closed;
-                          _selectedSub = ReportSubStatusInfo
-                              .forStatus(ReportStatus.closed)
-                              .first;
+                          _selectedSub =
+                              ReportSubStatusInfo.forStatus(ReportStatus.closed)
+                                  .first;
                         })),
               ],
             ),
@@ -3364,8 +3402,8 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                                     ? color
                                     : Colors.grey.shade300)),
                     showCheckmark: false,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 2, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
                   ),
                 );
               }).toList(),
@@ -3397,8 +3435,7 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                           decoration: BoxDecoration(
                               color: const Color(0xFFF8F9FF),
                               borderRadius: BorderRadius.circular(8),
-                              border:
-                                  Border.all(color: Colors.grey.shade300)),
+                              border: Border.all(color: Colors.grey.shade300)),
                           child: Row(children: [
                             const Icon(Icons.person_add_outlined,
                                 size: 20, color: Colors.grey),
@@ -3421,8 +3458,7 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                             children: [
                               ..._selectedDepts.map((dept) => Chip(
                                     label: Text(dept,
-                                        style:
-                                            const TextStyle(fontSize: 11)),
+                                        style: const TextStyle(fontSize: 11)),
                                     onDeleted: null,
                                     backgroundColor:
                                         _blue.withValues(alpha: 0.1),
@@ -3433,8 +3469,7 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                                   )),
                               ..._selectedUsers.map((user) => Chip(
                                     label: Text('${user.fullName} (PJA)',
-                                        style:
-                                            const TextStyle(fontSize: 11)),
+                                        style: const TextStyle(fontSize: 11)),
                                     onDeleted: null,
                                     backgroundColor:
                                         _blue.withValues(alpha: 0.1),
@@ -3533,8 +3568,8 @@ class _UpdateStatusSheetState extends State<_UpdateStatusSheet> {
                           top: -4,
                           right: -4,
                           child: InkWell(
-                            onTap: () => setState(
-                                () => _attachedPhotos.removeAt(idx)),
+                            onTap: () =>
+                                setState(() => _attachedPhotos.removeAt(idx)),
                             child: Container(
                               decoration: const BoxDecoration(
                                 color: Colors.black54,
