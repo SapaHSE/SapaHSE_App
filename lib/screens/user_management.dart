@@ -327,6 +327,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
+        extendBody: true,
         backgroundColor: const Color(0xFFF5F6FA),
         appBar: AppBar(
           title: _isSearching
@@ -435,13 +436,15 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             _buildRejectedHistoryTab(),
           ],
         ),
+        floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
         floatingActionButton: FloatingActionButton(
           onPressed: _openFabMenu,
           backgroundColor: const Color(0xFF1A56C4),
           foregroundColor: Colors.white,
           shape: const CircleBorder(),
           elevation: 4,
-          child: const Icon(Icons.add, size: 30),
+          tooltip: 'Buka menu user',
+          child: const Icon(Icons.add, size: 26),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         bottomNavigationBar: BottomAppBar(
@@ -1229,6 +1232,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     if (role == 'admin') avatarColor = Colors.orange;
 
     return Scaffold(
+      extendBody: true,
       backgroundColor: const Color(0xFFF8F9FE),
       appBar: AppBar(
         title: const Text(
@@ -1529,6 +1533,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           ],
         ),
       ),
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
       floatingActionButton: _isSuperadmin
           ? FloatingActionButton(
               onPressed: _openDetailFabMenu,
@@ -1536,7 +1541,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
               foregroundColor: Colors.white,
               shape: const CircleBorder(),
               elevation: 4,
-              child: const Icon(Icons.add, size: 30),
+              tooltip: 'Buka menu detail user',
+              child: const Icon(Icons.add, size: 26),
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

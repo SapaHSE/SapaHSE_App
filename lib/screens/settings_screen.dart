@@ -262,6 +262,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: const Text('Settings',
@@ -380,13 +381,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       ),
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
       floatingActionButton: FloatingActionButton(
         onPressed: _openFabMenu,
         backgroundColor: _blue,
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
-        elevation: 0,
-        child: const Icon(Icons.add, size: 30),
+        elevation: 4,
+        tooltip: 'Buka menu pengaturan',
+        child: const Icon(Icons.add, size: 26),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(

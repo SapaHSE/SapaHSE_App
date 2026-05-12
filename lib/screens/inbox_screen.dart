@@ -567,6 +567,7 @@ class _InboxScreenState extends State<InboxScreen>
     return Material(
       color: const Color(0xFFF5F5F5),
       child: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             // ── Custom Header matching Profile design (Unified Container) ────

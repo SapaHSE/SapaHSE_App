@@ -188,6 +188,7 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
     final bool canEdit = _currentUser?.role.toLowerCase() == 'superadmin';
 
     return Scaffold(
+      extendBody: true,
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
         title: const Text('Department Management', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
@@ -248,13 +249,15 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
                     },
                   ),
                 ),
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
       floatingActionButton: FloatingActionButton(
         onPressed: _openFabMenu,
         backgroundColor: _blue,
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
         elevation: 4,
-        child: const Icon(Icons.add, size: 30),
+        tooltip: 'Buka menu departemen',
+        child: const Icon(Icons.add, size: 26),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(

@@ -163,6 +163,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     return Stack(
       children: [
         Scaffold(
+          extendBody: true,
           backgroundColor: Colors.white,
           appBar: AppBar(
             title: const Text('My Profile',
@@ -188,13 +189,15 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     ],
                   ),
                 ),
+          floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
           floatingActionButton: FloatingActionButton(
             onPressed: _openFabMenu,
             backgroundColor: const Color(0xFF1A56C4),
             foregroundColor: Colors.white,
             shape: const CircleBorder(),
             elevation: 4,
-            child: const Icon(Icons.add, size: 30),
+            tooltip: 'Buka menu profil',
+            child: const Icon(Icons.add, size: 26),
           ),
           floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
           bottomNavigationBar: BottomAppBar(
