@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedType = 'All Report';
   String _statusFilter = 'Aktif';
 
-  int _displayedCount = 5;
+  int _displayedCount = 25;
   bool _isLoadingMore = false;
   final ScrollController _scrollController = ScrollController();
 
