@@ -281,7 +281,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
         backgroundColor: const Color(0xFF1A56C4),
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
-        elevation: 4,
+        elevation: 0,
         child: const Icon(Icons.add, size: 30),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -289,7 +289,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
         shape: const CircularNotchedRectangle(),
         notchMargin: 8,
         color: Colors.white,
-        elevation: 8,
+        elevation: 0,
         child: SizedBox(
           height: 64,
           child: Row(
@@ -369,13 +369,7 @@ class _NewsDetailFabMenuSheet extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
+        boxShadow: [],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
