@@ -58,7 +58,7 @@ class _CertificationDetailScreenState extends State<CertificationDetailScreen> {
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        elevation: 0,
+        
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -206,7 +206,7 @@ class _CertificationDetailScreenState extends State<CertificationDetailScreen> {
                               backgroundColor: Colors.green,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              elevation: 0,
+                              
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                             child: const Text('Approve', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -223,11 +223,11 @@ class _CertificationDetailScreenState extends State<CertificationDetailScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
+      bottomNavigationBar: Container(
+        
+        
         color: Colors.white,
-        elevation: 0,
+        
         child: SizedBox(
           height: 60,
           child: Row(
@@ -255,10 +255,10 @@ class _CertificationDetailScreenState extends State<CertificationDetailScreen> {
         backgroundColor: const Color(0xFF1A56C4),
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
-        elevation: 0,
+        
         child: Icon(widget.isApprovalMode ? Icons.add : Icons.edit, size: 28),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
@@ -468,7 +468,7 @@ class _CertificationDetailScreenState extends State<CertificationDetailScreen> {
                       backgroundColor: const Color(0xFF1A56C4),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
+                      
                     ),
                     child: const Text('Simpan Perubahan', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),

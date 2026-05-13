@@ -185,7 +185,7 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> wit
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
+      extendBody: false,
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
         title: _isSearching 
@@ -203,7 +203,7 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> wit
           : const Text('Location Management', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        elevation: 0,
+        
         centerTitle: true,
         leading: _isSearching
           ? IconButton(
@@ -262,16 +262,16 @@ class _LocationManagementScreenState extends State<LocationManagementScreen> wit
         backgroundColor: _blue,
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
-        elevation: 4,
+        
         tooltip: 'Buka menu lokasi',
         child: const Icon(Icons.add, size: 26),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: Container(
+        
+        
         color: Colors.white,
-        elevation: 8,
+        
         child: SizedBox(
           height: 64,
           child: Row(
@@ -652,7 +652,7 @@ class _AreaFormScreenState extends State<_AreaFormScreen> {
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        elevation: 0,
+        
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -720,7 +720,7 @@ class _AreaFormScreenState extends State<_AreaFormScreen> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
+                  
                 ),
                 child: _isLoading 
                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))

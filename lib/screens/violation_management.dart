@@ -261,14 +261,14 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
+      extendBody: false,
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: const Text('Manajemen Pelanggaran',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        elevation: 0,
+        
         centerTitle: true,
       ),
       body: Column(
@@ -337,17 +337,17 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
               backgroundColor: const Color(0xFF1A56C4),
               foregroundColor: Colors.white,
               shape: const CircleBorder(),
-              elevation: 4,
+              
               tooltip: 'Buka menu pelanggaran',
               child: const Icon(Icons.add, size: 26),
             )
           : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: Container(
+        
+        
         color: Colors.white,
-        elevation: 8,
+        
         child: SizedBox(
           height: 60,
           child: Row(
@@ -1223,7 +1223,7 @@ class _ViolationFormSheetState extends State<ViolationFormSheet> {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
-                elevation: 0,
+                
               ),
               child: _isSaving
                   ? const CircularProgressIndicator(color: Colors.white)

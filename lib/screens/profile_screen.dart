@@ -216,59 +216,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 centerTitle: true,
                               ),
                               backgroundColor: Colors.white,
-                              body: _buildWorkspaceTab(),
-                              floatingActionButtonAnimator:
-                                  FloatingActionButtonAnimator.noAnimation,
-                              floatingActionButton: FloatingActionButton(
-                                onPressed: _openFabMenu,
-                                backgroundColor: const Color(0xFF1A56C4),
-                                foregroundColor: Colors.white,
-                                shape: const CircleBorder(),
-                                elevation: 4,
-                                tooltip: 'Buka menu workspace',
-                                child: const Icon(Icons.add, size: 26),
-                              ),
-                              floatingActionButtonLocation:
-                                  FloatingActionButtonLocation.centerDocked,
-                              bottomNavigationBar: BottomAppBar(
-                                shape: const CircularNotchedRectangle(),
-                                notchMargin: 8,
-                                color: Colors.white,
-                                elevation: 0,
-                                child: SizedBox(
-                                  height: 64,
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceAround,
-                                    children: [
-                                      _ProfileNavItem(
-                                          icon: Icons.home,
-                                          label: 'Home',
-                                          index: 0,
-                                          currentIndex: 4,
-                                          onTap: _onTabTapped),
-                                      _ProfileNavItem(
-                                          icon: Icons.article_outlined,
-                                          label: 'News',
-                                          index: 1,
-                                          currentIndex: 4,
-                                          onTap: _onTabTapped),
-                                      const SizedBox(width: 48),
-                                      _ProfileNavItem(
-                                          icon: Icons.inbox_outlined,
-                                          label: 'Inbox',
-                                          index: 3,
-                                          currentIndex: 4,
-                                          onTap: _onTabTapped),
-                                      _ProfileNavItem(
-                                          icon: Icons.menu,
-                                          label: 'Menu',
-                                          index: 4,
-                                          currentIndex: 4,
-                                          onTap: _onTabTapped),
-                                    ],
+                              body: Stack(
+                                children: [
+                                  Positioned.fill(child: _buildWorkspaceTab()),
+                                  Positioned(
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      alignment: Alignment.bottomCenter,
+                                      children: [
+                                        Container(
+                                          height: 65,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                            children: [
+                                              _ProfileNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
+                                              _ProfileNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
+                                              const SizedBox(width: 56), // Space for FAB
+                                              _ProfileNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
+                                              _ProfileNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
+                                            ],
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: -24,
+                                          child: GestureDetector(
+                                            onTap: _openFabMenu,
+                                            child: Container(
+                                              width: 60,
+                                              height: 60,
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xFF1A56C4),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(Icons.add, color: Colors.white, size: 30),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
                             )));
               },

@@ -114,7 +114,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     final catColor = _categoryColor(article.category);
 
     return Scaffold(
-      extendBody: true,
+      extendBody: false,
       backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
@@ -306,16 +306,16 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
         backgroundColor: const Color(0xFF1A56C4),
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
-        elevation: 4,
+        
         tooltip: 'Buka menu berita',
         child: const Icon(Icons.add, size: 26),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: Container(
+        
+        
         color: Colors.white,
-        elevation: 0,
+        
         child: SizedBox(
           height: 64,
           child: Row(

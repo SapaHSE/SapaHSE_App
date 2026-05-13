@@ -328,7 +328,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        extendBody: true,
+        extendBody: false,
         backgroundColor: const Color(0xFFF5F6FA),
         appBar: AppBar(
           title: _isSearching
@@ -353,7 +353,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   ),
                 ),
           backgroundColor: Colors.white,
-          elevation: 0,
+          
           centerTitle: false,
           leading: _isSearching
               ? IconButton(
@@ -443,16 +443,16 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           backgroundColor: const Color(0xFF1A56C4),
           foregroundColor: Colors.white,
           shape: const CircleBorder(),
-          elevation: 4,
+          
           tooltip: 'Buka menu user',
           child: const Icon(Icons.add, size: 26),
         ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        bottomNavigationBar: BottomAppBar(
-          shape: const CircularNotchedRectangle(),
-          notchMargin: 8,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        bottomNavigationBar: Container(
+          
+          
           color: Colors.white,
-          elevation: 8,
+          
           child: SizedBox(
             height: 60,
             child: Row(
@@ -744,7 +744,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            elevation: 0,
+            
             color: Colors.white,
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -1236,7 +1236,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     if (role == 'admin') avatarColor = Colors.orange;
 
     return Scaffold(
-      extendBody: true,
+      extendBody: false,
       backgroundColor: const Color(0xFFF8F9FE),
       appBar: AppBar(
         title: const Text(
@@ -1248,7 +1248,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           ),
         ),
         backgroundColor: Colors.white,
-        elevation: 0,
+        
         centerTitle: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
@@ -1544,17 +1544,17 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
               backgroundColor: const Color(0xFF1A56C4),
               foregroundColor: Colors.white,
               shape: const CircleBorder(),
-              elevation: 4,
+              
               tooltip: 'Buka menu detail user',
               child: const Icon(Icons.add, size: 26),
             )
           : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: Container(
+        
+        
         color: Colors.white,
-        elevation: 8,
+        
         child: SizedBox(
           height: 60,
           child: Row(
@@ -2003,7 +2003,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
           ),
         ),
         backgroundColor: Colors.white,
-        elevation: 0,
+        
         iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: SingleChildScrollView(

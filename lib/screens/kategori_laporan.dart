@@ -301,7 +301,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
+      extendBody: false,
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
         title: _isSearching 
@@ -319,7 +319,7 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
           : const Text('Kategori Laporan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        elevation: 0,
+        
         centerTitle: true,
         leading: _isSearching
           ? IconButton(
@@ -362,16 +362,16 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
         backgroundColor: _blue,
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
-        elevation: 4,
+        
         tooltip: 'Buka menu kategori',
         child: const Icon(Icons.add, size: 26),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: Container(
+        
+        
         color: Colors.white,
-        elevation: 8,
+        
         child: SizedBox(
           height: 64,
           child: Row(
@@ -810,7 +810,7 @@ class _SubcategoryFormScreenState extends State<_SubcategoryFormScreen> {
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        elevation: 0,
+        
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -926,7 +926,7 @@ class _SubcategoryFormScreenState extends State<_SubcategoryFormScreen> {
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 2,
+          
           shadowColor: _blue.withOpacity(0.4),
         ),
         child: _isLoading 

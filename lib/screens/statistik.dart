@@ -73,11 +73,11 @@ class _StatistikScreenState extends State<StatistikScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
+      extendBody: false,
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
+        
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
@@ -244,7 +244,7 @@ class _StatistikScreenState extends State<StatistikScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFBC02D),
                         foregroundColor: Colors.black87,
-                        elevation: 0,
+                        
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       child: const Text('Buka Onboarding', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
@@ -264,16 +264,16 @@ class _StatistikScreenState extends State<StatistikScreen> {
         backgroundColor: _blue,
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
-        elevation: 4,
+        
         tooltip: 'Buka menu statistik',
         child: const Icon(Icons.add, size: 26),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: Container(
+        
+        
         color: Colors.white,
-        elevation: 8,
+        
         child: SizedBox(
           height: 64,
           child: Row(

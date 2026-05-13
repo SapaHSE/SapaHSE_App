@@ -351,7 +351,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             backgroundColor: Colors.white,
             foregroundColor: Colors.black,
-            elevation: 0,
+            
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () => Navigator.pop(context),
@@ -370,57 +370,54 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     ],
                   ),
                 ),
-          floatingActionButtonAnimator:
-              FloatingActionButtonAnimator.noAnimation,
-          floatingActionButton: FloatingActionButton(
-            onPressed: _openFabMenu,
-            backgroundColor: const Color(0xFF1A56C4),
-            foregroundColor: Colors.white,
-            shape: const CircleBorder(),
-            elevation: 4,
-            tooltip: 'Buka menu profil',
-            child: const Icon(Icons.add, size: 26),
-          ),
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerDocked,
-          bottomNavigationBar: BottomAppBar(
-            shape: const CircularNotchedRectangle(),
-            notchMargin: 8,
+          bottomNavigationBar: Container(
             color: Colors.white,
-            elevation: 8,
-            child: SizedBox(
-              height: 60,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _ProfileNavItem(
-                      icon: Icons.home,
-                      label: 'Home',
-                      index: 0,
-                      currentIndex: 4,
-                      onTap: _onTabTapped),
-                  _ProfileNavItem(
-                      icon: Icons.article_outlined,
-                      label: 'News',
-                      index: 1,
-                      currentIndex: 4,
-                      onTap: _onTabTapped),
-                  const SizedBox(width: 48),
-                  _ProfileNavItem(
-                      icon: Icons.inbox_outlined,
-                      label: 'Inbox',
-                      index: 3,
-                      currentIndex: 4,
-                      onTap: _onTabTapped),
-                  _ProfileNavItem(
-                      icon: Icons.menu,
-                      label: 'Menu',
-                      index: 4,
-                      currentIndex: 4,
-                      onTap: _onTabTapped),
-                ],
+            
+            child: const SizedBox(height: 0), // Hide the native one but keep spacing if needed, actually we should use Stack.
+          ),
+        ),
+        // Custom Stack-based Bottom Navigation
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Stack(
+            
+            alignment: Alignment.bottomCenter,
+            children: [
+              Container(
+                height: 65,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _ProfileNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
+                    _ProfileNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
+                    const SizedBox(width: 56), // Space for FAB
+                    _ProfileNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
+                    _ProfileNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
+                  ],
+                ),
               ),
-            ),
+              Positioned(
+                top: -24,
+                child: GestureDetector(
+                  onTap: _openFabMenu,
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF1A56C4),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.add, color: Colors.white, size: 30),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         if (_isLoading) _buildLoadingOverlay(),
@@ -884,7 +881,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
-                            elevation: 0,
+                            
                           ),
                           child: const Text('SIMPAN PERUBAHAN',
                               style: TextStyle(fontWeight: FontWeight.bold)),
@@ -1301,7 +1298,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
+                      
                     ),
                     child: const Text('Simpan Information Medis',
                         style: TextStyle(fontWeight: FontWeight.bold)),
@@ -1615,7 +1612,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
+                    
                   ),
                   child: const Text('Simpan Lisensi',
                       style: TextStyle(fontWeight: FontWeight.bold)),
@@ -1896,7 +1893,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
+                    
                   ),
                   child: const Text('Simpan Sertifikat',
                       style: TextStyle(fontWeight: FontWeight.bold)),
@@ -3106,7 +3103,7 @@ class _DepartmentPickerSheetState extends State<_DepartmentPickerSheet> {
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
+                  
                 ),
                 child: const Text(
                   'Simpan',

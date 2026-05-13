@@ -33,7 +33,7 @@ class ViolationDetailScreen extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        elevation: 0,
+        
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -155,11 +155,11 @@ class ViolationDetailScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
+      bottomNavigationBar: Container(
+        
+        
         color: Colors.white,
-        elevation: 0,
+        
         child: SizedBox(
           height: 60,
           child: Row(
@@ -196,10 +196,10 @@ class ViolationDetailScreen extends StatelessWidget {
         backgroundColor: const Color(0xFF1A56C4),
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
-        elevation: 0,
+        
         child: const Icon(Icons.add, size: 30),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
