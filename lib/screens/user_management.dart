@@ -430,66 +430,85 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             ],
           ),
         ),
-        body: TabBarView(
+        body: Stack(
+          clipBehavior: Clip.none,
           children: [
-            _buildUserListTab(),
-            _buildApprovalTab(),
-            _buildRejectedHistoryTab(),
-          ],
-        ),
-        floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
-        floatingActionButton: FloatingActionButton(
-          onPressed: _openFabMenu,
-          backgroundColor: const Color(0xFF1A56C4),
-          foregroundColor: Colors.white,
-          shape: const CircleBorder(),
-          
-          tooltip: 'Buka menu user',
-          child: const Icon(Icons.add, size: 26),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        bottomNavigationBar: Container(
-          
-          
-          color: Colors.white,
-          
-          child: SizedBox(
-            height: 60,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _UserNavItem(
-                  icon: Icons.home,
-                  label: 'Home',
-                  index: 0,
-                  currentIndex: 4,
-                  onTap: _onTabTapped,
-                ),
-                _UserNavItem(
-                  icon: Icons.article_outlined,
-                  label: 'News',
-                  index: 1,
-                  currentIndex: 4,
-                  onTap: _onTabTapped,
-                ),
-                const SizedBox(width: 48),
-                _UserNavItem(
-                  icon: Icons.inbox_outlined,
-                  label: 'Inbox',
-                  index: 3,
-                  currentIndex: 4,
-                  onTap: _onTabTapped,
-                ),
-                _UserNavItem(
-                  icon: Icons.menu,
-                  label: 'Menu',
-                  index: 4,
-                  currentIndex: 4,
-                  onTap: _onTabTapped,
-                ),
-              ],
+            Positioned.fill(
+              child: TabBarView(
+                children: [
+                  _buildUserListTab(),
+                  _buildApprovalTab(),
+                  _buildRejectedHistoryTab(),
+                ],
+              ),
             ),
-          ),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                color: Colors.white,
+                child: SizedBox(
+                  height: 70,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _UserNavItem(
+                            icon: Icons.home,
+                            label: 'Home',
+                            index: 0,
+                            currentIndex: 4,
+                            onTap: _onTabTapped,
+                          ),
+                          _UserNavItem(
+                            icon: Icons.article_outlined,
+                            label: 'News',
+                            index: 1,
+                            currentIndex: 4,
+                            onTap: _onTabTapped,
+                          ),
+                          const SizedBox(width: 48),
+                          _UserNavItem(
+                            icon: Icons.inbox_outlined,
+                            label: 'Inbox',
+                            index: 3,
+                            currentIndex: 4,
+                            onTap: _onTabTapped,
+                          ),
+                          _UserNavItem(
+                            icon: Icons.menu,
+                            label: 'Menu',
+                            index: 4,
+                            currentIndex: 4,
+                            onTap: _onTabTapped,
+                          ),
+                        ],
+                      ),
+                      Positioned(
+                        top: -24,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: FloatingActionButton(
+                            onPressed: _openFabMenu,
+                            backgroundColor: const Color(0xFF1A56C4),
+                            foregroundColor: Colors.white,
+                            shape: const CircleBorder(),
+                            elevation: 0,
+                            tooltip: 'Buka menu user',
+                            child: const Icon(Icons.add, size: 26),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -551,7 +570,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                       itemCount: users.length,
                       itemBuilder: (context, index) {
                         final user = users[index];
@@ -721,7 +740,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       itemCount: _unapprovedUsers.length,
       itemBuilder: (context, index) {
         final user = _unapprovedUsers[index];
@@ -894,7 +913,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       itemCount: _rejectedUsers.length,
       itemBuilder: (context, index) {
         final log = _rejectedUsers[index];

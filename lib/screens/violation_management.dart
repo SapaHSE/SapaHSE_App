@@ -271,116 +271,134 @@ class _ViolationManagementScreenState extends State<ViolationManagementScreen> {
         
         centerTitle: true,
       ),
-      body: Column(
+      body: Stack(
+        clipBehavior: Clip.none,
         children: [
-          if (_isSelectionMode)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: Colors.red.shade50,
-              child: Row(
-                children: [
-                  Text('${_selectedIds.length} dipilih',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.red)),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () => setState(() {
-                      _isSelectionMode = false;
-                      _selectedIds.clear();
-                    }),
-                    child: const Text('Batal'),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: _selectedIds.isEmpty ? null : _deleteSelected,
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white),
-                    child: const Text('Hapus'),
-                  ),
+          Positioned.fill(
+            child: Column(
+              children: [
+                if (_isSelectionMode)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    color: Colors.red.shade50,
+                    child: Row(
+                      children: [
+                        Text('${_selectedIds.length} dipilih',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, color: Colors.red)),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: () => setState(() {
+                            _isSelectionMode = false;
+                            _selectedIds.clear();
+                          }),
+                          child: const Text('Batal'),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: _selectedIds.isEmpty ? null : _deleteSelected,
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white),
+                          child: const Text('Hapus'),
+                        ),
+                      ],
+                    ),
+                  )
+                else ...[
+                  _buildSearchBar(),
+                  _buildFilterRow(),
                 ],
-              ),
-            )
-          else ...[
-            _buildSearchBar(),
-            _buildFilterRow(),
-          ],
-          Expanded(
-            child: _isLoading && _violations.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null && _violations.isEmpty
-                    ? Center(child: Text(_error!))
-                    : RefreshIndicator(
-                        onRefresh: () => _fetchViolations(refresh: true),
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _violations.length +
-                              (_currentPage < _lastPage ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index == _violations.length) {
-                              _currentPage++;
-                              _fetchViolations();
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            }
-                            return _buildViolationCard(_violations[index]);
-                          },
+                Expanded(
+                  child: _isLoading && _violations.isEmpty
+                      ? const Center(child: CircularProgressIndicator())
+                      : _error != null && _violations.isEmpty
+                          ? Center(child: Text(_error!))
+                          : RefreshIndicator(
+                              onRefresh: () => _fetchViolations(refresh: true),
+                              child: ListView.builder(
+                                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                                itemCount: _violations.length +
+                                    (_currentPage < _lastPage ? 1 : 0),
+                                itemBuilder: (context, index) {
+                                  if (index == _violations.length) {
+                                    _currentPage++;
+                                    _fetchViolations();
+                                    return const Center(
+                                        child: CircularProgressIndicator());
+                                  }
+                                  return _buildViolationCard(_violations[index]);
+                                },
+                              ),
+                            ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              color: Colors.white,
+              child: SizedBox(
+                height: 70,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _NavItem(
+                            icon: Icons.home,
+                            label: 'Home',
+                            index: 0,
+                            currentIndex: 4,
+                            onTap: _onTabTapped),
+                        _NavItem(
+                            icon: Icons.article_outlined,
+                            label: 'News',
+                            index: 1,
+                            currentIndex: 4,
+                            onTap: _onTabTapped),
+                        const SizedBox(width: 48),
+                        _NavItem(
+                            icon: Icons.inbox_outlined,
+                            label: 'Inbox',
+                            index: 3,
+                            currentIndex: 4,
+                            onTap: _onTabTapped),
+                        _NavItem(
+                            icon: Icons.menu,
+                            label: 'Menu',
+                            index: 4,
+                            currentIndex: 4,
+                            onTap: _onTabTapped),
+                      ],
+                    ),
+                    if (_hasFullAccess)
+                      Positioned(
+                        top: -24,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: FloatingActionButton(
+                            onPressed: _openFabMenu,
+                            backgroundColor: const Color(0xFF1A56C4),
+                            foregroundColor: Colors.white,
+                            shape: const CircleBorder(),
+                            elevation: 0,
+                            tooltip: 'Buka menu pelanggaran',
+                            child: const Icon(Icons.add, size: 26),
+                          ),
                         ),
                       ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
-      ),
-      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
-      floatingActionButton: _hasFullAccess
-          ? FloatingActionButton(
-              onPressed: _openFabMenu,
-              backgroundColor: const Color(0xFF1A56C4),
-              foregroundColor: Colors.white,
-              shape: const CircleBorder(),
-              
-              tooltip: 'Buka menu pelanggaran',
-              child: const Icon(Icons.add, size: 26),
-            )
-          : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      bottomNavigationBar: Container(
-        
-        
-        color: Colors.white,
-        
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                  icon: Icons.home,
-                  label: 'Home',
-                  index: 0,
-                  currentIndex: 4,
-                  onTap: _onTabTapped),
-              _NavItem(
-                  icon: Icons.article_outlined,
-                  label: 'News',
-                  index: 1,
-                  currentIndex: 4,
-                  onTap: _onTabTapped),
-              const SizedBox(width: 48),
-              _NavItem(
-                  icon: Icons.inbox_outlined,
-                  label: 'Inbox',
-                  index: 3,
-                  currentIndex: 4,
-                  onTap: _onTabTapped),
-              _NavItem(
-                  icon: Icons.menu,
-                  label: 'Menu',
-                  index: 4,
-                  currentIndex: 4,
-                  onTap: _onTabTapped),
-            ],
-          ),
-        ),
       ),
     );
   }

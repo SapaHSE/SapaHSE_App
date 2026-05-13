@@ -197,87 +197,106 @@ class _DepartmentManagementScreenState extends State<DepartmentManagementScreen>
         
         centerTitle: true,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(_error!, style: const TextStyle(color: Colors.red)),
-                    const SizedBox(height: 16),
-                    ElevatedButton(onPressed: _loadInitialData, child: const Text('Coba Lagi')),
-                  ],
-                ))
-              : RefreshIndicator(
-                  onRefresh: _loadInitialData,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _departments.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final dept = _departments[index];
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          leading: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(color: _blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                            child: const Icon(Icons.corporate_fare, color: _blue, size: 20),
-                          ),
-                          title: Text(dept.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          trailing: canEdit ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20),
-                                onPressed: () => _showForm(department: dept),
+      body: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? Center(child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_error!, style: const TextStyle(color: Colors.red)),
+                          const SizedBox(height: 16),
+                          ElevatedButton(onPressed: _loadInitialData, child: const Text('Coba Lagi')),
+                        ],
+                      ))
+                    : RefreshIndicator(
+                        onRefresh: _loadInitialData,
+                        child: ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                          itemCount: _departments.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final dept = _departments[index];
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                                onPressed: () => _confirmDelete(dept),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                leading: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(color: _blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                                  child: const Icon(Icons.corporate_fare, color: _blue, size: 20),
+                                ),
+                                title: Text(dept.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                trailing: canEdit ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20),
+                                      onPressed: () => _showForm(department: dept),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                      onPressed: () => _confirmDelete(dept),
+                                    ),
+                                  ],
+                                ) : null,
                               ),
-                            ],
-                          ) : null,
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
-                ),
-      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openFabMenu,
-        backgroundColor: _blue,
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        
-        tooltip: 'Buka menu departemen',
-        child: const Icon(Icons.add, size: 26),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      bottomNavigationBar: Container(
-        
-        
-        color: Colors.white,
-        
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _DeptNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
-              _DeptNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
-              const SizedBox(width: 48),
-              _DeptNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
-              _DeptNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
-            ],
+                      ),
           ),
-        ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              color: Colors.white,
+              child: SizedBox(
+                height: 70,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _DeptNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
+                        _DeptNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
+                        const SizedBox(width: 48),
+                        _DeptNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
+                        _DeptNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
+                      ],
+                    ),
+                    Positioned(
+                      top: -24,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: FloatingActionButton(
+                          onPressed: _openFabMenu,
+                          backgroundColor: _blue,
+                          foregroundColor: Colors.white,
+                          shape: const CircleBorder(),
+                          elevation: 0,
+                          tooltip: 'Buka menu departemen',
+                          child: const Icon(Icons.add, size: 26),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

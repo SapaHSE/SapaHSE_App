@@ -351,40 +351,59 @@ class _KategoriLaporanScreenState extends State<KategoriLaporanScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _buildError()
-              : _buildMainListTab(),
-      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _isLoading ? null : () => _openFabMenu(),
-        backgroundColor: _blue,
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        
-        tooltip: 'Buka menu kategori',
-        child: const Icon(Icons.add, size: 26),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      bottomNavigationBar: Container(
-        
-        
-        color: Colors.white,
-        
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _KategoriNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
-              _KategoriNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
-              const SizedBox(width: 48),
-              _KategoriNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
-              _KategoriNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
-            ],
+      body: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? _buildError()
+                    : _buildMainListTab(),
           ),
-        ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              color: Colors.white,
+              child: SizedBox(
+                height: 70,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _KategoriNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
+                        _KategoriNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
+                        const SizedBox(width: 48),
+                        _KategoriNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
+                        _KategoriNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
+                      ],
+                    ),
+                    Positioned(
+                      top: -24,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: FloatingActionButton(
+                          onPressed: _isLoading ? null : () => _openFabMenu(),
+                          backgroundColor: _blue,
+                          foregroundColor: Colors.white,
+                          shape: const CircleBorder(),
+                          elevation: 0,
+                          tooltip: 'Buka menu kategori',
+                          child: const Icon(Icons.add, size: 26),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
