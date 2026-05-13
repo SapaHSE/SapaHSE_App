@@ -8,6 +8,7 @@ import 'package:sapahse/services/department_service.dart';
 import 'package:sapahse/models/department_model.dart';
 import 'package:sapahse/main.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:sapahse/services/company_service.dart';
 import 'license_detail_screen.dart';
 import 'violation_detail_screen.dart';
 import 'certification_detail_screen.dart';
@@ -26,6 +27,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   bool _isLoading = true;
   String _loadingMessage = 'Memuat Profil...';
   ProfileData? _profileData;
+  List<String> _ownerList = [];
+  List<String> _kontraktorList = [];
+  List<String> _subkontraktorList = [];
 
   // Persistent State for License Form
   final TextEditingController _licenseNameController = TextEditingController();
@@ -59,6 +63,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _fetchCompanyData();
     if (widget.initialAction == 'add_license') {
       _selectedSubTab = 1;
     } else if (widget.initialAction == 'add_certification') {
@@ -94,6 +99,26 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         }
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _fetchCompanyData() async {
+    try {
+      final owners =
+          await CompanyService.getCompanies(category: 'owner', active: true);
+      final contractors = await CompanyService.getCompanies(
+          category: 'kontraktor', active: true);
+      final subContractors = await CompanyService.getCompanies(
+          category: 'subkontraktor', active: true);
+      if (mounted) {
+        setState(() {
+          _ownerList = owners.map((e) => e.name).toList();
+          _kontraktorList = contractors.map((e) => e.name).toList();
+          _subkontraktorList = subContractors.map((e) => e.name).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching companies in Profile: $e');
     }
   }
 
@@ -592,6 +617,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     final deptCtrl = TextEditingController(text: _profileData?.department);
     final jobCtrl = TextEditingController(text: _profileData?.position);
     final addressCtrl = TextEditingController(text: _profileData?.alamat);
+    
+    String localTipeAfiliasi = _profileData?.tipeAfiliasi ?? 'Owner';
+    if (localTipeAfiliasi == 'Sub-Kontraktor') localTipeAfiliasi = 'Sub-Kont.';
+    
+    String? localSelectedPerusahaan = _profileData?.company;
+    String? localSelectedPerusahaanKontraktor = _profileData?.perusahaanKontraktor;
+    String? localSelectedSubKontraktor = _profileData?.subKontraktor;
+    
     XFile? localImageFile;
 
     showModalBottomSheet(
@@ -727,6 +760,41 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                             const SizedBox(height: 16),
                             _buildSheetField('Alamat', addressCtrl,
                                 maxLines: 2),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Tipe Afiliasi *',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildAfiliasiButtons(localTipeAfiliasi, (val) {
+                              setModalState(() => localTipeAfiliasi = val);
+                            }),
+                            const SizedBox(height: 16),
+                            _buildDropdownField(
+                              'Perusahaan Owner *',
+                              localSelectedPerusahaan,
+                              _ownerList,
+                              (v) => setModalState(() => localSelectedPerusahaan = v),
+                              required: true,
+                            ),
+                            if (localTipeAfiliasi == 'Kontraktor' || localTipeAfiliasi == 'Sub-Kont.') ...[
+                              const SizedBox(height: 16),
+                              _buildDropdownField(
+                                'Perusahaan Kontraktor',
+                                localSelectedPerusahaanKontraktor,
+                                _kontraktorList,
+                                (v) => setModalState(() => localSelectedPerusahaanKontraktor = v),
+                              ),
+                            ],
+                            if (localTipeAfiliasi == 'Sub-Kont.') ...[
+                              const SizedBox(height: 16),
+                              _buildDropdownField(
+                                'Sub-Kontraktor',
+                                localSelectedSubKontraktor,
+                                _subkontraktorList,
+                                (v) => setModalState(() => localSelectedSubKontraktor = v),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -751,6 +819,10 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                               department: deptCtrl.text,
                               position: jobCtrl.text,
                               alamat: addressCtrl.text,
+                              tipeAfiliasi: localTipeAfiliasi == 'Sub-Kont.' ? 'Sub-Kontraktor' : localTipeAfiliasi,
+                              company: localSelectedPerusahaan,
+                              perusahaanKontraktor: localSelectedPerusahaanKontraktor,
+                              subKontraktor: localSelectedSubKontraktor,
                               imageFile: localImageFile,
                             );
 
@@ -850,6 +922,90 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           });
         },
       ),
+    );
+  }
+
+  Widget _buildAfiliasiButtons(
+      String selectedType, Function(String) onSelected) {
+    final types = ['Owner', 'Kontraktor', 'Sub-Kont.'];
+    return Row(
+      children: types.map((type) {
+        final isSelected = selectedType == type;
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: GestureDetector(
+              onTap: () => onSelected(type),
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF1A56C4) : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected
+                        ? const Color(0xFF1A56C4)
+                        : Colors.grey.shade300,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (isSelected)
+                      const Icon(Icons.check, color: Colors.white, size: 16),
+                    if (isSelected) const SizedBox(width: 4),
+                    Text(
+                      type,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.black87,
+                        fontSize: 12,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildDropdownField(
+      String label, String? value, List<String> items, Function(String?) onChanged,
+      {bool required = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label + (required ? ' *' : ''),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: items.contains(value) ? value : null,
+          decoration: InputDecoration(
+            fillColor: Colors.grey.shade50,
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          items: items
+              .map((e) => DropdownMenuItem(
+                  value: e, child: Text(e, style: const TextStyle(fontSize: 13))))
+              .toList(),
+          onChanged: onChanged,
+        ),
+      ],
     );
   }
 
@@ -1785,11 +1941,49 @@ class _BiodataContent extends StatelessWidget {
             _buildRow(context, 'Phone', data?.phoneNumber ?? '-', onTap: () {
               final phone = data?.phoneNumber ?? "";
               if (phone.isNotEmpty && phone != '-') {
-                String waNumber = phone;
-                if (waNumber.startsWith('08')) {
-                  waNumber = '628${waNumber.substring(2)}';
-                }
-                _launchUrl('https://wa.me/$waNumber');
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Colors.white,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  builder: (context) => SafeArea(
+                    child: Wrap(
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Text(
+                            'Pilih Hubungi Lewat',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.phone, color: Color(0xFF1A56C4)),
+                          title: const Text('Aplikasi Telepon'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _launchUrl('tel:$phone');
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.message, color: Colors.green),
+                          title: const Text('WhatsApp'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            String waNumber = phone.replaceAll(RegExp(r'\D'), '');
+                            if (waNumber.startsWith('08')) {
+                              waNumber = '628${waNumber.substring(2)}';
+                            } else if (waNumber.startsWith('8')) {
+                               waNumber = '628${waNumber.substring(1)}';
+                            }
+                            _launchUrl('https://wa.me/$waNumber');
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                );
               }
             }),
             _buildRow(context, 'Alamat', data?.alamat ?? '-',

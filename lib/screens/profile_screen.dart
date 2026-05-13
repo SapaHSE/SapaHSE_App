@@ -217,7 +217,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               backgroundColor: Colors.white,
                               body: _buildWorkspaceTab(),
-                              floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
+                              floatingActionButtonAnimator:
+                                  FloatingActionButtonAnimator.noAnimation,
                               floatingActionButton: FloatingActionButton(
                                 onPressed: _openFabMenu,
                                 backgroundColor: const Color(0xFF1A56C4),
@@ -527,7 +528,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               icon: Icons.gavel_outlined,
               iconBg: const Color(0xFFFFEBEE),
               iconColor: const Color(0xFFD32F2F),
-              title: 'Pelanggaran User',
+              title: 'User Violations',
               subtitle: 'Catat & kelola pelanggaran karyawan',
               onTap: () => Navigator.push(
                 context,
@@ -573,7 +574,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               icon: Icons.folder_special,
               iconBg: const Color(0xFFFBE9E7),
               iconColor: const Color(0xFFD84315),
-              title: 'Kategori Laporan',
+              title: 'Category & Subcategory Report',
               subtitle: 'Daftar TTA, KTA & subkategori',
               onTap: () {
                 Navigator.push(

@@ -598,46 +598,59 @@ class _InboxScreenState extends State<InboxScreen>
                     unselectedLabelColor: Colors.black54,
                     indicatorColor: const Color(0xFF1565C0),
                     indicatorWeight: 2.5,
-                    indicatorSize: TabBarIndicatorSize.tab,
+                    indicatorSize: TabBarIndicatorSize.label,
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 8),
                     labelStyle: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 13), // Slightly smaller font for safety
+                        fontWeight: FontWeight.w600, fontSize: 13),
                     unselectedLabelStyle: const TextStyle(
                         fontWeight: FontWeight.normal, fontSize: 13),
                     tabs: [
                       Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('Pengumuman'),
-                            if (_unreadAnnouncements > 0) ...[
-                              const SizedBox(width: 6),
-                              _TabBadge(count: _unreadAnnouncements),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('Pengumuman'),
+                              if (_unreadAnnouncements > 0) ...[
+                                const SizedBox(width: 6),
+                                _TabBadge(count: _unreadAnnouncements),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
                       Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('Tugas'),
-                            if (_unreadReports > 0) ...[
-                              const SizedBox(width: 6),
-                              _TabBadge(count: _unreadReports),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('Tugas'),
+                              if (_unreadReports > 0) ...[
+                                const SizedBox(width: 6),
+                                _TabBadge(count: _unreadReports),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
                       Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('MyPost'),
-                            if (_unreadMyReports > 0) ...[
-                              const SizedBox(width: 6),
-                              _TabBadge(count: _unreadMyReports),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('MyPost'),
+                              if (_unreadMyReports > 0) ...[
+                                const SizedBox(width: 6),
+                                _TabBadge(count: _unreadMyReports),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
                     ],
@@ -766,12 +779,14 @@ class _InboxScreenState extends State<InboxScreen>
                     children: [
                       Icon(Icons.warning_amber_rounded, size: 18, color: Colors.orange.shade900),
                       const SizedBox(width: 8),
-                      Text(
-                        '$urgentCount Tugas Butuh Tindakan Segera',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange.shade900,
+                      Expanded(
+                        child: Text(
+                          '$urgentCount Tugas Butuh Tindakan Segera',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange.shade900,
+                          ),
                         ),
                       ),
                     ],

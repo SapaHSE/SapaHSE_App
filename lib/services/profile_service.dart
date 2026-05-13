@@ -87,6 +87,10 @@ class ProfileService {
     String? position,
     String? department,
     String? alamat,
+    String? tipeAfiliasi,
+    String? company,
+    String? perusahaanKontraktor,
+    String? subKontraktor,
     XFile? imageFile,
   }) async {
     final fields = <String, dynamic>{};
@@ -97,6 +101,10 @@ class ProfileService {
     if (position != null) fields['position'] = position;
     if (department != null) fields['department'] = department;
     if (alamat != null) fields['alamat'] = alamat;
+    if (tipeAfiliasi != null) fields['tipe_afiliasi'] = tipeAfiliasi;
+    if (company != null) fields['company'] = company;
+    if (perusahaanKontraktor != null) fields['perusahaan_kontraktor'] = perusahaanKontraktor;
+    if (subKontraktor != null) fields['sub_kontraktor'] = subKontraktor;
 
     final files = <http.MultipartFile>[];
     if (imageFile != null) {
