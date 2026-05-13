@@ -245,8 +245,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       if (_selectedFilter == 'Inactive') return !isActive;
       if (_selectedFilter == 'User') return role == 'user' && isActive;
       if (_selectedFilter == 'Admin') return role == 'admin' && isActive;
-      if (_selectedFilter == 'Superadmin')
+      if (_selectedFilter == 'Superadmin') {
         return role == 'superadmin' && isActive;
+      }
 
       return true; // Semua
     }).toList();
@@ -522,9 +523,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     selectedColor: _blue,
                     labelStyle: TextStyle(
                       color: isSelected ? Colors.white : Colors.grey.shade700,
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
                       fontSize: 13,
                     ),
                     backgroundColor: Colors.white,
@@ -544,140 +544,144 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : users.isEmpty
-              ? Center(
-                  child: Text(
-                    'Tidak ada pengguna ditemukan.',
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: users.length,
-                  itemBuilder: (context, index) {
-                    final user = users[index];
-                    final isActive =
-                        user['is_active'] == 1 || user['is_active'] == true;
-                    final role = (user['role'] ?? 'user').toString();
-                    final name = user['full_name'] ?? 'Unknown';
-                    final initials = name.isNotEmpty
-                        ? name
-                              .trim()
-                              .split(' ')
-                              .map((e) => e.isNotEmpty ? e[0] : '')
-                              .take(2)
-                              .join()
-                              .toUpperCase()
-                        : '?';
-                    final dept = user['department'] ?? 'No Dept';
-                    final jabatan = user['job_title'] ?? 'Staff';
+                  ? Center(
+                      child: Text(
+                        'Tidak ada pengguna ditemukan.',
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: users.length,
+                      itemBuilder: (context, index) {
+                        final user = users[index];
+                        final isActive =
+                            user['is_active'] == 1 || user['is_active'] == true;
+                        final role = (user['role'] ?? 'user').toString();
+                        final name = user['full_name'] ?? 'Unknown';
+                        final initials = name.isNotEmpty
+                            ? name
+                                .trim()
+                                .split(' ')
+                                .map((e) => e.isNotEmpty ? e[0] : '')
+                                .take(2)
+                                .join()
+                                .toUpperCase()
+                            : '?';
+                        final dept = user['department'] ?? 'No Dept';
+                        final jabatan = user['job_title'] ?? 'Staff';
 
-                    Color avatarColor = Colors.blue;
-                    if (role == 'superadmin') avatarColor = Colors.purple;
-                    if (role == 'admin') avatarColor = Colors.orange;
-                    if (!isActive) avatarColor = Colors.grey;
+                        Color avatarColor = Colors.blue;
+                        if (role == 'superadmin') avatarColor = Colors.purple;
+                        if (role == 'admin') avatarColor = Colors.orange;
+                        if (!isActive) avatarColor = Colors.grey;
 
-                    return GestureDetector(
-                      onTap: () => _navigateToUserDetail(user),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.02),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor: avatarColor,
-                              child: Text(
-                                initials,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                        return GestureDetector(
+                          onTap: () => _navigateToUserDetail(user),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.02),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '$jabatan • $dept',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade500,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                if (!isActive)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade200,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Text(
-                                      'Inactive',
-                                      style: TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: avatarColor.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      role.toUpperCase(),
-                                      style: TextStyle(
-                                        color: avatarColor,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: avatarColor,
+                                  child: Text(
+                                    initials,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '$jabatan • $dept',
+                                        style: TextStyle(
+                                          color: Colors.grey.shade500,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    if (!isActive)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade200,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: const Text(
+                                          'Inactive',
+                                          style: TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: avatarColor.withValues(
+                                              alpha: 0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          role.toUpperCase(),
+                                          style: TextStyle(
+                                            color: avatarColor,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
         ),
         if (!_isLoading)
           Padding(
@@ -724,12 +728,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         final name = user['full_name'] ?? 'Unknown';
         final initials = name.isNotEmpty
             ? name
-                  .trim()
-                  .split(' ')
-                  .map((e) => e.isNotEmpty ? e[0] : '')
-                  .take(2)
-                  .join()
-                  .toUpperCase()
+                .trim()
+                .split(' ')
+                .map((e) => e.isNotEmpty ? e[0] : '')
+                .take(2)
+                .join()
+                .toUpperCase()
             : '?';
         final email = user['personal_email'] ?? user['email'] ?? '-';
 
@@ -870,8 +874,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   }
 
   Widget _buildRejectedHistoryTab() {
-    if (_isLoadingRejected)
+    if (_isLoadingRejected) {
       return const Center(child: CircularProgressIndicator());
+    }
     if (_rejectedUsers.isEmpty) {
       return Center(
         child: Column(
@@ -1213,18 +1218,17 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     final name = widget.user['full_name'] ?? 'Unknown';
     final initials = name.isNotEmpty
         ? name
-              .trim()
-              .split(' ')
-              .map((e) => e.isNotEmpty ? e[0] : '')
-              .take(2)
-              .join()
-              .toUpperCase()
+            .trim()
+            .split(' ')
+            .map((e) => e.isNotEmpty ? e[0] : '')
+            .take(2)
+            .join()
+            .toUpperCase()
         : '?';
     final dept = widget.user['department'] ?? 'No Dept';
     final jabatan = widget.user['job_title'] ?? 'Staff';
     final role = (widget.user['role'] ?? 'user').toString().toLowerCase();
-    final isLogEntry =
-        widget.user['registration_status'] == 'rejected' ||
+    final isLogEntry = widget.user['registration_status'] == 'rejected' ||
         widget.user.containsKey('rejected_at');
 
     Color avatarColor = Colors.green;
@@ -1877,8 +1881,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
       text: widget.userToEdit?['employee_id'] ?? '',
     );
     _emailCtrl = TextEditingController(
-      text:
-          widget.userToEdit?['personal_email'] ??
+      text: widget.userToEdit?['personal_email'] ??
           widget.userToEdit?['email'] ??
           '',
     );
@@ -1889,8 +1892,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
       text: widget.userToEdit?['phone_number'] ?? '',
     );
     _jabatanCtrl = TextEditingController(
-      text:
-          widget.userToEdit?['position'] ??
+      text: widget.userToEdit?['position'] ??
           widget.userToEdit?['job_title'] ??
           '',
     );
@@ -1936,12 +1938,10 @@ class _UserFormScreenState extends State<UserFormScreen> {
       'department': _selectedDept ?? '',
       'position': _jabatanCtrl.text.trim(),
       'company': _selectedPerusahaan ?? '',
-      'tipe_afiliasi': _tipeAfiliasi == 'Sub-Kont.'
-          ? 'Sub-Kontraktor'
-          : _tipeAfiliasi,
+      'tipe_afiliasi':
+          _tipeAfiliasi == 'Sub-Kont.' ? 'Sub-Kontraktor' : _tipeAfiliasi,
       'perusahaan_kontraktor': _selectedPerusahaanKontraktor,
       'sub_kontraktor': _selectedSubKontraktor,
-
       'role': _role,
     };
 
@@ -2040,9 +2040,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
                   _passwordCtrl,
                   obscure: true,
                 ),
-
               const Divider(height: 32),
-
               _buildAfiliasiRow(),
               _buildDropdown(
                 'Perusahaan Owner',
@@ -2051,7 +2049,6 @@ class _UserFormScreenState extends State<UserFormScreen> {
                 (v) => setState(() => _selectedPerusahaan = v),
                 required: true,
               ),
-
               if (_tipeAfiliasi == 'Kontraktor' || _tipeAfiliasi == 'Sub-Kont.')
                 _buildDropdown(
                   'Perusahaan Kontraktor',
@@ -2059,7 +2056,6 @@ class _UserFormScreenState extends State<UserFormScreen> {
                   _kontraktorList,
                   (v) => setState(() => _selectedPerusahaanKontraktor = v),
                 ),
-
               if (_tipeAfiliasi == 'Sub-Kont.')
                 _buildDropdown(
                   'Sub-Kontraktor',
@@ -2067,9 +2063,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
                   _subkontraktorList,
                   (v) => setState(() => _selectedSubKontraktor = v),
                 ),
-
               const Divider(height: 32),
-
               _buildDropdown(
                 'Departemen',
                 _selectedDept,
@@ -2078,7 +2072,6 @@ class _UserFormScreenState extends State<UserFormScreen> {
                 required: true,
               ),
               _buildField('Jabatan / Posisi', _jabatanCtrl, required: true),
-
               const SizedBox(height: 16),
               const Text(
                 'Role Akses',
@@ -2183,8 +2176,9 @@ class _UserFormScreenState extends State<UserFormScreen> {
               ),
             ),
             validator: (v) {
-              if (required && (v == null || v.trim().isEmpty))
+              if (required && (v == null || v.trim().isEmpty)) {
                 return 'Wajib diisi';
+              }
               return null;
             },
           ),
@@ -2347,46 +2341,46 @@ class _UserMenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: iconBgColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: iconColor, size: 24),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20),
+            ],
           ),
-          Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 // ── FAB BOTTOM SHEET ──────────────────────────────────────────────────────────
