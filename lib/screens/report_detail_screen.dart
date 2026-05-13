@@ -479,68 +479,30 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
 
     return Scaffold(
       backgroundColor: widget.isDialog ? Colors.white : const Color(0xFFF0F0F0),
-      extendBody: !widget.isDialog,
+      extendBody: false,
       floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
       floatingActionButtonLocation: widget.isDialog
           ? FloatingActionButtonLocation.centerFloat
-          : FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'report_detail_fab',
-        onPressed: _report.status != ReportStatus.closed
-            ? _showUpdateStatusModal
-            : null,
-        backgroundColor: _report.status != ReportStatus.closed
-            ? const Color(0xFF1A56C4)
-            : Colors.grey.shade400,
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        elevation: _report.status != ReportStatus.closed ? 4 : 0,
-        tooltip: _report.status != ReportStatus.closed
-            ? 'Update status laporan'
-            : 'Anda tidak berwenang mengubah status laporan ini',
-        child: const Icon(Icons.edit_outlined, size: 26),
-      ),
-      bottomNavigationBar: widget.isDialog
-          ? null
-          : BottomAppBar(
-              shape: const CircularNotchedRectangle(),
-              notchMargin: 8,
-              color: Colors.white,
-              elevation: 8,
-              child: SizedBox(
-                height: 60,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _ReportDetailNavItem(
-                        icon: Icons.home,
-                        label: 'Home',
-                        index: 0,
-                        currentIndex: -1,
-                        onTap: _onTabTapped),
-                    _ReportDetailNavItem(
-                        icon: Icons.article_outlined,
-                        label: 'News',
-                        index: 1,
-                        currentIndex: -1,
-                        onTap: _onTabTapped),
-                    const SizedBox(width: 48),
-                    _ReportDetailNavItem(
-                        icon: Icons.inbox_outlined,
-                        label: 'Inbox',
-                        index: 3,
-                        currentIndex: -1,
-                        onTap: _onTabTapped),
-                    _ReportDetailNavItem(
-                        icon: Icons.menu,
-                        label: 'Menu',
-                        index: 4,
-                        currentIndex: -1,
-                        onTap: _onTabTapped),
-                  ],
-                ),
-              ),
-            ),
+          : null,
+      floatingActionButton: widget.isDialog
+          ? FloatingActionButton(
+              heroTag: 'report_detail_fab',
+              onPressed: _report.status != ReportStatus.closed
+                  ? _showUpdateStatusModal
+                  : null,
+              backgroundColor: _report.status != ReportStatus.closed
+                  ? const Color(0xFF1A56C4)
+                  : Colors.grey.shade400,
+              foregroundColor: Colors.white,
+              shape: const CircleBorder(),
+              elevation: 0,
+              tooltip: _report.status != ReportStatus.closed
+                  ? 'Update status laporan'
+                  : 'Anda tidak berwenang mengubah status laporan ini',
+              child: const Icon(Icons.edit_outlined, size: 26),
+            )
+          : null,
+      bottomNavigationBar: null,
       appBar: widget.isDialog
           ? null
           : AppBar(
@@ -1212,6 +1174,75 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
               ),
             ),
           ),
+          
+          if (!widget.isDialog)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.bottomCenter,
+                children: [
+                  Container(
+                    height: 65,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _ReportDetailNavItem(
+                            icon: Icons.home,
+                            label: 'Home',
+                            index: 0,
+                            currentIndex: -1,
+                            onTap: _onTabTapped),
+                        _ReportDetailNavItem(
+                            icon: Icons.article_outlined,
+                            label: 'News',
+                            index: 1,
+                            currentIndex: -1,
+                            onTap: _onTabTapped),
+                        const SizedBox(width: 56), // Space for FAB
+                        _ReportDetailNavItem(
+                            icon: Icons.inbox_outlined,
+                            label: 'Inbox',
+                            index: 3,
+                            currentIndex: -1,
+                            onTap: _onTabTapped),
+                        _ReportDetailNavItem(
+                            icon: Icons.menu,
+                            label: 'Menu',
+                            index: 4,
+                            currentIndex: -1,
+                            onTap: _onTabTapped),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    top: -24,
+                    child: GestureDetector(
+                      onTap: _report.status != ReportStatus.closed
+                          ? _showUpdateStatusModal
+                          : null,
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: _report.status != ReportStatus.closed
+                              ? const Color(0xFF1A56C4)
+                              : Colors.grey.shade400,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.edit_outlined, color: Colors.white, size: 28),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
