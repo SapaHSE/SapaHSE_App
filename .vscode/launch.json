@@ -8,21 +8,21 @@
             "name": "sapahse",
             "request": "launch",
             "type": "dart",
-            "cwd": "D:\\Kuliah\\Semester 6\\Magang\\SapaHSE.apk\\SapaHSE"
+            "cwd": "D:\\Kuliah\\Semester 6\\Magang\\SapaHSE.apk\\sapahse"
         },
         {
             "name": "sapahse (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile",
-            "cwd": "D:\\Kuliah\\Semester 6\\Magang\\SapaHSE.apk\\SapaHSE"
+            "cwd": "D:\\Kuliah\\Semester 6\\Magang\\SapaHSE.apk\\sapahse"
         },
         {
             "name": "sapahse (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release",
-            "cwd": "D:\\Kuliah\\Semester 6\\Magang\\SapaHSE.apk\\SapaHSE"
+            "cwd": "D:\\Kuliah\\Semester 6\\Magang\\SapaHSE.apk\\sapahse"
         }
     ]
 }

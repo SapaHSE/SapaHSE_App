@@ -1228,15 +1228,15 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                           ? _showUpdateStatusModal
                           : null,
                       child: Container(
-                        width: 56,
-                        height: 56,
+                        width: 60,
+                        height: 60,
                         decoration: BoxDecoration(
                           color: _report.status != ReportStatus.closed
                               ? const Color(0xFF1A56C4)
                               : Colors.grey.shade400,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.edit_outlined, color: Colors.white, size: 28),
+                        child: const Icon(Icons.edit_outlined, color: Colors.white, size: 30),
                       ),
                     ),
                   ),

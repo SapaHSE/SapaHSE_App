@@ -276,140 +276,160 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionHeader('PREFERENSI APLIKASI'),
-            _buildCard([
-              _buildDropdownRow(
-                icon: Icons.language,
-                iconColor: const Color(0xFF1976D2),
-                label: 'Bahasa',
-                subtitle: 'Bahasa tampilan aplikasi',
-                value: _selectedLanguage,
-                items: ['Indonesia', 'English'],
-                onChanged: (v) => setState(() => _selectedLanguage = v!),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionHeader('PREFERENSI APLIKASI'),
+                  _buildCard([
+                    _buildDropdownRow(
+                      icon: Icons.language,
+                      iconColor: const Color(0xFF1976D2),
+                      label: 'Bahasa',
+                      subtitle: 'Bahasa tampilan aplikasi',
+                      value: _selectedLanguage,
+                      items: ['Indonesia', 'English'],
+                      onChanged: (v) => setState(() => _selectedLanguage = v!),
+                    ),
+                    _buildDivider(),
+                    _buildSwitchRow(
+                      icon: Icons.dark_mode,
+                      iconColor: Colors.black,
+                      label: 'Tema Gelap',
+                      value: _isDarkMode,
+                      onChanged: (v) => setState(() => _isDarkMode = v),
+                    ),
+                    _buildDivider(),
+                    _buildSwitchRow(
+                      icon: Icons.notifications_active,
+                      iconColor: const Color(0xFFFBC02D),
+                      label: 'Notifikasi Push',
+                      subtitle: 'Laporan, pengumuman, tugas',
+                      value: _isPushEnabled,
+                      onChanged: (v) => setState(() => _isPushEnabled = v),
+                    ),
+                  ]),
+                  _buildSectionHeader('SINKRONISASI & PENYIMPANAN'),
+                  _buildCard([
+                    _buildActionRow(
+                      icon: Icons.sync,
+                      iconColor: const Color(0xFF43A047),
+                      label: 'Status Sinkronisasi',
+                      subtitle: _isSyncing 
+                          ? 'Sedang menyelaraskan...' 
+                          : '$_draftCount data menunggu sinkronisasi',
+                      onTap: _handleSync,
+                      trailing: _isSyncing
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : (_draftCount > 0
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                      color: Colors.orange.shade100,
+                                      borderRadius: BorderRadius.circular(10)),
+                                  child: Text('$_draftCount',
+                                      style: const TextStyle(
+                                          color: Colors.orange,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold)),
+                                )
+                              : const Icon(Icons.check_circle, color: Colors.green, size: 20)),
+                    ),
+                    _buildDivider(),
+                    _buildActionRow(
+                      icon: Icons.storage,
+                      iconColor: const Color(0xFF5C38FF),
+                      label: 'Local Storage',
+                      subtitle: '$_storageSize digunakan untuk draft offline',
+                      trailing: TextButton(
+                        onPressed: () async {
+                          await CloudSaveService.instance.clearAll();
+                          await _refreshSyncData();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Penyimpanan lokal dibersihkan.')));
+                          }
+                        },
+                        child: const Text('Hapus',
+                            style: TextStyle(
+                                color: Color(0xFF5C38FF),
+                                fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    _buildDivider(),
+                    _buildSwitchRow(
+                      icon: Icons.fingerprint,
+                      iconColor: const Color(0xFFF57C00),
+                      label: 'Login Biometrik',
+                      subtitle: 'Face ID / Sidik Jari',
+                      value: _isBiometricEnabled,
+                      onChanged: _toggleBiometric,
+                    ),
+                  ]),
+                  _buildSectionHeader('AKUN'),
+                  _buildCard([
+                    _buildMenuRow(Icons.lock_outline, 'Ganti Kata Sandi', '',
+                        onTap: () => _showChangePasswordDialog(context)),
+                    _buildDivider(),
+                    _buildMenuRow(Icons.logout, 'Keluar', '',
+                        isDestructive: true, onTap: () => _showLogoutDialog(context)),
+                  ]),
+                  const SizedBox(height: 40),
+                ],
               ),
-              _buildDivider(),
-              _buildSwitchRow(
-                icon: Icons.dark_mode,
-                iconColor: Colors.black,
-                label: 'Tema Gelap',
-                value: _isDarkMode,
-                onChanged: (v) => setState(() => _isDarkMode = v),
-              ),
-              _buildDivider(),
-              _buildSwitchRow(
-                icon: Icons.notifications_active,
-                iconColor: const Color(0xFFFBC02D),
-                label: 'Notifikasi Push',
-                subtitle: 'Laporan, pengumuman, tugas',
-                value: _isPushEnabled,
-                onChanged: (v) => setState(() => _isPushEnabled = v),
-              ),
-            ]),
-            _buildSectionHeader('SINKRONISASI & PENYIMPANAN'),
-            _buildCard([
-              _buildActionRow(
-                icon: Icons.sync,
-                iconColor: const Color(0xFF43A047),
-                label: 'Status Sinkronisasi',
-                subtitle: _isSyncing 
-                    ? 'Sedang menyelaraskan...' 
-                    : '$_draftCount data menunggu sinkronisasi',
-                onTap: _handleSync,
-                trailing: _isSyncing
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : (_draftCount > 0
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                                color: Colors.orange.shade100,
-                                borderRadius: BorderRadius.circular(10)),
-                            child: Text('$_draftCount',
-                                style: const TextStyle(
-                                    color: Colors.orange,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold)),
-                          )
-                        : const Icon(Icons.check_circle, color: Colors.green, size: 20)),
-              ),
-              _buildDivider(),
-              _buildActionRow(
-                icon: Icons.storage,
-                iconColor: const Color(0xFF5C38FF),
-                label: 'Local Storage',
-                subtitle: '$_storageSize digunakan untuk draft offline',
-                trailing: TextButton(
-                  onPressed: () async {
-                    await CloudSaveService.instance.clearAll();
-                    await _refreshSyncData();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Penyimpanan lokal dibersihkan.')));
-                    }
-                  },
-                  child: const Text('Hapus',
-                      style: TextStyle(
-                          color: Color(0xFF5C38FF),
-                          fontWeight: FontWeight.bold)),
-                ),
-              ),
-              _buildDivider(),
-              _buildSwitchRow(
-                icon: Icons.fingerprint,
-                iconColor: const Color(0xFFF57C00),
-                label: 'Login Biometrik',
-                subtitle: 'Face ID / Sidik Jari',
-                value: _isBiometricEnabled,
-                onChanged: _toggleBiometric,
-              ),
-            ]),
-            _buildSectionHeader('AKUN'),
-            _buildCard([
-              _buildMenuRow(Icons.lock_outline, 'Ganti Kata Sandi', '',
-                  onTap: () => _showChangePasswordDialog(context)),
-              _buildDivider(),
-              _buildMenuRow(Icons.logout, 'Keluar', '',
-                  isDestructive: true, onTap: () => _showLogoutDialog(context)),
-            ]),
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
-      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openFabMenu,
-        backgroundColor: _blue,
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        elevation: 4,
-        tooltip: 'Buka menu pengaturan',
-        child: const Icon(Icons.add, size: 26),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        color: Colors.white,
-        elevation: 0,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _SettingsNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
-              _SettingsNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
-              const SizedBox(width: 48),
-              _SettingsNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
-              _SettingsNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
-            ],
+            ),
           ),
-        ),
+          
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.bottomCenter,
+              children: [
+                Container(
+                  height: 65,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _SettingsNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 4, onTap: _onTabTapped),
+                      _SettingsNavItem(icon: Icons.article_outlined, label: 'News', index: 1, currentIndex: 4, onTap: _onTabTapped),
+                      const SizedBox(width: 56), // Space for FAB
+                      _SettingsNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 4, onTap: _onTabTapped),
+                      _SettingsNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 4, onTap: _onTabTapped),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: -24,
+                  child: GestureDetector(
+                    onTap: _openFabMenu,
+                    child: Container(
+                      width: 60, // Slightly larger
+                      height: 60,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF1A56C4),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.add, color: Colors.white, size: 30),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

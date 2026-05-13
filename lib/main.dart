@@ -655,14 +655,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   child: GestureDetector(
                     onTap: _openFabMenu,
                     child: Container(
-                      width: 56,
-                      height: 56,
+                      width: 60,
+                      height: 60,
                       decoration: const BoxDecoration(
                         color: Color(0xFF1A56C4),
                         shape: BoxShape.circle,
                         // No shadow to match user's flat design request
                       ),
-                      child: const Icon(Icons.add, color: Colors.white, size: 28),
+                      child: const Icon(Icons.add, color: Colors.white, size: 30),
                     ),
                   ),
                 ),
