@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:convert';
 import '../data/news_data.dart';
 import '../services/news_service.dart';
 import 'package:sapahse/main.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 
 class NewsDetailScreen extends StatefulWidget {
   final NewsArticle article;
@@ -76,6 +78,33 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
         articleTitle: widget.article.title,
         onRefresh: _loadDetail,
       ),
+    );
+  }
+
+  Widget _buildRichContent(NewsArticle article) {
+    try {
+      final decoded = jsonDecode(article.content);
+      if (decoded is List) {
+        final doc = Document.fromJson(decoded);
+        return QuillEditor.basic(
+          controller: QuillController(
+            document: doc,
+            selection: const TextSelection.collapsed(offset: 0),
+            readOnly: true,
+          ),
+          config: const QuillEditorConfig(
+            padding: EdgeInsets.zero,
+            autoFocus: false,
+            showCursor: false,
+            enableInteractiveSelection: false,
+            scrollable: false,
+          ),
+        );
+      }
+    } catch (_) {}
+    return Text(
+      article.content.isNotEmpty ? article.content : article.excerpt,
+      style: const TextStyle(fontSize: 15, height: 1.7, color: Color(0xFF2D2D2D)),
     );
   }
 
@@ -236,13 +265,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       ],
                     )
                   else
-                    Text(
-                      article.content.isNotEmpty
-                          ? article.content
-                          : article.excerpt,
-                      style: const TextStyle(
-                          fontSize: 15, height: 1.7, color: Color(0xFF2D2D2D)),
-                    ),
+                    _buildRichContent(article),
 
                   const SizedBox(height: 32),
 

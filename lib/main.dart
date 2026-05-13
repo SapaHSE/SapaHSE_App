@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
 import 'dart:io';
 import 'app_globals.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'services/storage_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -29,6 +32,16 @@ class BBEApp extends StatelessWidget {
     return MaterialApp(
       title: 'SapaHse',
       debugShowCheckedModeBanner: false,
+      // Localization delegates for FlutterQuill and Flutter widgets
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        FlutterQuillLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', ''), // English (add other locales as needed)
+      ],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF1A56C4),
@@ -138,7 +151,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
 
   void _openFabMenu() {
-    final isSuperAdmin = _userRole?.toLowerCase() == 'superadmin';
+    final role = _userRole?.toLowerCase();
+    final isSuperAdmin = role == 'superadmin';
+    final isAdmin = role == 'admin' || isSuperAdmin;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -146,6 +161,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       builder: (_) => FabMenuSheet(
         currentIndex: _currentIndex,
         isSuperAdmin: isSuperAdmin,
+        isAdmin: isAdmin,
         onScanQr: () {
           Navigator.pop(context);
           Navigator.push(
@@ -361,13 +377,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void _showAddNewsSheet() async {
     final titleCtrl = TextEditingController();
     final captionCtrl = TextEditingController();
-    final contentCtrl = TextEditingController();
+    final quillController = QuillController.basic();
     final hashtagCtrl = TextEditingController();
     XFile? pickedFile;
     String selectedType = 'K3 / HSE';
     final ImagePicker picker = ImagePicker();
-    
-    // Get current user for author name
+
     final user = await StorageService.getUser();
     final authorName = user?['full_name'] ?? 'Admin HSE';
     final releaseDate = '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}';
@@ -388,6 +403,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
             ),
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -447,10 +463,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       Text(releaseDate, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     ])),
                   ]),
-
                   const SizedBox(height: 20),
 
-                  // ── Form Fields ────────────────────────────────────────────
+                  // ── Title ────────────────────────────────────────────────────
                   TextField(
                     controller: titleCtrl,
                     decoration: InputDecoration(
@@ -462,6 +477,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 16),
 
+                  // ── Caption ──────────────────────────────────────────────────
                   TextField(
                     controller: captionCtrl,
                     maxLines: 2,
@@ -474,7 +490,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Type Dropdown
+                  // ── Type Dropdown ────────────────────────────────────────────
                   DropdownButtonFormField<String>(
                     initialValue: selectedType,
                     decoration: InputDecoration(
@@ -488,18 +504,57 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 16),
 
-                  TextField(
-                    controller: contentCtrl,
-                    maxLines: 5,
-                    decoration: InputDecoration(
-                      labelText: 'Deskripsi Berita',
-                      hintText: 'Tulis detail isi berita secara lengkap di sini...',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      alignLabelWithHint: true,
+                  // ── Rich Text Editor ─────────────────────────────────────────
+                  const Text('DESKRIPSI BERITA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  const SizedBox(height: 8),
+                  QuillSimpleToolbar(
+                    controller: quillController,
+                    config: const QuillSimpleToolbarConfig(
+                      multiRowsDisplay: false,
+                      showFontFamily: false,
+                      showFontSize: false,
+                      showBoldButton: true,
+                      showItalicButton: true,
+                      showUnderLineButton: true,
+                      showStrikeThrough: true,
+                      showColorButton: false,
+                      showBackgroundColorButton: false,
+                      showClearFormat: true,
+                      showAlignmentButtons: false,
+                      showHeaderStyle: true,
+                      showListNumbers: true,
+                      showListBullets: true,
+                      showListCheck: false,
+                      showCodeBlock: false,
+                      showQuote: true,
+                      showIndent: false,
+                      showLink: false,
+                      showSearchButton: false,
+                      showSubscript: false,
+                      showSuperscript: false,
+                      showUndo: true,
+                      showRedo: true,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    height: 200,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: QuillEditor.basic(
+                      controller: quillController,
+                      config: const QuillEditorConfig(
+                        placeholder: 'Tulis detail isi berita secara lengkap di sini...',
+                        padding: EdgeInsets.all(12),
+                        expands: false,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
 
+                  // ── Hashtag ──────────────────────────────────────────────────
                   TextField(
                     controller: hashtagCtrl,
                     decoration: InputDecoration(
@@ -516,6 +571,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     width: double.infinity, height: 50,
                     child: ElevatedButton(
                       onPressed: () {
+                        jsonEncode(quillController.document.toDelta().toJson());
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                           content: Text('Berita berhasil dipublikasikan'),
@@ -687,6 +743,7 @@ class _ImageSourceCard extends StatelessWidget {
 class FabMenuSheet extends StatelessWidget {
   final int currentIndex;
   final bool? isSuperAdmin;
+  final bool? isAdmin;
   final VoidCallback onScanQr;
   final VoidCallback onCreateHazard;
   final VoidCallback onCreateInspection;
@@ -702,6 +759,7 @@ class FabMenuSheet extends StatelessWidget {
     super.key,
     required this.currentIndex,
     this.isSuperAdmin,
+    this.isAdmin,
     required this.onScanQr,
     required this.onCreateHazard,
     required this.onCreateInspection,
@@ -788,7 +846,7 @@ class FabMenuSheet extends StatelessWidget {
               onTap: onAddCarousel,
             ),
           ],
-          if (currentIndex == 1 && (isSuperAdmin ?? false)) ...[
+          if (currentIndex == 1 && (isAdmin ?? false)) ...[
             Divider(height: 1, indent: 72, color: Colors.grey.shade100),
             _FabMenuTile(
               icon: Icons.article_outlined,
