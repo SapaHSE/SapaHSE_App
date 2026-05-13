@@ -92,6 +92,7 @@ class InboxItem {
   // Announcement-only
   final String? body;
   final String? fromName;
+  final bool isUrgent;
   final InboxAuthor? createdBy;
 
   InboxItem({
@@ -117,6 +118,7 @@ class InboxItem {
     this.ticketNumber,
     this.body,
     this.fromName,
+    this.isUrgent = false,
     this.createdBy,
   });
 
@@ -138,6 +140,8 @@ class InboxItem {
         timeAgo: json['time_ago']?.toString(),
         body: json['body']?.toString() ?? '',
         fromName: (json['from_name'] ?? json['from'] ?? 'Admin').toString(),
+        imageUrl: json['image_url']?.toString(),
+        isUrgent: json['is_urgent'] == true || json['is_urgent'] == 1,
         createdBy: rawCreator is Map<String, dynamic>
             ? InboxAuthor.fromJson(rawCreator)
             : null,

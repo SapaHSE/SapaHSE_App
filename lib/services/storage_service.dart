@@ -8,6 +8,7 @@ class StorageService {
   static const _keyExpiry = 'auth_expiry';
   static const _keyRememberMe = 'auth_remember';
   static const _keyBiometricEnabled = 'biometric_enabled';
+  static const _keyReadAnnouncements = 'read_announcement_ids';
 
   static SharedPreferences? _prefs;
   static final _secureStorage = const FlutterSecureStorage();
@@ -168,5 +169,21 @@ class StorageService {
   static Future<void> clearBiometricCredentials() async {
     await _secureStorage.delete(key: 'biometric_login_id');
     await _secureStorage.delete(key: 'biometric_password');
+  }
+
+  // ── Announcement Read Tracking ───────────────────────────────────────────
+  static Future<void> markAnnouncementRead(String id) async {
+    final prefs = await _getPrefs();
+    final list = prefs.getStringList(_keyReadAnnouncements) ?? [];
+    if (!list.contains(id)) {
+      list.add(id);
+      await prefs.setStringList(_keyReadAnnouncements, list);
+    }
+  }
+
+  static Future<bool> isAnnouncementRead(String id) async {
+    final prefs = await _getPrefs();
+    final list = prefs.getStringList(_keyReadAnnouncements) ?? [];
+    return list.contains(id);
   }
 }

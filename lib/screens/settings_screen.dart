@@ -237,6 +237,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateInspectionScreen()));
         },
         onAddCarousel: () { Navigator.pop(context); },
+        onAddAnnouncement: () { Navigator.pop(context); },
         onAddNews: () { Navigator.pop(context); },
         onEditBiodata: () {
           Navigator.pop(context);

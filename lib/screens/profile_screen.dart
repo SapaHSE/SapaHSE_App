@@ -86,6 +86,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onAddCarousel: () {
           Navigator.pop(context);
         },
+        onAddAnnouncement: () {
+          Navigator.pop(context);
+        },
         onAddNews: () {
           Navigator.pop(context);
         },

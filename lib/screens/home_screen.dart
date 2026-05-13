@@ -8,6 +8,11 @@ import 'report_detail_screen.dart';
 import 'news_detail_screen.dart';
 import '../data/report_store.dart';
 import '../widgets/sapa_hse_header.dart';
+import '../models/announcement.dart';
+import '../services/announcement_service.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../services/storage_service.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -32,8 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingMore = false;
   final ScrollController _scrollController = ScrollController();
 
-  // ── Featured News Carousel ────────────────────────────────────────────────
-  List<NewsArticle> _carouselItems = [];
+  // ── Featured News & Announcements Carousel ───────────────────────────────
+  List<dynamic> _carouselItems = []; // Can hold NewsArticle or Announcement
 
   // ── Only Hazard & Inspection ──────────────────────────────────────────────
   final List<String> _reportTypes = [
@@ -56,12 +61,15 @@ class _HomeScreenState extends State<HomeScreen> {
     // Listen to changes in ReportStore to update cache
     ReportStore.instance.reports.addListener(_updateFilteredCache);
 
+    // Listen to announcement changes to reload carousel
+    AnnouncementService.refreshNotifier.addListener(_loadCarouselData);
+
     // STAGGERED LOADING: Give the engine time to render the first frames
     // before starting heavy data tasks.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 800), () {
         if (mounted) {
-          _loadCarouselNews();
+          _loadCarouselData();
         }
       });
     });
@@ -74,18 +82,280 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _loadCarouselNews() async {
-    final result = await NewsService.getNews();
+  Future<void> _loadCarouselData() async {
+    // Load News
+    final newsResult = await NewsService.getNews();
+    
+    // Load Announcements
+    final announcements = await AnnouncementService.getAnnouncements();
+
     if (!mounted) return;
-    if (result.success) {
-      setState(() {
-        _carouselItems = result.articles.where((a) => a.isFeatured).toList();
+
+    setState(() {
+      _carouselItems = [];
+      
+      // Add all news
+      if (newsResult.success) {
+        _carouselItems.addAll(newsResult.articles);
+      }
+      
+      // Add announcements
+      _carouselItems.addAll(announcements);
+
+      // Sort by date (latest first)
+      _carouselItems.sort((a, b) {
+        DateTime parseDate(dynamic item) {
+          if (item is NewsArticle) {
+            // Try ISO first
+            DateTime? d = DateTime.tryParse(item.date);
+            if (d != null) return d;
+            // Try "13 May 2026" format
+            try {
+              return DateFormat('dd MMM yyyy').parse(item.date);
+            } catch (_) {
+              return DateTime(2000); // Fallback to old date if unparseable
+            }
+          } else {
+            return (item as Announcement).createdAt;
+          }
+        }
+
+        return parseDate(b).compareTo(parseDate(a));
       });
-      // Delay start carousel slightly more
+
+      // LIMIT TO 3 ITEMS
+      if (_carouselItems.length > 3) {
+        _carouselItems = _carouselItems.sublist(0, 3);
+      }
+    });
+
+    // Check for urgent announcement popup
+    _checkUrgentAnnouncement(announcements);
+
+    if (_carouselItems.isNotEmpty) {
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) _startCarousel();
       });
     }
+  }
+
+  Future<void> _checkUrgentAnnouncement(List<Announcement> announcements) async {
+    final urgent = announcements.where((a) => a.isUrgent).toList();
+    if (urgent.isNotEmpty) {
+      // Filter out already read ones
+      for (final a in urgent) {
+        final alreadyRead = await StorageService.isAnnouncementRead(a.id);
+        if (!alreadyRead) {
+          if (!mounted) return;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showUrgentPopup(a);
+          });
+          break; // Show only one at a time
+        }
+      }
+    }
+  }
+
+  void _showUrgentPopup(Announcement a) {
+    bool isChecked = false;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Must confirm
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 30, offset: const Offset(0, 15))
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Red Header with Siren
+                  Container(
+                    width: double.infinity,
+                    height: 140,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFFB71C1C), Color(0xFFC62828)],
+                      ),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.campaign_rounded,
+                        color: Colors.white,
+                        size: 80,
+                      ),
+                    ),
+                  ),
+                  
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Badge & Expiry
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.red.shade200),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.warning_amber_rounded, size: 12, color: Colors.red.shade700),
+                                  const SizedBox(width: 4),
+                                  Text('URGENSI TINGGI', style: TextStyle(color: Colors.red.shade700, fontSize: 10, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
+                            const Text('Berlaku: 3 hari lagi', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Image if available (Above Title)
+                        if (a.imageUrl != null && a.imageUrl!.isNotEmpty) ...[
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: CachedNetworkImage(
+                              imageUrl: a.imageUrl!,
+                              width: double.infinity,
+                              height: 180,
+                              fit: BoxFit.cover,
+                              placeholder: (_, __) => Container(color: Colors.grey.shade100, child: const Center(child: CircularProgressIndicator())),
+                              errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // Title
+                        Text(
+                          a.title,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87),
+                        ),
+                        const SizedBox(height: 12),
+                        
+                        // Body
+                        Text(
+                          a.body,
+                          style: TextStyle(color: Colors.grey.shade700, fontSize: 13, height: 1.5),
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        // Warning Box
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF3F3),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFFCDD2)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.info_outline, size: 18, color: Color(0xFFF44336)),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Text(
+                                  'Pengumuman ini akan muncul setiap hari selama 3 hari hingga kamu mengonfirmasi telah membaca.',
+                                  style: TextStyle(fontSize: 11, color: Color(0xFFC62828), height: 1.4),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Footer Meta
+                        Text(
+                          'Dari: Admin HSE - PT. Bukit Bakiri Energi - ${_formatDate(a.createdAt)}',
+                          style: const TextStyle(fontSize: 10, color: Colors.grey),
+                        ),
+                        const Divider(height: 32),
+                        
+                        // Checkbox
+                        GestureDetector(
+                          onTap: () => setModalState(() => isChecked = !isChecked),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 24, height: 24,
+                                child: Checkbox(
+                                  value: isChecked,
+                                  activeColor: const Color(0xFF1A56C4),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                  onChanged: (v) => setModalState(() => isChecked = v ?? false),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Text(
+                                  'Saya sudah membaca dan mengerti isi pengumuman ini',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black87),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        
+                        // Close Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: isChecked ? () async {
+                              await StorageService.markAnnouncementRead(a.id);
+                              if (ctx.mounted) Navigator.pop(ctx);
+                            } : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1A56C4),
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey.shade200,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              elevation: 0,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (isChecked) const Icon(Icons.check, size: 18),
+                                if (isChecked) const SizedBox(width: 8),
+                                const Text('Tutup', style: TextStyle(fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack).fadeIn(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime dt) {
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
 
   void _onScroll() {
@@ -142,7 +412,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     ReportStore.instance.reports.removeListener(_updateFilteredCache);
+    AnnouncementService.refreshNotifier.removeListener(_loadCarouselData);
     _searchDebounce?.cancel();
     _carouselTimer?.cancel();
     _pageController.dispose();
@@ -293,7 +565,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── CAROUSEL ──────────────────────────────────────────────────────────────
   Widget _buildCarousel() {
     if (_carouselItems.isEmpty) {
       return Container(
@@ -314,20 +585,34 @@ class _HomeScreenState extends State<HomeScreen> {
             itemCount: _carouselItems.length,
             itemBuilder: (_, index) {
               final item = _carouselItems[index];
+              final isNews = item is NewsArticle;
+              
+              final String title = isNews ? item.title : item.title;
+              final String? rawImageUrl = isNews ? item.imageUrl : item.imageUrl;
+              final String imageUrl = (rawImageUrl != null && rawImageUrl.isNotEmpty) 
+                  ? rawImageUrl 
+                  : 'https://placehold.co/600x400/1A56C4/FFFFFF?text=SapaHSE+ANNOUNCEMENT';
+              final String label = isNews ? 'BERITA' : 'PENGUMUMAN';
+              final Color labelColor = isNews ? Colors.blue : Colors.purple;
+
               return GestureDetector(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => NewsDetailScreen(article: item),
-                    ),
-                  );
+                  if (isNews) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => NewsDetailScreen(article: item),
+                      ),
+                    );
+                  } else {
+                    _showUrgentPopup(item); 
+                  }
                 },
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
                     CachedNetworkImage(
-                      imageUrl: item.imageUrl,
+                      imageUrl: imageUrl,
                       fit: BoxFit.cover,
                       placeholder: (_, __) => Container(
                         color: const Color(0xFF37474F),
@@ -342,6 +627,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Colors.white24, size: 60),
                       ),
                     ),
+                    
                     // Gradient overlay
                     Container(
                       decoration: BoxDecoration(
@@ -353,16 +639,34 @@ class _HomeScreenState extends State<HomeScreen> {
                             Colors.black.withValues(alpha: 0.88)
                           ],
                           stops: const [0.3, 1.0],
+                         ),
+                      ),
+                    ),
+
+                    // Type Badge
+                    Positioned(
+                      top: 16,
+                      left: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: labelColor.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          label,
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
+
                     // Title
                     Positioned(
                       left: 16,
                       right: 52,
                       bottom: 38,
                       child: Text(
-                        item.title,
+                        title,
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -382,66 +686,35 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
 
-          // Left arrow
+          // Arrows and dots logic stays similar, but updated with item info
           Positioned(
-            left: 8,
-            top: 0,
-            bottom: 0,
+            left: 8, top: 0, bottom: 0,
             child: Center(
               child: GestureDetector(
                 onTap: () {
-                  final prev = _currentPage > 0
-                      ? _currentPage - 1
-                      : _carouselItems.length - 1;
-                  _pageController.animateToPage(prev,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut);
+                  final prev = _currentPage > 0 ? _currentPage - 1 : _carouselItems.length - 1;
+                  _pageController.animateToPage(prev, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
                 },
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: const BoxDecoration(
-                      color: Colors.black38, shape: BoxShape.circle),
-                  child: const Icon(Icons.chevron_left,
-                      color: Colors.white, size: 22),
-                ),
+                child: Container(width: 32, height: 32, decoration: const BoxDecoration(color: Colors.black38, shape: BoxShape.circle), child: const Icon(Icons.chevron_left, color: Colors.white, size: 22)),
               ),
             ),
           ),
-
-          // Right arrow
           Positioned(
-            right: 8,
-            top: 0,
-            bottom: 0,
+            right: 8, top: 0, bottom: 0,
             child: Center(
               child: GestureDetector(
                 onTap: () {
                   final next = (_currentPage + 1) % _carouselItems.length;
-                  _pageController.animateToPage(next,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut);
+                  _pageController.animateToPage(next, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
                 },
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: const BoxDecoration(
-                      color: Colors.black38, shape: BoxShape.circle),
-                  child: const Icon(Icons.chevron_right,
-                      color: Colors.white, size: 22),
-                ),
+                child: Container(width: 32, height: 32, decoration: const BoxDecoration(color: Colors.black38, shape: BoxShape.circle), child: const Icon(Icons.chevron_right, color: Colors.white, size: 22)),
               ),
             ),
           ),
-
-          // Dots + author/date
           Positioned(
-            left: 16,
-            right: 16,
-            bottom: 12,
+            left: 16, right: 16, bottom: 12,
             child: Row(
               children: [
-                // Dots
                 Row(
                   children: List.generate(
                       _carouselItems.length,
@@ -451,20 +724,22 @@ class _HomeScreenState extends State<HomeScreen> {
                             height: 7,
                             margin: const EdgeInsets.only(right: 4),
                             decoration: BoxDecoration(
-                              color: i == _currentPage
-                                  ? Colors.white
-                                  : Colors.white38,
+                              color: i == _currentPage ? Colors.white : Colors.white38,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           )),
                 ),
                 const SizedBox(width: 10),
-                const Icon(Icons.person_outline,
-                    color: Colors.white70, size: 13),
+                const Icon(Icons.person_outline, color: Colors.white70, size: 13),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    '${_carouselItems[_currentPage].author}  •  ${_carouselItems[_currentPage].date}',
+                    () {
+                      final item = _carouselItems[_currentPage];
+                      if (item is NewsArticle) return '${item.author}  •  ${item.date}';
+                      if (item is Announcement) return '${item.creatorName ?? 'Admin'}  •  ${item.timeAgo}';
+                      return '';
+                    }(),
                     style: const TextStyle(color: Colors.white70, fontSize: 11),
                     overflow: TextOverflow.ellipsis,
                   ),

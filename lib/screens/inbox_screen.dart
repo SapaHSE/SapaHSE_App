@@ -11,6 +11,7 @@ import 'report_detail_screen.dart';
 import '../widgets/sapa_hse_header.dart';
 import '../services/approval_service.dart';
 import '../services/storage_service.dart';
+import '../services/announcement_service.dart';
 
 
 enum _SubFilter { unread, read }
@@ -173,49 +174,30 @@ class _InboxScreenState extends State<InboxScreen>
       _loadingAnnouncements = true;
       _errorAnnouncements = null;
     });
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    setState(() {
-      _loadingAnnouncements = false;
-      _announcements = [
-        InboxItem(
-          id: 'a1',
+    try {
+      final data = await AnnouncementService.getAnnouncements();
+      if (!mounted) return;
+      setState(() {
+        _loadingAnnouncements = false;
+        _announcements = data.map((a) => InboxItem(
+          id: a.id,
           itemType: InboxItemType.announcement,
-          isRead: false,
-          title: 'Pelatihan K3 Wajib Maret 2026',
-          body: 'Seluruh karyawan diwajibkan mengikuti pelatihan K3 pada tanggal 28 Maret 2026 pukul 08.00 di Aula Utama. Kehadiran bersifat wajib.',
+          isRead: false, // You might want to track this in DB later
+          title: a.title,
+          body: a.body,
+          imageUrl: a.imageUrl,
+          isUrgent: a.isUrgent,
           fromName: 'Admin HSE',
-          createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-        ),
-        InboxItem(
-          id: 'a2',
-          itemType: InboxItemType.announcement,
-          isRead: false,
-          title: 'Inspeksi Rutin Area Tambang',
-          body: 'Akan dilaksanakan inspeksi rutin menyeluruh di seluruh area tambang pada minggu ini. Harap semua peralatan dalam kondisi siap periksa.',
-          fromName: 'Supervisor K3',
-          createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        ),
-        InboxItem(
-          id: 'a3',
-          itemType: InboxItemType.announcement,
-          isRead: false,
-          title: 'Update SOP Penanganan Bahan B3',
-          body: 'SOP penanganan limbah B3 telah diperbarui sesuai regulasi KLHK terbaru. Silakan unduh dokumen terbaru di portal internal perusahaan.',
-          fromName: 'Admin HSE',
-          createdAt: DateTime.now().subtract(const Duration(days: 2)),
-        ),
-        InboxItem(
-          id: 'a4',
-          itemType: InboxItemType.announcement,
-          isRead: false,
-          title: 'Jadwal Pemeriksaan APAR Bulanan',
-          body: 'Pemeriksaan APAR bulanan akan dilaksanakan pada 30 Maret 2026. Pastikan semua unit APAR di area tanggung jawab Anda dalam kondisi baik.',
-          fromName: 'Tim HSE',
-          createdAt: DateTime.now().subtract(const Duration(days: 4)),
-        ),
-      ];
-    });
+          createdAt: a.createdAt,
+        )).toList();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingAnnouncements = false;
+        _errorAnnouncements = 'Gagal memuat pengumuman';
+      });
+    }
   }
 
   Future<void> _loadMyReports() async {
@@ -1607,7 +1589,19 @@ class _InboxScreenState extends State<InboxScreen>
                             height: 1.3)),
                     const SizedBox(height: 12),
                     const Divider(),
-                    const SizedBox(height: 12),
+                    if (item.imageUrl != null) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: CachedNetworkImage(
+                          imageUrl: item.imageUrl!,
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) => Container(color: Colors.grey.shade100, child: const Center(child: CircularProgressIndicator())),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     Text(item.body ?? '',
                         style: const TextStyle(
                             fontSize: 14, color: Colors.black87, height: 1.6)),

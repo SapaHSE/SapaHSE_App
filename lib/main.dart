@@ -17,6 +17,7 @@ import 'screens/create_hazard_screen.dart';
 import 'screens/create_inspection_screen.dart';
 import 'screens/qr_scan_screen.dart';
 import 'screens/my_profile.dart';
+import 'services/announcement_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -182,6 +183,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         onAddCarousel: () {
           Navigator.pop(context);
           _showAddCarouselSheet();
+        },
+        onAddAnnouncement: () {
+          Navigator.pop(context);
+          _showAddAnnouncementSheet();
         },
         onAddNews: () {
           Navigator.pop(context);
@@ -596,6 +601,169 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
   }
 
+  void _showAddAnnouncementSheet() {
+    final titleCtrl = TextEditingController();
+    final bodyCtrl = TextEditingController();
+    bool isUrgent = false;
+    File? selectedImage;
+    bool isSubmitting = false;
+    final ImagePicker picker = ImagePicker();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setModal) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40, height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                    ),
+                  ),
+                  const Text('Tambah Pengumuman Baru', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  const SizedBox(height: 24),
+
+                  // Title
+                  TextField(
+                    controller: titleCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Judul Pengumuman',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      prefixIcon: const Icon(Icons.title),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Body
+                  TextField(
+                    controller: bodyCtrl,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: 'Isi Pengumuman',
+                      alignLabelWithHint: true,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      prefixIcon: const Icon(Icons.description),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Image Picker
+                  GestureDetector(
+                    onTap: () async {
+                      final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+                      if (file != null) setModal(() => selectedImage = File(file.path));
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: selectedImage != null
+                          ? ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.file(selectedImage!, fit: BoxFit.cover))
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_photo_alternate_outlined, size: 32, color: Colors.grey.shade400),
+                                const SizedBox(height: 4),
+                                Text('Tambah Gambar (Opsional)', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                              ],
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Urgent Switch
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isUrgent ? Colors.red.shade50 : Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(isUrgent ? Icons.notification_important : Icons.info_outline, color: isUrgent ? Colors.red : Colors.blue, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            const Text('Status Urgent', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            Text(isUrgent ? 'Akan muncul pop-up' : 'Muncul di list/carousel', style: const TextStyle(fontSize: 11)),
+                          ]),
+                        ),
+                        Switch(
+                          value: isUrgent,
+                          activeThumbColor: Colors.red,
+                          onChanged: (v) => setModal(() => isUrgent = v),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Submit
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: isSubmitting ? null : () async {
+                        if (titleCtrl.text.isEmpty || bodyCtrl.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Judul dan isi wajib diisi')));
+                          return;
+                        }
+                        setModal(() => isSubmitting = true);
+                        final success = await AnnouncementService.createAnnouncement(
+                          title: titleCtrl.text,
+                          body: bodyCtrl.text,
+                          isUrgent: isUrgent,
+                          image: selectedImage,
+                        );
+                        if (ctx.mounted) {
+                          setModal(() => isSubmitting = false);
+                          if (success) {
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Pengumuman berhasil diterbitkan'), backgroundColor: Colors.green));
+                          } else {
+                            ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Gagal menerbitkan pengumuman'), backgroundColor: Colors.red));
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1A56C4),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      child: isSubmitting 
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('Terbitkan Pengumuman', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -613,12 +781,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               clipBehavior: Clip.none,
               alignment: Alignment.bottomCenter,
               children: [
-                Container(
-                  height: 65,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
-                  ),
+                Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    height: 65,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
+                    ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -650,19 +820,31 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     ],
                   ),
                 ),
+              ),
                 Positioned(
-                  top: -24,
-                  child: GestureDetector(
-                    onTap: _openFabMenu,
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF1A56C4),
-                        shape: BoxShape.circle,
-                        // No shadow to match user's flat design request
+                  top: -30, // Slightly higher for better look
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: _openFabMenu,
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A56C4),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF1A56C4).withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              spreadRadius: 2,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.add, color: Colors.white, size: 32),
                       ),
-                      child: const Icon(Icons.add, color: Colors.white, size: 30),
                     ),
                   ),
                 ),
@@ -768,6 +950,7 @@ class FabMenuSheet extends StatelessWidget {
   final VoidCallback onCreateHazard;
   final VoidCallback onCreateInspection;
   final VoidCallback onAddCarousel;
+  final VoidCallback? onAddAnnouncement;
   final VoidCallback onAddNews;
   final VoidCallback onEditBiodata;
   final VoidCallback onAddLicense;
@@ -784,6 +967,7 @@ class FabMenuSheet extends StatelessWidget {
     required this.onCreateHazard,
     required this.onCreateInspection,
     required this.onAddCarousel,
+    this.onAddAnnouncement,
     required this.onAddNews,
     required this.onEditBiodata,
     required this.onAddLicense,
@@ -864,6 +1048,17 @@ class FabMenuSheet extends StatelessWidget {
               title: 'Tambah Gambar Carousel',
               subtitle: 'Tambah banner informasi di halaman beranda',
               onTap: onAddCarousel,
+            ),
+          ],
+          if (onAddAnnouncement != null) ...[
+            Divider(height: 1, indent: 72, color: Colors.grey.shade100),
+            _FabMenuTile(
+              icon: Icons.campaign_rounded,
+              iconBgColor: const Color(0xFFF3E5F5),
+              iconColor: const Color(0xFF7B1FA2),
+              title: 'Tambah Pengumuman',
+              subtitle: 'Buat pengumuman urgent atau biasa',
+              onTap: onAddAnnouncement!,
             ),
           ],
           if (currentIndex == 1 && (isAdmin ?? false)) ...[
