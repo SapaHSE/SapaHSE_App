@@ -31,6 +31,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   List<String> _kontraktorList = [];
   List<String> _subkontraktorList = [];
 
+  bool _isFetchingCompanies = false;
+  bool _isFetchingProfile = false;
+
   // Persistent State for License Form
   final TextEditingController _licenseNameController = TextEditingController();
   final TextEditingController _licenseNumberController =
@@ -85,40 +88,52 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   Future<void> _loadProfile({bool silent = false, String? message}) async {
+    if (_isFetchingProfile) return;
+    _isFetchingProfile = true;
+
     if (!silent) {
       setState(() {
         _isLoading = true;
         _loadingMessage = message ?? 'Memuat Data Profil...';
       });
     }
-    final result = await ProfileService.getProfile();
-    if (mounted) {
-      setState(() {
-        if (result.success) {
-          _profileData = result.data;
-        }
-        _isLoading = false;
-      });
+    try {
+      final result = await ProfileService.getProfile();
+      if (mounted) {
+        setState(() {
+          if (result.success) {
+            _profileData = result.data;
+          }
+          _isLoading = false;
+        });
+      }
+    } finally {
+      _isFetchingProfile = false;
     }
   }
 
   Future<void> _fetchCompanyData() async {
+    if (_isFetchingCompanies) return;
+    _isFetchingCompanies = true;
+
     try {
-      final owners =
-          await CompanyService.getCompanies(category: 'owner', active: true);
-      final contractors = await CompanyService.getCompanies(
-          category: 'kontraktor', active: true);
-      final subContractors = await CompanyService.getCompanies(
-          category: 'subkontraktor', active: true);
+      final results = await Future.wait([
+        CompanyService.getCompanies(category: 'owner', active: true),
+        CompanyService.getCompanies(category: 'kontraktor', active: true),
+        CompanyService.getCompanies(category: 'subkontraktor', active: true),
+      ]);
+
       if (mounted) {
         setState(() {
-          _ownerList = owners.map((e) => e.name).toList();
-          _kontraktorList = contractors.map((e) => e.name).toList();
-          _subkontraktorList = subContractors.map((e) => e.name).toList();
+          _ownerList = results[0].map((e) => e.name).toList();
+          _kontraktorList = results[1].map((e) => e.name).toList();
+          _subkontraktorList = results[2].map((e) => e.name).toList();
         });
       }
     } catch (e) {
       debugPrint('Error fetching companies in Profile: $e');
+    } finally {
+      _isFetchingCompanies = false;
     }
   }
 
@@ -351,11 +366,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       _buildSubTabBar(),
                       const SizedBox(height: 20),
                       _buildSubTabContent(),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 120),
                     ],
                   ),
                 ),
-          floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
+          floatingActionButtonAnimator:
+              FloatingActionButtonAnimator.noAnimation,
           floatingActionButton: FloatingActionButton(
             onPressed: _openFabMenu,
             backgroundColor: const Color(0xFF1A56C4),
@@ -617,14 +633,15 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     final deptCtrl = TextEditingController(text: _profileData?.department);
     final jobCtrl = TextEditingController(text: _profileData?.position);
     final addressCtrl = TextEditingController(text: _profileData?.alamat);
-    
+
     String localTipeAfiliasi = _profileData?.tipeAfiliasi ?? 'Owner';
     if (localTipeAfiliasi == 'Sub-Kontraktor') localTipeAfiliasi = 'Sub-Kont.';
-    
+
     String? localSelectedPerusahaan = _profileData?.company;
-    String? localSelectedPerusahaanKontraktor = _profileData?.perusahaanKontraktor;
+    String? localSelectedPerusahaanKontraktor =
+        _profileData?.perusahaanKontraktor;
     String? localSelectedSubKontraktor = _profileData?.subKontraktor;
-    
+
     XFile? localImageFile;
 
     showModalBottomSheet(
@@ -763,7 +780,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                             const SizedBox(height: 16),
                             const Text(
                               'Tipe Afiliasi *',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 13),
                             ),
                             const SizedBox(height: 8),
                             _buildAfiliasiButtons(localTipeAfiliasi, (val) {
@@ -774,16 +792,19 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                               'Perusahaan Owner *',
                               localSelectedPerusahaan,
                               _ownerList,
-                              (v) => setModalState(() => localSelectedPerusahaan = v),
+                              (v) => setModalState(
+                                  () => localSelectedPerusahaan = v),
                               required: true,
                             ),
-                            if (localTipeAfiliasi == 'Kontraktor' || localTipeAfiliasi == 'Sub-Kont.') ...[
+                            if (localTipeAfiliasi == 'Kontraktor' ||
+                                localTipeAfiliasi == 'Sub-Kont.') ...[
                               const SizedBox(height: 16),
                               _buildDropdownField(
                                 'Perusahaan Kontraktor',
                                 localSelectedPerusahaanKontraktor,
                                 _kontraktorList,
-                                (v) => setModalState(() => localSelectedPerusahaanKontraktor = v),
+                                (v) => setModalState(() =>
+                                    localSelectedPerusahaanKontraktor = v),
                               ),
                             ],
                             if (localTipeAfiliasi == 'Sub-Kont.') ...[
@@ -792,7 +813,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                 'Sub-Kontraktor',
                                 localSelectedSubKontraktor,
                                 _subkontraktorList,
-                                (v) => setModalState(() => localSelectedSubKontraktor = v),
+                                (v) => setModalState(
+                                    () => localSelectedSubKontraktor = v),
                               ),
                             ],
                           ],
@@ -804,46 +826,59 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         width: double.infinity,
                         height: 54,
                         child: ElevatedButton(
-                          onPressed: () async {
-                            Navigator.pop(context);
-                            setState(() {
-                              _isLoading = true;
-                              _loadingMessage = 'Menyimpan Profil...';
-                            });
+                          onPressed: _isLoading
+                              ? null
+                              : () async {
+                                  // Set loading dulu biar tombol ke-disable
+                                  setState(() {
+                                    _isLoading = true;
+                                    _loadingMessage = 'Menyimpan Profil...';
+                                  });
 
-                            final result = await ProfileService.updateProfile(
-                              fullName: nameCtrl.text,
-                              personalEmail: emailCtrl.text,
-                              workEmail: workEmailCtrl.text,
-                              phoneNumber: phoneCtrl.text,
-                              department: deptCtrl.text,
-                              position: jobCtrl.text,
-                              alamat: addressCtrl.text,
-                              tipeAfiliasi: localTipeAfiliasi == 'Sub-Kont.' ? 'Sub-Kontraktor' : localTipeAfiliasi,
-                              company: localSelectedPerusahaan,
-                              perusahaanKontraktor: localSelectedPerusahaanKontraktor,
-                              subKontraktor: localSelectedSubKontraktor,
-                              imageFile: localImageFile,
-                            );
+                                  // Baru tutup sheet
+                                  Navigator.pop(context);
 
-                            if (context.mounted) {
-                              if (result.success) {
-                                _loadProfile(silent: true);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content:
-                                          Text('Profil berhasil diperbarui')),
-                                );
-                              } else {
-                                setState(() => _isLoading = false);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text(result.errorMessage ??
-                                          'Gagal memperbarui')),
-                                );
-                              }
-                            }
-                          },
+                                  final result =
+                                      await ProfileService.updateProfile(
+                                    fullName: nameCtrl.text,
+                                    personalEmail: emailCtrl.text,
+                                    workEmail: workEmailCtrl.text,
+                                    phoneNumber: phoneCtrl.text,
+                                    department: deptCtrl.text,
+                                    position: jobCtrl.text,
+                                    alamat: addressCtrl.text,
+                                    tipeAfiliasi:
+                                        localTipeAfiliasi == 'Sub-Kont.'
+                                            ? 'Sub-Kontraktor'
+                                            : localTipeAfiliasi,
+                                    company: localSelectedPerusahaan,
+                                    perusahaanKontraktor:
+                                        localSelectedPerusahaanKontraktor,
+                                    subKontraktor: localSelectedSubKontraktor,
+                                    imageFile: localImageFile,
+                                  );
+
+                                  if (!mounted) return;
+
+                                  setState(() {
+                                    _isLoading = false;
+                                    if (result.success) {
+                                      _profileData = result.data;
+                                    }
+                                  });
+
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(this.context)
+                                        .showSnackBar(
+                                      SnackBar(
+                                        content: Text(result.success
+                                            ? 'Profil berhasil diperbarui'
+                                            : (result.errorMessage ??
+                                                'Gagal memperbarui')),
+                                      ),
+                                    );
+                                  }
+                                },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1A56C4),
                             foregroundColor: Colors.white,
@@ -972,8 +1007,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     );
   }
 
-  Widget _buildDropdownField(
-      String label, String? value, List<String> items, Function(String?) onChanged,
+  Widget _buildDropdownField(String label, String? value, List<String> items,
+      Function(String?) onChanged,
       {bool required = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1001,7 +1036,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           ),
           items: items
               .map((e) => DropdownMenuItem(
-                  value: e, child: Text(e, style: const TextStyle(fontSize: 13))))
+                  value: e,
+                  child: Text(e, style: const TextStyle(fontSize: 13))))
               .toList(),
           onChanged: onChanged,
         ),
@@ -1070,9 +1106,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 const SizedBox(height: 20),
                 _buildFieldLabel('Golongan Darah'),
                 InkWell(
-                  onTap: () => _showBloodTypePicker(context, bloodTypeCtrl, setModalState),
+                  onTap: () => _showBloodTypePicker(
+                      context, bloodTypeCtrl, setModalState),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(12),
@@ -1081,14 +1119,18 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     child: Row(
                       children: [
                         Text(
-                          bloodTypeCtrl.text.isEmpty ? 'Pilih Golongan Darah' : bloodTypeCtrl.text,
+                          bloodTypeCtrl.text.isEmpty
+                              ? 'Pilih Golongan Darah'
+                              : bloodTypeCtrl.text,
                           style: TextStyle(
-                            color: bloodTypeCtrl.text.isEmpty ? Colors.grey.shade400 : Colors.black,
-                            fontSize: 14
-                          ),
+                              color: bloodTypeCtrl.text.isEmpty
+                                  ? Colors.grey.shade400
+                                  : Colors.black,
+                              fontSize: 14),
                         ),
                         const Spacer(),
-                        Icon(Icons.arrow_drop_down, color: Colors.grey.shade400),
+                        Icon(Icons.arrow_drop_down,
+                            color: Colors.grey.shade400),
                       ],
                     ),
                   ),
@@ -1096,9 +1138,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 const SizedBox(height: 16),
                 _buildFieldLabel('Tinggi Badan (cm)'),
                 InkWell(
-                  onTap: () => _showHeightPicker(context, heightCtrl, setModalState),
+                  onTap: () =>
+                      _showHeightPicker(context, heightCtrl, setModalState),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(12),
@@ -1107,14 +1151,18 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     child: Row(
                       children: [
                         Text(
-                          heightCtrl.text.isEmpty ? 'Pilih Tinggi Badan' : '${heightCtrl.text} cm',
+                          heightCtrl.text.isEmpty
+                              ? 'Pilih Tinggi Badan'
+                              : '${heightCtrl.text} cm',
                           style: TextStyle(
-                            color: heightCtrl.text.isEmpty ? Colors.grey.shade400 : Colors.black,
-                            fontSize: 14
-                          ),
+                              color: heightCtrl.text.isEmpty
+                                  ? Colors.grey.shade400
+                                  : Colors.black,
+                              fontSize: 14),
                         ),
                         const Spacer(),
-                        Icon(Icons.arrow_drop_down, color: Colors.grey.shade400),
+                        Icon(Icons.arrow_drop_down,
+                            color: Colors.grey.shade400),
                       ],
                     ),
                   ),
@@ -1139,7 +1187,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     ),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('/', style: TextStyle(fontSize: 20, color: Colors.grey)),
+                      child: Text('/',
+                          style: TextStyle(fontSize: 20, color: Colors.grey)),
                     ),
                     Expanded(
                       child: TextField(
@@ -1202,36 +1251,51 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      setState(() {
-                        _isLoading = true;
-                        _loadingMessage = 'Menyimpan Data Medis...';
-                      });
+                    onPressed: _isLoading
+                        ? null
+                        : () async {
+                            // Set loading dulu biar tombol ke-disable
+                            setState(() {
+                              _isLoading = true;
+                              _loadingMessage = 'Menyimpan Data Medis...';
+                            });
 
-                      final result = await ProfileService.updateMedical(
-                        bloodType: bloodTypeCtrl.text,
-                        height: heightCtrl.text,
-                        weight: weightCtrl.text,
-                        bloodPressure: systolicCtrl.text.isNotEmpty && diastolicCtrl.text.isNotEmpty 
-                            ? '${systolicCtrl.text}/${diastolicCtrl.text}' 
-                            : '',
-                        allergies: allergiesCtrl.text,
-                        lastMedication: lastMedicationCtrl.text,
-                        currentMedication: currentMedicationCtrl.text,
-                        currentIllness: currentIllnessCtrl.text,
-                      );
+                            // Baru tutup sheet
+                            Navigator.pop(context);
 
-                      if (context.mounted) {
-                        if (result.success) {
-                          _loadProfile(silent: true);
-                        } else {
-                          setState(() => _isLoading = false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(result.message)));
-                        }
-                      }
-                    },
+                            final result = await ProfileService.updateMedical(
+                              bloodType: bloodTypeCtrl.text,
+                              height: heightCtrl.text,
+                              weight: weightCtrl.text,
+                              bloodPressure: systolicCtrl.text.isNotEmpty &&
+                                      diastolicCtrl.text.isNotEmpty
+                                  ? '${systolicCtrl.text}/${diastolicCtrl.text}'
+                                  : '',
+                              allergies: allergiesCtrl.text,
+                              lastMedication: lastMedicationCtrl.text,
+                              currentMedication: currentMedicationCtrl.text,
+                              currentIllness: currentIllnessCtrl.text,
+                            );
+
+                            if (mounted) {
+                              if (result.success) {
+                                setState(() {
+                                  _profileData = result.data;
+                                  _isLoading = false;
+                                });
+                                ScaffoldMessenger.of(this.context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'Data medis berhasil disimpan')));
+                              } else {
+                                setState(() => _isLoading = false);
+                                ScaffoldMessenger.of(this.context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(result.errorMessage ??
+                                            'Gagal menyimpan')));
+                              }
+                            }
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF5C38FF),
                       foregroundColor: Colors.white,
@@ -1251,44 +1315,52 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     );
   }
 
-  void _showBloodTypePicker(BuildContext context, TextEditingController ctrl, StateSetter setModalState) {
+  void _showBloodTypePicker(BuildContext context, TextEditingController ctrl,
+      StateSetter setModalState) {
     final types = ['A', 'B', 'AB', 'O'];
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => Container(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Pilih Golongan Darah', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text('Pilih Golongan Darah',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             ...types.map((t) => ListTile(
-              title: Text(t, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w600)),
-              onTap: () {
-                setModalState(() => ctrl.text = t);
-                Navigator.pop(context);
-              },
-            )),
+                  title: Text(t,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    setModalState(() => ctrl.text = t);
+                    Navigator.pop(context);
+                  },
+                )),
           ],
         ),
       ),
     );
   }
 
-  void _showHeightPicker(BuildContext context, TextEditingController ctrl, StateSetter setModalState) {
+  void _showHeightPicker(BuildContext context, TextEditingController ctrl,
+      StateSetter setModalState) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.6,
         padding: const EdgeInsets.symmetric(vertical: 20),
         child: Column(
           children: [
-            const Text('Pilih Tinggi Badan (cm)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text('Pilih Tinggi Badan (cm)',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Expanded(
               child: ListView.builder(
@@ -1489,48 +1561,55 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: () async {
-                    if (_licenseNameController.text.isEmpty ||
-                        _licenseNumberController.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('Harap lengkapi semua data')));
-                      return;
-                    }
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          if (_licenseNameController.text.isEmpty ||
+                              _licenseNumberController.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content:
+                                        Text('Harap lengkapi semua data')));
+                            return;
+                          }
 
-                    Navigator.pop(context); // Close modal
-                    setState(() {
-                      _isLoading = true;
-                      _loadingMessage = 'Menyimpan Lisensi...';
-                    });
+                          // Set loading dulu biar tombol ke-disable
+                          setState(() {
+                            _isLoading = true;
+                            _loadingMessage = 'Menyimpan Lisensi...';
+                          });
 
-                    final result = await ProfileService.addLicense(
-                      name: _licenseNameController.text,
-                      licenseNumber: _licenseNumberController.text,
-                      issuer: _licenseIssuerController.text,
-                      obtainedAt: _licenseObtainedAt != null
-                          ? '${_licenseObtainedAt!.year}-${_licenseObtainedAt!.month.toString().padLeft(2, '0')}-${_licenseObtainedAt!.day.toString().padLeft(2, '0')}'
-                          : null,
-                      expiredAt: _licenseSelectedDate != null
-                          ? '${_licenseSelectedDate!.year}-${_licenseSelectedDate!.month.toString().padLeft(2, '0')}-${_licenseSelectedDate!.day.toString().padLeft(2, '0')}'
-                          : null,
-                      imageFile: _licenseImage,
-                    );
+                          // Baru tutup modal
+                          Navigator.pop(context);
 
-                    if (!mounted) return;
-                    if (result.success) {
-                      _licenseNameController.clear();
-                      _licenseNumberController.clear();
-                      _licenseIssuerController.clear();
-                      _licenseObtainedAt = null;
-                      _licenseSelectedDate = null;
-                      _licenseImage = null;
-                      _loadProfile(silent: true);
-                    } else {
-                      setState(() => _isLoading = false);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(result.message)));
-                    }
-                  },
+                          final result = await ProfileService.addLicense(
+                            name: _licenseNameController.text,
+                            licenseNumber: _licenseNumberController.text,
+                            issuer: _licenseIssuerController.text,
+                            obtainedAt: _licenseObtainedAt != null
+                                ? '${_licenseObtainedAt!.year}-${_licenseObtainedAt!.month.toString().padLeft(2, '0')}-${_licenseObtainedAt!.day.toString().padLeft(2, '0')}'
+                                : null,
+                            expiredAt: _licenseSelectedDate != null
+                                ? '${_licenseSelectedDate!.year}-${_licenseSelectedDate!.month.toString().padLeft(2, '0')}-${_licenseSelectedDate!.day.toString().padLeft(2, '0')}'
+                                : null,
+                            imageFile: _licenseImage,
+                          );
+
+                          if (!mounted) return;
+                          if (result.success) {
+                            _licenseNameController.clear();
+                            _licenseNumberController.clear();
+                            _licenseIssuerController.clear();
+                            _licenseObtainedAt = null;
+                            _licenseSelectedDate = null;
+                            _licenseImage = null;
+                            _loadProfile(silent: true);
+                          } else {
+                            setState(() => _isLoading = false);
+                            ScaffoldMessenger.of(this.context).showSnackBar(
+                                SnackBar(content: Text(result.message)));
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1A56C4),
                     foregroundColor: Colors.white,
@@ -1747,7 +1826,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 16),
               _buildFieldLabel('Foto Sertifikat'),
               _buildImagePicker(
@@ -1764,48 +1842,55 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: () async {
-                    if (_certNameController.text.isEmpty ||
-                        _certIssuerController.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('Harap lengkapi nama dan penerbit')));
-                      return;
-                    }
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          if (_certNameController.text.isEmpty ||
+                              _certIssuerController.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text(
+                                        'Harap lengkapi nama dan penerbit')));
+                            return;
+                          }
 
-                    Navigator.pop(context); // Close modal
-                    setState(() {
-                      _isLoading = true;
-                      _loadingMessage = 'Menyimpan Sertifikat...';
-                    });
+                          // Set loading dulu biar tombol ke-disable
+                          setState(() {
+                            _isLoading = true;
+                            _loadingMessage = 'Menyimpan Sertifikat...';
+                          });
 
-                    final result = await ProfileService.addCertification(
-                      name: _certNameController.text,
-                      certificationNumber: _certNumberController.text,
-                      issuer: _certIssuerController.text,
-                      obtainedAt: _certObtainedAt != null
-                          ? '${_certObtainedAt!.year}-${_certObtainedAt!.month.toString().padLeft(2, '0')}-${_certObtainedAt!.day.toString().padLeft(2, '0')}'
-                          : null,
-                      expiredAt: _certExpiredAt != null
-                          ? '${_certExpiredAt!.year}-${_certExpiredAt!.month.toString().padLeft(2, '0')}-${_certExpiredAt!.day.toString().padLeft(2, '0')}'
-                          : null,
-                      imageFile: _certImage,
-                    );
+                          // Baru tutup modal
+                          Navigator.pop(context);
 
-                    if (!mounted) return;
-                    if (result.success) {
-                      _certNameController.clear();
-                      _certNumberController.clear();
-                      _certIssuerController.clear();
-                      _certObtainedAt = null;
-                      _certExpiredAt = null;
-                      _certImage = null;
-                      _loadProfile(silent: true);
-                    } else {
-                      setState(() => _isLoading = false);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(result.message)));
-                    }
-                  },
+                          final result = await ProfileService.addCertification(
+                            name: _certNameController.text,
+                            certificationNumber: _certNumberController.text,
+                            issuer: _certIssuerController.text,
+                            obtainedAt: _certObtainedAt != null
+                                ? '${_certObtainedAt!.year}-${_certObtainedAt!.month.toString().padLeft(2, '0')}-${_certObtainedAt!.day.toString().padLeft(2, '0')}'
+                                : null,
+                            expiredAt: _certExpiredAt != null
+                                ? '${_certExpiredAt!.year}-${_certExpiredAt!.month.toString().padLeft(2, '0')}-${_certExpiredAt!.day.toString().padLeft(2, '0')}'
+                                : null,
+                            imageFile: _certImage,
+                          );
+
+                          if (!mounted) return;
+                          if (result.success) {
+                            _certNameController.clear();
+                            _certNumberController.clear();
+                            _certIssuerController.clear();
+                            _certObtainedAt = null;
+                            _certExpiredAt = null;
+                            _certImage = null;
+                            _loadProfile(silent: true);
+                          } else {
+                            setState(() => _isLoading = false);
+                            ScaffoldMessenger.of(this.context).showSnackBar(
+                                SnackBar(content: Text(result.message)));
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1A56C4),
                     foregroundColor: Colors.white,
@@ -1945,7 +2030,8 @@ class _BiodataContent extends StatelessWidget {
                   context: context,
                   backgroundColor: Colors.white,
                   shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20)),
                   ),
                   builder: (context) => SafeArea(
                     child: Wrap(
@@ -1954,11 +2040,13 @@ class _BiodataContent extends StatelessWidget {
                           padding: EdgeInsets.all(20),
                           child: Text(
                             'Pilih Hubungi Lewat',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ),
                         ListTile(
-                          leading: const Icon(Icons.phone, color: Color(0xFF1A56C4)),
+                          leading:
+                              const Icon(Icons.phone, color: Color(0xFF1A56C4)),
                           title: const Text('Aplikasi Telepon'),
                           onTap: () {
                             Navigator.pop(context);
@@ -1966,15 +2054,17 @@ class _BiodataContent extends StatelessWidget {
                           },
                         ),
                         ListTile(
-                          leading: const Icon(Icons.message, color: Colors.green),
+                          leading:
+                              const Icon(Icons.message, color: Colors.green),
                           title: const Text('WhatsApp'),
                           onTap: () {
                             Navigator.pop(context);
-                            String waNumber = phone.replaceAll(RegExp(r'\D'), '');
+                            String waNumber =
+                                phone.replaceAll(RegExp(r'\D'), '');
                             if (waNumber.startsWith('08')) {
                               waNumber = '628${waNumber.substring(2)}';
                             } else if (waNumber.startsWith('8')) {
-                               waNumber = '628${waNumber.substring(1)}';
+                              waNumber = '628${waNumber.substring(1)}';
                             }
                             _launchUrl('https://wa.me/$waNumber');
                           },
@@ -2094,7 +2184,7 @@ class _LicenseContent extends StatelessWidget {
   final VoidCallback onAdd;
   final VoidCallback onRefresh;
   const _LicenseContent({
-    required this.licenses, 
+    required this.licenses,
     required this.onAdd,
     required this.onRefresh,
   });
@@ -2200,7 +2290,9 @@ class _LicenseContent extends StatelessWidget {
                       child: Text(
                         !l.isVerified
                             ? 'Tunggu Verifikasi'
-                            : isAktif ? 'Aktif' : 'Expired',
+                            : isAktif
+                                ? 'Aktif'
+                                : 'Expired',
                         style: TextStyle(
                           color: !l.isVerified
                               ? const Color(0xFFEF6C00)
@@ -2331,7 +2423,9 @@ class _CertificationContent extends StatelessWidget {
                       child: Text(
                         !c.isVerified
                             ? 'Tunggu Verifikasi'
-                            : isAktif ? 'Aktif' : 'Renew',
+                            : isAktif
+                                ? 'Aktif'
+                                : 'Renew',
                         style: TextStyle(
                           color: !c.isVerified
                               ? const Color(0xFFEF6C00)
@@ -2552,9 +2646,11 @@ class _ViolationContent extends StatelessWidget {
                                 Text(
                                   '${v.location ?? "-"} · ${v.dateOfViolation ?? "-"}',
                                   style: TextStyle(
-                                      color: Colors.grey.shade500, fontSize: 13),
+                                      color: Colors.grey.shade500,
+                                      fontSize: 13),
                                 ),
-                                if (v.expiredAt != null && v.expiredAt!.isNotEmpty)
+                                if (v.expiredAt != null &&
+                                    v.expiredAt!.isNotEmpty)
                                   Text(
                                     'Berlaku s/d: ${v.expiredAt}',
                                     style: TextStyle(

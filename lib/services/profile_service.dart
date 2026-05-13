@@ -106,12 +106,15 @@ class ProfileService {
     if (perusahaanKontraktor != null) fields['perusahaan_kontraktor'] = perusahaanKontraktor;
     if (subKontraktor != null) fields['sub_kontraktor'] = subKontraktor;
 
-    final files = <http.MultipartFile>[];
+    ApiResponse response;
     if (imageFile != null) {
-      files.add(await http.MultipartFile.fromPath('profile_photo', imageFile.path));
+      final files = <http.MultipartFile>[];
+      files.add(
+          await http.MultipartFile.fromPath('profile_photo', imageFile.path));
+      response = await ApiService.postMultipart('/profile', fields, files);
+    } else {
+      response = await ApiService.post('/profile', fields);
     }
-
-    final response = await ApiService.postMultipart('/profile', fields, files);
 
     if (!response.success) {
       return ProfileResult.error(
@@ -129,7 +132,7 @@ class ProfileService {
   }
 
   // ── Update Medical ──────────────────────────────────────────────────────────
-  static Future<SimpleResult> updateMedical({
+  static Future<ProfileResult> updateMedical({
     String? bloodType,
     String? height,
     String? weight,
@@ -151,9 +154,17 @@ class ProfileService {
     });
 
     if (!response.success) {
-      return SimpleResult.error(response.errorMessage ?? 'Gagal menyimpan data medis.');
+      return ProfileResult.error(
+          response.errorMessage ?? 'Gagal menyimpan data medis.');
     }
-    return SimpleResult.success('Data medis berhasil disimpan.');
+
+    final userData = response.data['data'] as Map<String, dynamic>?;
+    if (userData == null) {
+      return ProfileResult.error('Respons server tidak valid.');
+    }
+
+    await StorageService.saveUser(userData);
+    return ProfileResult.success(ProfileData.fromJson(userData));
   }
 
   // ── Change password ───────────────────────────────────────────────────────

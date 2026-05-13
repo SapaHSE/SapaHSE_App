@@ -12,6 +12,9 @@ class ApiService {
   static const String baseUrl = 'https://sapahse.up.railway.app/api';
   // static const String baseUrl = 'https://sapahse.up.railway.app/api';
 
+  // ── Session Guard ────────────────────────────────────────────────────────
+  static bool _isSessionExpiredShowing = false;
+
   // ── Headers ───────────────────────────────────────────────────────────────
   static Future<Map<String, String>> _headers({bool auth = true}) async {
     final headers = <String, String>{
@@ -215,11 +218,19 @@ class ApiService {
         return ApiResponse.error(body['message'] ?? 'Unknown error');
       }
     } else if (response.statusCode == 401) {
+      if (_isSessionExpiredShowing) {
+        return ApiResponse.error('Sesi berakhir.', statusCode: 401);
+      }
+      _isSessionExpiredShowing = true;
+
       final hasToken = await StorageService.getToken() != null;
       if (hasToken) {
         StorageService.clear().then((_) {
           final ctx = navigatorKey.currentContext;
-          if (ctx == null || !ctx.mounted) return;
+          if (ctx == null || !ctx.mounted) {
+            _isSessionExpiredShowing = false;
+            return;
+          }
           showDialog(
             context: ctx,
             barrierDismissible: false,
@@ -240,6 +251,7 @@ class ApiService {
               actions: [
                 FilledButton(
                   onPressed: () {
+                    _isSessionExpiredShowing = false;
                     navigatorKey.currentState?.pushAndRemoveUntil(
                       MaterialPageRoute(builder: (_) => const LoginScreen()),
                       (route) => false,
