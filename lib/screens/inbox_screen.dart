@@ -9,6 +9,7 @@ import '../services/cloud_save_service.dart';
 import '../services/inbox_service.dart';
 import 'report_detail_screen.dart';
 import '../widgets/sapa_hse_header.dart';
+import '../services/approval_service.dart';
 import '../services/storage_service.dart';
 
 
@@ -308,110 +309,16 @@ class _InboxScreenState extends State<InboxScreen>
   // ── Approval loading (superadmin only) ─────────────────────────────────────
   Future<void> _loadApprovals() async {
     setState(() => _loadingApprovals = true);
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    setState(() {
-      _loadingApprovals = false;
-      _approvals = [
-        ApprovalItem(
-          id: 'apr-1',
-          type: ApprovalType.registerUser,
-          status: ApprovalStatus.pending,
-          title: 'Registrasi Akun Baru',
-          subtitle: 'Mengajukan pembuatan akun SapaHSE',
-          requesterName: 'Rudi Hartono',
-          department: 'Produksi',
-          company: 'PT. Bukit Baiduri Energi',
-          createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-          metadata: {
-            'email': 'rudi.hartono@bbe.co.id',
-            'employee_id': 'EMP-2026-089',
-            'position': 'Operator Lapangan',
-          },
-        ),
-        ApprovalItem(
-          id: 'apr-2',
-          type: ApprovalType.license,
-          status: ApprovalStatus.pending,
-          title: 'SIO Crane Operator',
-          subtitle: 'Surat Izin Operasi Crane kelas B',
-          requesterName: 'Dedi Permana',
-          department: 'Operasional',
-          company: 'PT. Bukit Baiduri Energi',
-          createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-          metadata: {
-            'license_number': 'SIO-2026-4421',
-            'issuer': 'Kemnaker RI',
-            'expired_at': '2027-06-15',
-          },
-        ),
-        ApprovalItem(
-          id: 'apr-3',
-          type: ApprovalType.certification,
-          status: ApprovalStatus.pending,
-          title: 'Sertifikat AK3 Umum',
-          subtitle: 'Ahli Keselamatan & Kesehatan Kerja Umum',
-          requesterName: 'Siti Nurhaliza',
-          department: 'HSE',
-          company: 'PT. Bukit Baiduri Energi',
-          createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-          metadata: {
-            'cert_number': 'AK3-2026-0078',
-            'issuer': 'BNSP',
-            'expired_at': '2028-01-20',
-          },
-        ),
-        ApprovalItem(
-          id: 'apr-4',
-          type: ApprovalType.registerUser,
-          status: ApprovalStatus.approved,
-          title: 'Registrasi Akun Baru',
-          subtitle: 'Mengajukan pembuatan akun SapaHSE',
-          requesterName: 'Andi Prasetyo',
-          department: 'Logistik',
-          company: 'PT. Bukit Baiduri Energi',
-          createdAt: DateTime.now().subtract(const Duration(days: 1)),
-          metadata: {
-            'email': 'andi.prasetyo@bbe.co.id',
-            'employee_id': 'EMP-2026-090',
-            'position': 'Staff Logistik',
-          },
-        ),
-        ApprovalItem(
-          id: 'apr-5',
-          type: ApprovalType.license,
-          status: ApprovalStatus.rejected,
-          title: 'SIM A - Kendaraan Operasional',
-          subtitle: 'Surat Izin Mengemudi kelas A',
-          requesterName: 'Bambang Suryadi',
-          department: 'Transportasi',
-          company: 'PT. Bukit Baiduri Energi',
-          createdAt: DateTime.now().subtract(const Duration(days: 2)),
-          metadata: {
-            'license_number': 'SIM-A-3301-2025',
-            'issuer': 'Polri',
-            'expired_at': '2030-03-10',
-            'reject_reason': 'Dokumen tidak valid / buram',
-          },
-        ),
-        ApprovalItem(
-          id: 'apr-6',
-          type: ApprovalType.certification,
-          status: ApprovalStatus.pending,
-          title: 'Sertifikat Juru Las SMAW',
-          subtitle: 'Welder Qualification Certificate - 6G Position',
-          requesterName: 'Fahri Maulana',
-          department: 'Maintenance',
-          company: 'PT. Bukit Baiduri Energi',
-          createdAt: DateTime.now().subtract(const Duration(hours: 10)),
-          metadata: {
-            'cert_number': 'WQC-2026-0192',
-            'issuer': 'BNSP / LSP Teknik',
-            'expired_at': '2029-05-22',
-          },
-        ),
-      ];
-    });
+    try {
+      final list = await ApprovalService.getPendingApprovals();
+      if (!mounted) return;
+      setState(() {
+        _approvals = list;
+        _loadingApprovals = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() => _loadingApprovals = false);
+    }
   }
 
   int get _pendingApprovalCount =>
@@ -1079,25 +986,37 @@ class _InboxScreenState extends State<InboxScreen>
           formatDate: _formatDate,
           onTap: () => _showApprovalDetail(item),
           onApprove: item.status == ApprovalStatus.pending
-              ? () {
-                  setState(() => item.status = ApprovalStatus.approved);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${item.title} telah disetujui'),
-                      backgroundColor: const Color(0xFF4CAF50),
-                    ),
-                  );
+              ? () async {
+                  final typeStr = item.type == ApprovalType.registerUser ? 'register_user' : (item.type == ApprovalType.license ? 'license' : 'certification');
+                  final success = await ApprovalService.approve(item.id, typeStr);
+                  if (success) {
+                    setState(() => item.status = ApprovalStatus.approved);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${item.title} telah disetujui'),
+                          backgroundColor: const Color(0xFF4CAF50),
+                        ),
+                      );
+                    }
+                  }
                 }
               : null,
           onReject: item.status == ApprovalStatus.pending
-              ? () {
-                  setState(() => item.status = ApprovalStatus.rejected);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${item.title} telah ditolak'),
-                      backgroundColor: const Color(0xFFF44336),
-                    ),
-                  );
+              ? () async {
+                  final typeStr = item.type == ApprovalType.registerUser ? 'register_user' : (item.type == ApprovalType.license ? 'license' : 'certification');
+                  final success = await ApprovalService.reject(item.id, typeStr);
+                  if (success) {
+                    setState(() => item.status = ApprovalStatus.rejected);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${item.title} telah ditolak'),
+                          backgroundColor: const Color(0xFFF44336),
+                        ),
+                      );
+                    }
+                  }
                 }
               : null,
         );
@@ -1171,7 +1090,7 @@ class _InboxScreenState extends State<InboxScreen>
                     _detailRow(Icons.calendar_today_outlined, 'Tanggal', _formatDate(item.createdAt)),
                     _detailRow(Icons.description_outlined, 'Keterangan', item.subtitle),
                     // Extra metadata
-                    ...item.metadata.entries.where((e) => e.key != 'reject_reason').map((e) =>
+                    ...item.metadata.entries.where((e) => e.key != 'reject_reason' && e.key != 'file_url').map((e) =>
                       _detailRow(Icons.info_outline, _metadataLabel(e.key), e.value.toString()),
                     ),
                     if (item.metadata['reject_reason'] != null) ...[
@@ -1197,98 +1116,108 @@ class _InboxScreenState extends State<InboxScreen>
                         ),
                       ),
                     ],
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-              // Action buttons
-              if (item.status == ApprovalStatus.pending)
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          setState(() => item.status = ApprovalStatus.rejected);
-                          Navigator.pop(sheetCtx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('${item.title} telah ditolak'),
-                              backgroundColor: const Color(0xFFF44336),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.close, size: 18),
-                        label: const Text('Tolak'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFF44336),
-                          side: const BorderSide(color: Color(0xFFF44336)),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(vertical: 13),
+                    if (item.metadata['file_url'] != null) ...[
+                      const SizedBox(height: 16),
+                      const Text('Lampiran Dokumen:', 
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                      const SizedBox(height: 12),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black12,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          setState(() => item.status = ApprovalStatus.approved);
-                          Navigator.pop(sheetCtx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('${item.title} telah disetujui'),
-                              backgroundColor: const Color(0xFF4CAF50),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            item.metadata['file_url'],
+                            width: double.infinity,
+                            height: 250,
+                            fit: BoxFit.contain,
+                            errorBuilder: (ctx, err, stack) => Container(
+                              height: 100,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Center(child: Icon(Icons.broken_image, color: Colors.grey, size: 40)),
                             ),
-                          );
-                        },
-                        icon: const Icon(Icons.check, size: 18),
-                        label: const Text('Setujui'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4CAF50),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              else
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: item.status == ApprovalStatus.approved
-                        ? const Color(0xFFE8F5E9)
-                        : const Color(0xFFFFF3F3),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        item.status == ApprovalStatus.approved
-                            ? Icons.check_circle
-                            : Icons.cancel,
-                        size: 18,
-                        color: item.status == ApprovalStatus.approved
-                            ? const Color(0xFF4CAF50)
-                            : const Color(0xFFF44336),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        item.statusLabel,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: item.status == ApprovalStatus.approved
-                              ? const Color(0xFF2E7D32)
-                              : const Color(0xFFC62828),
+                          ),
                         ),
                       ),
                     ],
-                  ),
+                    const SizedBox(height: 32),
+                    if (item.status == ApprovalStatus.pending)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _showRejectDialog(item, sheetCtx),
+                              icon: const Icon(Icons.close, size: 18),
+                              label: const Text('Tolak'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFF44336),
+                                side: const BorderSide(color: Color(0xFFF44336)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => _showApproveConfirmation(item, sheetCtx),
+                              icon: const Icon(Icons.check, size: 18),
+                              label: const Text('Setujui'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF4CAF50),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: item.status == ApprovalStatus.approved
+                              ? const Color(0xFFE8F5E9)
+                              : const Color(0xFFFFF3F3),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              item.status == ApprovalStatus.approved
+                                  ? Icons.check_circle
+                                  : Icons.cancel,
+                              size: 18,
+                              color: item.status == ApprovalStatus.approved
+                                  ? const Color(0xFF4CAF50)
+                                  : const Color(0xFFF44336),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              item.statusLabel,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: item.status == ApprovalStatus.approved
+                                    ? const Color(0xFF2E7D32)
+                                    : const Color(0xFFC62828),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
+              ),
             ],
           ),
         ),
@@ -1315,6 +1244,123 @@ class _InboxScreenState extends State<InboxScreen>
                     fontSize: 13, fontWeight: FontWeight.w500)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showApproveConfirmation(ApprovalItem item, BuildContext sheetCtx) {
+    bool isProcessing = false;
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Konfirmasi', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: isProcessing 
+            ? const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()))
+            : Text('Apakah Anda yakin ingin menyetujui pengajuan "${item.title}" ini?'),
+          actions: isProcessing ? [] : [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+            ElevatedButton(
+              onPressed: () async {
+                setModalState(() => isProcessing = true);
+                final typeStr = item.type == ApprovalType.registerUser ? 'register_user' : (item.type == ApprovalType.license ? 'license' : 'certification');
+                final success = await ApprovalService.approve(item.id, typeStr);
+                if (success) {
+                  if (mounted) {
+                    setState(() => item.status = ApprovalStatus.approved);
+                    Navigator.pop(ctx);
+                    Navigator.pop(sheetCtx);
+                    _loadApprovals(); // Refresh list
+                  }
+                } else {
+                  setModalState(() => isProcessing = false);
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal menyetujui pengajuan.')));
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4CAF50),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Ya, Setujui'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showRejectDialog(ApprovalItem item, BuildContext sheetCtx) {
+    final reasonCtrl = TextEditingController();
+    bool isProcessing = false;
+    final isRegisterUser = item.type == ApprovalType.registerUser;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(isRegisterUser ? 'Alasan Penolakan' : 'Konfirmasi Penolakan', 
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          content: isProcessing 
+            ? const SizedBox(height: 150, child: Center(child: CircularProgressIndicator()))
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(isRegisterUser 
+                      ? 'Berikan alasan mengapa pendaftaran ini ditolak. Alasan ini akan dikirimkan ke email user.'
+                      : 'Apakah Anda yakin ingin menolak pengajuan "${item.title}" ini?',
+                      style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                  if (isRegisterUser) ...[
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: reasonCtrl,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        hintText: 'Contoh: Dokumen kurang jelas atau tidak sesuai.',
+                        hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        contentPadding: const EdgeInsets.all(12),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+          actions: isProcessing ? [] : [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+            ElevatedButton(
+              onPressed: () async {
+                if (isRegisterUser && reasonCtrl.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Alasan penolakan tidak boleh kosong.'))
+                  );
+                  return;
+                }
+                setModalState(() => isProcessing = true);
+                final typeStr = item.type == ApprovalType.registerUser ? 'register_user' : (item.type == ApprovalType.license ? 'license' : 'certification');
+                final success = await ApprovalService.reject(item.id, typeStr, reason: isRegisterUser ? reasonCtrl.text : null);
+                if (success) {
+                  if (mounted) {
+                    setState(() => item.status = ApprovalStatus.rejected);
+                    Navigator.pop(ctx);
+                    Navigator.pop(sheetCtx);
+                    _loadApprovals(); // Refresh list
+                  }
+                } else {
+                  setModalState(() => isProcessing = false);
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal menolak pengajuan.')));
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF44336),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Text(isRegisterUser ? 'Tolak & Kirim' : 'Ya, Tolak'),
+            ),
+          ],
+        ),
       ),
     );
   }

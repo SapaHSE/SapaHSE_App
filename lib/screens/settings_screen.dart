@@ -28,7 +28,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _draftCount = 0;
   bool _isSyncing = false;
   String _storageSize = '0 KB';
-  static const _blue = Color(0xFF1A56C4);
 
   @override
   void initState() {
@@ -352,7 +351,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onPressed: () async {
                           await CloudSaveService.instance.clearAll();
                           await _refreshSyncData();
-                          if (mounted) {
+                          if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Penyimpanan lokal dibersihkan.')));
                           }
                         },

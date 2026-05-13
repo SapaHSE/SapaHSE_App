@@ -3,6 +3,7 @@ import '../services/approval_service.dart';
 import '../models/profile_model.dart';
 import 'license_detail_screen.dart';
 import 'certification_detail_screen.dart';
+import '../models/approval_item.dart';
 
 class DocumentApprovalScreen extends StatefulWidget {
   const DocumentApprovalScreen({super.key});
@@ -25,34 +26,35 @@ class _DocumentApprovalScreenState extends State<DocumentApprovalScreen> {
 
   Future<void> _fetchPendingDocuments() async {
     setState(() => _isLoading = true);
-    final res = await ApprovalService.getPendingDocuments();
-    if (mounted) {
+    try {
+      final list = await ApprovalService.getPendingApprovals();
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
-        if (res.success && res.data['data'] != null) {
-          _pendingLicenses = res.data['data']['licenses'] ?? [];
-          _pendingCertifications = res.data['data']['certifications'] ?? [];
-        }
+        _pendingLicenses = list.where((item) => item.type == ApprovalType.license).toList();
+        _pendingCertifications = list.where((item) => item.type == ApprovalType.certification).toList();
       });
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _approveDocument(String type, String id) async {
     setState(() => _isLoading = true);
-    final res = type == 'license' 
+    final success = type == 'license' 
       ? await ApprovalService.approveLicense(id)
       : await ApprovalService.approveCertification(id);
     
     if (mounted) {
       setState(() => _isLoading = false);
-      if (res.success) {
+      if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Dokumen berhasil disetujui!')),
         );
         _fetchPendingDocuments();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(res.errorMessage ?? 'Gagal menyetujui dokumen.')),
+          const SnackBar(content: Text('Gagal menyetujui dokumen.')),
         );
       }
     }
@@ -340,18 +342,20 @@ class _DocumentApprovalScreenState extends State<DocumentApprovalScreen> {
   }
 
   Future<void> _rejectDocument(String type, String id) async {
-    final res = type == 'license'
+    setState(() => _isLoading = true);
+    final success = type == 'license'
         ? await ApprovalService.rejectLicense(id)
         : await ApprovalService.rejectCertification(id);
 
     if (mounted) {
-      if (res.success) {
+      setState(() => _isLoading = false);
+      if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Dokumen berhasil ditolak')));
         _fetchPendingDocuments();
       } else {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(res.errorMessage ?? 'Terjadi kesalahan')));
+            .showSnackBar(const SnackBar(content: Text('Gagal menolak dokumen')));
       }
     }
   }
