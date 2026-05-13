@@ -600,56 +600,76 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      body: IndexedStack(index: _currentIndex, children: _screens),
-      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openFabMenu,
-        backgroundColor: const Color(0xFF1A56C4),
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        elevation: 4,
-        tooltip: 'Buka menu utama',
-        child: const Icon(Icons.add, size: 26),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        color: Colors.white,
-        elevation: 0,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                  icon: Icons.home,
-                  label: 'Home',
-                  index: 0,
-                  currentIndex: _currentIndex,
-                  onTap: _onTabTapped),
-              _NavItem(
-                  icon: Icons.article_outlined,
-                  label: 'News',
-                  index: 1,
-                  currentIndex: _currentIndex,
-                  onTap: _onTabTapped),
-              const SizedBox(width: 48),
-              _NavItem(
-                  icon: Icons.inbox_outlined,
-                  label: 'Inbox',
-                  index: 3,
-                  currentIndex: _currentIndex,
-                  onTap: _onTabTapped),
-              _NavItem(
-                  icon: Icons.menu,
-                  label: 'Menu',
-                  index: 4,
-                  currentIndex: _currentIndex,
-                  onTap: _onTabTapped),
-            ],
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: IndexedStack(index: _currentIndex, children: _screens),
           ),
-        ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.bottomCenter,
+              children: [
+                Container(
+                  height: 65,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _NavItem(
+                          icon: Icons.home,
+                          label: 'Home',
+                          index: 0,
+                          currentIndex: _currentIndex,
+                          onTap: _onTabTapped),
+                      _NavItem(
+                          icon: Icons.article_outlined,
+                          label: 'News',
+                          index: 1,
+                          currentIndex: _currentIndex,
+                          onTap: _onTabTapped),
+                      const SizedBox(width: 56), // Space for FAB
+                      _NavItem(
+                          icon: Icons.inbox_outlined,
+                          label: 'Inbox',
+                          index: 3,
+                          currentIndex: _currentIndex,
+                          onTap: _onTabTapped),
+                      _NavItem(
+                          icon: Icons.menu,
+                          label: 'Menu',
+                          index: 4,
+                          currentIndex: _currentIndex,
+                          onTap: _onTabTapped),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: -24,
+                  child: GestureDetector(
+                    onTap: _openFabMenu,
+                    child: Container(
+                      width: 56,
+                      height: 56,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF1A56C4),
+                        shape: BoxShape.circle,
+                        // No shadow to match user's flat design request
+                      ),
+                      child: const Icon(Icons.add, color: Colors.white, size: 28),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

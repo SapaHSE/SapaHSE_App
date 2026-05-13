@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/inbox_item.dart';
 import '../models/report.dart';
+import '../models/approval_item.dart';
 import '../services/cloud_save_service.dart';
 import '../services/inbox_service.dart';
 import 'report_detail_screen.dart';
@@ -13,6 +14,7 @@ import '../services/storage_service.dart';
 
 enum _SubFilter { unread, read }
 enum _MyPostFilter { all, draft, pending, approved, rejected }
+enum _ApprovalFilter { all, pending, approved, rejected }
 
 class InboxScreen extends StatefulWidget {
   const InboxScreen({super.key});
@@ -44,6 +46,12 @@ class _InboxScreenState extends State<InboxScreen>
   String? _errorMyReports;
   String? _currentUserId;
 
+  // ── Superadmin Approval state ──────────────────────────────────────────────
+  bool _isSuperAdmin = false;
+  List<ApprovalItem> _approvals = [];
+  bool _loadingApprovals = false;
+  _ApprovalFilter _activeApprovalFilter = _ApprovalFilter.all;
+
   @override
   void initState() {
     super.initState();
@@ -64,10 +72,15 @@ class _InboxScreenState extends State<InboxScreen>
   Future<void> _loadCurrentUser() async {
     final user = await StorageService.getUser();
     if (user != null) {
+      final role = user['role']?.toString().toLowerCase() ?? '';
       setState(() {
         _currentUserId = user['id']?.toString();
+        _isSuperAdmin = role == 'superadmin' || role == 'super admin';
       });
       _loadMyReports();
+      if (_isSuperAdmin) {
+        _loadApprovals();
+      }
     }
   }
 
@@ -290,6 +303,153 @@ class _InboxScreenState extends State<InboxScreen>
         ),
       ];
     });
+  }
+
+  // ── Approval loading (superadmin only) ─────────────────────────────────────
+  Future<void> _loadApprovals() async {
+    setState(() => _loadingApprovals = true);
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+    setState(() {
+      _loadingApprovals = false;
+      _approvals = [
+        ApprovalItem(
+          id: 'apr-1',
+          type: ApprovalType.registerUser,
+          status: ApprovalStatus.pending,
+          title: 'Registrasi Akun Baru',
+          subtitle: 'Mengajukan pembuatan akun SapaHSE',
+          requesterName: 'Rudi Hartono',
+          department: 'Produksi',
+          company: 'PT. Bukit Baiduri Energi',
+          createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+          metadata: {
+            'email': 'rudi.hartono@bbe.co.id',
+            'employee_id': 'EMP-2026-089',
+            'position': 'Operator Lapangan',
+          },
+        ),
+        ApprovalItem(
+          id: 'apr-2',
+          type: ApprovalType.license,
+          status: ApprovalStatus.pending,
+          title: 'SIO Crane Operator',
+          subtitle: 'Surat Izin Operasi Crane kelas B',
+          requesterName: 'Dedi Permana',
+          department: 'Operasional',
+          company: 'PT. Bukit Baiduri Energi',
+          createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+          metadata: {
+            'license_number': 'SIO-2026-4421',
+            'issuer': 'Kemnaker RI',
+            'expired_at': '2027-06-15',
+          },
+        ),
+        ApprovalItem(
+          id: 'apr-3',
+          type: ApprovalType.certification,
+          status: ApprovalStatus.pending,
+          title: 'Sertifikat AK3 Umum',
+          subtitle: 'Ahli Keselamatan & Kesehatan Kerja Umum',
+          requesterName: 'Siti Nurhaliza',
+          department: 'HSE',
+          company: 'PT. Bukit Baiduri Energi',
+          createdAt: DateTime.now().subtract(const Duration(hours: 6)),
+          metadata: {
+            'cert_number': 'AK3-2026-0078',
+            'issuer': 'BNSP',
+            'expired_at': '2028-01-20',
+          },
+        ),
+        ApprovalItem(
+          id: 'apr-4',
+          type: ApprovalType.registerUser,
+          status: ApprovalStatus.approved,
+          title: 'Registrasi Akun Baru',
+          subtitle: 'Mengajukan pembuatan akun SapaHSE',
+          requesterName: 'Andi Prasetyo',
+          department: 'Logistik',
+          company: 'PT. Bukit Baiduri Energi',
+          createdAt: DateTime.now().subtract(const Duration(days: 1)),
+          metadata: {
+            'email': 'andi.prasetyo@bbe.co.id',
+            'employee_id': 'EMP-2026-090',
+            'position': 'Staff Logistik',
+          },
+        ),
+        ApprovalItem(
+          id: 'apr-5',
+          type: ApprovalType.license,
+          status: ApprovalStatus.rejected,
+          title: 'SIM A - Kendaraan Operasional',
+          subtitle: 'Surat Izin Mengemudi kelas A',
+          requesterName: 'Bambang Suryadi',
+          department: 'Transportasi',
+          company: 'PT. Bukit Baiduri Energi',
+          createdAt: DateTime.now().subtract(const Duration(days: 2)),
+          metadata: {
+            'license_number': 'SIM-A-3301-2025',
+            'issuer': 'Polri',
+            'expired_at': '2030-03-10',
+            'reject_reason': 'Dokumen tidak valid / buram',
+          },
+        ),
+        ApprovalItem(
+          id: 'apr-6',
+          type: ApprovalType.certification,
+          status: ApprovalStatus.pending,
+          title: 'Sertifikat Juru Las SMAW',
+          subtitle: 'Welder Qualification Certificate - 6G Position',
+          requesterName: 'Fahri Maulana',
+          department: 'Maintenance',
+          company: 'PT. Bukit Baiduri Energi',
+          createdAt: DateTime.now().subtract(const Duration(hours: 10)),
+          metadata: {
+            'cert_number': 'WQC-2026-0192',
+            'issuer': 'BNSP / LSP Teknik',
+            'expired_at': '2029-05-22',
+          },
+        ),
+      ];
+    });
+  }
+
+  int get _pendingApprovalCount =>
+      _approvals.where((a) => a.status == ApprovalStatus.pending).length;
+
+  List<ApprovalItem> get _filteredApprovals {
+    switch (_activeApprovalFilter) {
+      case _ApprovalFilter.pending:
+        return _approvals.where((a) => a.status == ApprovalStatus.pending).toList();
+      case _ApprovalFilter.approved:
+        return _approvals.where((a) => a.status == ApprovalStatus.approved).toList();
+      case _ApprovalFilter.rejected:
+        return _approvals.where((a) => a.status == ApprovalStatus.rejected).toList();
+      case _ApprovalFilter.all:
+        return List.from(_approvals);
+    }
+  }
+
+  int _approvalFilterCount(_ApprovalFilter f) {
+    switch (f) {
+      case _ApprovalFilter.all:
+        return _approvals.length;
+      case _ApprovalFilter.pending:
+        return _approvals.where((a) => a.status == ApprovalStatus.pending).length;
+      case _ApprovalFilter.approved:
+        return _approvals.where((a) => a.status == ApprovalStatus.approved).length;
+      case _ApprovalFilter.rejected:
+        return _approvals.where((a) => a.status == ApprovalStatus.rejected).length;
+    }
+  }
+
+  String _approvalFilterLabel(_ApprovalFilter f) {
+    switch (f) {
+      case _ApprovalFilter.all: return 'Semua';
+      case _ApprovalFilter.pending: return 'Menunggu';
+      case _ApprovalFilter.approved: return 'Disetujui';
+      case _ApprovalFilter.rejected: return 'Ditolak';
+    }
   }
 
   InboxItem _reportToInboxItem(Report r) {
@@ -629,7 +789,10 @@ class _InboxScreenState extends State<InboxScreen>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Text('Tugas'),
-                              if (_unreadReports > 0) ...[
+                              if (_isSuperAdmin && _pendingApprovalCount > 0) ...[
+                                const SizedBox(width: 6),
+                                _TabBadge(count: _pendingApprovalCount),
+                              ] else if (!_isSuperAdmin && _unreadReports > 0) ...[
                                 const SizedBox(width: 6),
                                 _TabBadge(count: _unreadReports),
                               ],
@@ -660,109 +823,61 @@ class _InboxScreenState extends State<InboxScreen>
             ),
             const Divider(height: 1),
 
-              // ── Sub-filter: Unread | Read OR MyPost Status ────────────────────────
+              // ── Sub-filter: context-aware ────────────────────────────────────
               Container(
                 color: Colors.white,
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                 child: _mainTabController.index == 2
-                    ? Row(
-                        children: [
-                          const Text(
-                            'Filter:',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black54,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Container(
-                              height: 40,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.grey.shade300),
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<_MyPostFilter>(
-                                  value: _activeMyPostFilter,
-                                  isExpanded: true,
-                                  icon: const Icon(Icons.keyboard_arrow_down, size: 20),
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF1A56C4),
-                                  ),
-                                  items: _MyPostFilter.values.map((f) {
-                                    final count = _myPostFilterCount(f);
-                                    
-                                    return DropdownMenuItem(
-                                      value: f,
-                                      child: Row(
-                                        children: [
-                                          Text(_myPostFilterLabel(f)),
-                                          const Spacer(),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: Colors.grey.shade200,
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                            child: Text(
-                                              '$count',
-                                              style: const TextStyle(fontSize: 10, color: Colors.black54),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (val) {
-                                    if (val != null) setState(() => _activeMyPostFilter = val);
-                                  },
+                    ? _buildDropdownFilter<_MyPostFilter>(
+                        value: _activeMyPostFilter,
+                        values: _MyPostFilter.values,
+                        label: _myPostFilterLabel,
+                        count: _myPostFilterCount,
+                        onChanged: (v) => setState(() => _activeMyPostFilter = v),
+                      )
+                    : (_mainTabController.index == 1 && _isSuperAdmin)
+                        ? _buildDropdownFilter<_ApprovalFilter>(
+                            value: _activeApprovalFilter,
+                            values: _ApprovalFilter.values,
+                            label: _approvalFilterLabel,
+                            count: _approvalFilterCount,
+                            onChanged: (v) => setState(() => _activeApprovalFilter = v),
+                          )
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: _SubFilterChip(
+                                  label: _mainTabController.index == 1 ? 'Aktif' : 'Unread',
+                                  isActive: _activeFilter == _SubFilter.unread,
+                                  badge: _mainTabController.index == 0
+                                      ? (_unreadAnnouncements > 0
+                                          ? _unreadAnnouncements
+                                          : null)
+                                      : (_aktifReportCount > 0 ? _aktifReportCount : null),
+                                  onTap: () =>
+                                      setState(() => _activeFilter = _SubFilter.unread),
                                 ),
                               ),
-                            ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _SubFilterChip(
+                                  label: _mainTabController.index == 1 ? 'Selesai' : 'Read',
+                                  isActive: _activeFilter == _SubFilter.read,
+                                  badge: _mainTabController.index == 0
+                                      ? (_readAnnouncementCount > 0
+                                          ? _readAnnouncementCount
+                                          : null)
+                                      : (_selesaiReportCount > 0 ? _selesaiReportCount : null),
+                                  onTap: () =>
+                                      setState(() => _activeFilter = _SubFilter.read),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      )
-                    : Row(
-                        children: [
-                          Expanded(
-                            child: _SubFilterChip(
-                              label: _mainTabController.index == 1 ? 'Aktif' : 'Unread',
-                              isActive: _activeFilter == _SubFilter.unread,
-                              badge: _mainTabController.index == 0
-                                  ? (_unreadAnnouncements > 0
-                                      ? _unreadAnnouncements
-                                      : null)
-                                  : (_aktifReportCount > 0 ? _aktifReportCount : null),
-                              onTap: () =>
-                                  setState(() => _activeFilter = _SubFilter.unread),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _SubFilterChip(
-                              label: _mainTabController.index == 1 ? 'Selesai' : 'Read',
-                              isActive: _activeFilter == _SubFilter.read,
-                              badge: _mainTabController.index == 0
-                                  ? (_readAnnouncementCount > 0
-                                      ? _readAnnouncementCount
-                                      : null)
-                                  : (_selesaiReportCount > 0 ? _selesaiReportCount : null),
-                              onTap: () =>
-                                  setState(() => _activeFilter = _SubFilter.read),
-                            ),
-                          ),
-                        ],
-                      ),
               ),
 
             // ── Tugas Butuh Tindakan Segera Banner ───────────────────────
-            if (_mainTabController.index == 1)
+            if (_mainTabController.index == 1 && !_isSuperAdmin)
               Builder(builder: (context) {
                 final urgentCount = _personalReports.where((i) =>
                   i.status == ReportStatus.open && 
@@ -793,6 +908,29 @@ class _InboxScreenState extends State<InboxScreen>
                   ),
                 );
               }),
+            // ── Pending approval banner for superadmin ───────────────────
+            if (_mainTabController.index == 1 && _isSuperAdmin && _pendingApprovalCount > 0)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                color: const Color(0xFFFFF8E1),
+                child: Row(
+                  children: [
+                    Icon(Icons.pending_actions, size: 18, color: Colors.orange.shade800),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '$_pendingApprovalCount Permintaan Menunggu Persetujuan',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange.shade800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             // ── Content (TabBarView for smooth animations) ───────────────
             Expanded(
@@ -812,6 +950,15 @@ class _InboxScreenState extends State<InboxScreen>
   }
 
   Widget _buildReportsTab() {
+    if (_isSuperAdmin) {
+      if (_loadingApprovals && _approvals.isEmpty) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      return RefreshIndicator(
+        onRefresh: _loadApprovals,
+        child: _buildApprovalList(_filteredApprovals),
+      );
+    }
     if (_loadingReports && _reports.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -822,6 +969,403 @@ class _InboxScreenState extends State<InboxScreen>
       onRefresh: _loadReports,
       child: _buildList(_activeReports, isAnnouncement: false),
     );
+  }
+
+  // ── Generic dropdown filter builder ────────────────────────────────────────
+  Widget _buildDropdownFilter<T>({
+    required T value,
+    required List<T> values,
+    required String Function(T) label,
+    required int Function(T) count,
+    required ValueChanged<T> onChanged,
+  }) {
+    return Row(
+      children: [
+        const Text(
+          'Filter:',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.black54,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<T>(
+                value: value,
+                isExpanded: true,
+                icon: const Icon(Icons.keyboard_arrow_down, size: 20),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A56C4),
+                ),
+                items: values.map((f) {
+                  final c = count(f);
+                  return DropdownMenuItem<T>(
+                    value: f,
+                    child: Row(
+                      children: [
+                        Text(label(f)),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$c',
+                            style: const TextStyle(fontSize: 10, color: Colors.black54),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) onChanged(val);
+                },
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Approval list builder ──────────────────────────────────────────────────
+  Widget _buildApprovalList(List<ApprovalItem> list) {
+    if (list.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.check_circle_outline, size: 52, color: Colors.grey.shade300),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Tidak ada permintaan approval.',
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+      itemCount: list.length,
+      itemBuilder: (context, i) {
+        final item = list[i];
+        return _ApprovalCard(
+          item: item,
+          formatDate: _formatDate,
+          onTap: () => _showApprovalDetail(item),
+          onApprove: item.status == ApprovalStatus.pending
+              ? () {
+                  setState(() => item.status = ApprovalStatus.approved);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${item.title} telah disetujui'),
+                      backgroundColor: const Color(0xFF4CAF50),
+                    ),
+                  );
+                }
+              : null,
+          onReject: item.status == ApprovalStatus.pending
+              ? () {
+                  setState(() => item.status = ApprovalStatus.rejected);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${item.title} telah ditolak'),
+                      backgroundColor: const Color(0xFFF44336),
+                    ),
+                  );
+                }
+              : null,
+        );
+      },
+    );
+  }
+
+  // ── Approval detail bottom sheet ───────────────────────────────────────────
+  void _showApprovalDetail(ApprovalItem item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => DraggableScrollableSheet(
+        initialChildSize: 0.65,
+        maxChildSize: 0.9,
+        minChildSize: 0.4,
+        builder: (_, sc) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView(
+                  controller: sc,
+                  children: [
+                    // Type badge + title
+                    Row(
+                      children: [
+                        _approvalTypeIcon(item.type),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item.typeLabel,
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: _approvalTypeColor(item.type))),
+                              const SizedBox(height: 2),
+                              Text(item.title,
+                                  style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 12),
+                    _detailRow(Icons.person_outline, 'Pemohon', item.requesterName),
+                    _detailRow(Icons.business, 'Departemen', item.department ?? '-'),
+                    _detailRow(Icons.apartment, 'Perusahaan', item.company ?? '-'),
+                    _detailRow(Icons.calendar_today_outlined, 'Tanggal', _formatDate(item.createdAt)),
+                    _detailRow(Icons.description_outlined, 'Keterangan', item.subtitle),
+                    // Extra metadata
+                    ...item.metadata.entries.where((e) => e.key != 'reject_reason').map((e) =>
+                      _detailRow(Icons.info_outline, _metadataLabel(e.key), e.value.toString()),
+                    ),
+                    if (item.metadata['reject_reason'] != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF3F3),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFFFCDD2)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, size: 18, color: Color(0xFFF44336)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Alasan ditolak: ${item.metadata['reject_reason']}',
+                                style: const TextStyle(fontSize: 13, color: Color(0xFFC62828)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+              // Action buttons
+              if (item.status == ApprovalStatus.pending)
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          setState(() => item.status = ApprovalStatus.rejected);
+                          Navigator.pop(sheetCtx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${item.title} telah ditolak'),
+                              backgroundColor: const Color(0xFFF44336),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.close, size: 18),
+                        label: const Text('Tolak'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFF44336),
+                          side: const BorderSide(color: Color(0xFFF44336)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() => item.status = ApprovalStatus.approved);
+                          Navigator.pop(sheetCtx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${item.title} telah disetujui'),
+                              backgroundColor: const Color(0xFF4CAF50),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.check, size: 18),
+                        label: const Text('Setujui'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4CAF50),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: item.status == ApprovalStatus.approved
+                        ? const Color(0xFFE8F5E9)
+                        : const Color(0xFFFFF3F3),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        item.status == ApprovalStatus.approved
+                            ? Icons.check_circle
+                            : Icons.cancel,
+                        size: 18,
+                        color: item.status == ApprovalStatus.approved
+                            ? const Color(0xFF4CAF50)
+                            : const Color(0xFFF44336),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        item.statusLabel,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: item.status == ApprovalStatus.approved
+                              ? const Color(0xFF2E7D32)
+                              : const Color(0xFFC62828),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: Colors.grey),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 90,
+            child: Text(label,
+                style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          ),
+          Expanded(
+            child: Text(value,
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w500)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _metadataLabel(String key) {
+    switch (key) {
+      case 'email': return 'Email';
+      case 'employee_id': return 'NIP';
+      case 'position': return 'Jabatan';
+      case 'license_number': return 'No. Lisensi';
+      case 'cert_number': return 'No. Sertifikat';
+      case 'issuer': return 'Penerbit';
+      case 'expired_at': return 'Masa Berlaku';
+      default: return key.replaceAll('_', ' ');
+    }
+  }
+
+  Widget _approvalTypeIcon(ApprovalType type) {
+    IconData icon;
+    Color color;
+    switch (type) {
+      case ApprovalType.registerUser:
+        icon = Icons.person_add_outlined;
+        color = const Color(0xFF1565C0);
+        break;
+      case ApprovalType.license:
+        icon = Icons.badge_outlined;
+        color = const Color(0xFFE65100);
+        break;
+      case ApprovalType.certification:
+        icon = Icons.workspace_premium_outlined;
+        color = const Color(0xFF6A1B9A);
+        break;
+    }
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(icon, color: color, size: 24),
+    );
+  }
+
+  Color _approvalTypeColor(ApprovalType type) {
+    switch (type) {
+      case ApprovalType.registerUser: return const Color(0xFF1565C0);
+      case ApprovalType.license: return const Color(0xFFE65100);
+      case ApprovalType.certification: return const Color(0xFF6A1B9A);
+    }
   }
 
   Widget _buildAnnouncementsTab() {
@@ -1535,6 +2079,264 @@ class _AnnouncementCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── APPROVAL CARD ─────────────────────────────────────────────────────────────
+class _ApprovalCard extends StatelessWidget {
+  final ApprovalItem item;
+  final String Function(DateTime) formatDate;
+  final VoidCallback onTap;
+  final VoidCallback? onApprove;
+  final VoidCallback? onReject;
+
+  const _ApprovalCard({
+    required this.item,
+    required this.formatDate,
+    required this.onTap,
+    this.onApprove,
+    this.onReject,
+  });
+
+  Color get _typeColor {
+    switch (item.type) {
+      case ApprovalType.registerUser:
+        return const Color(0xFF1565C0);
+      case ApprovalType.license:
+        return const Color(0xFFE65100);
+      case ApprovalType.certification:
+        return const Color(0xFF6A1B9A);
+    }
+  }
+
+  IconData get _typeIcon {
+    switch (item.type) {
+      case ApprovalType.registerUser:
+        return Icons.person_add_outlined;
+      case ApprovalType.license:
+        return Icons.badge_outlined;
+      case ApprovalType.certification:
+        return Icons.workspace_premium_outlined;
+    }
+  }
+
+  Color get _statusColor {
+    switch (item.status) {
+      case ApprovalStatus.pending:
+        return const Color(0xFFFF9800);
+      case ApprovalStatus.approved:
+        return const Color(0xFF4CAF50);
+      case ApprovalStatus.rejected:
+        return const Color(0xFFF44336);
+    }
+  }
+
+  IconData get _statusIcon {
+    switch (item.status) {
+      case ApprovalStatus.pending:
+        return Icons.schedule;
+      case ApprovalStatus.approved:
+        return Icons.check_circle;
+      case ApprovalStatus.rejected:
+        return Icons.cancel;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isPending = item.status == ApprovalStatus.pending;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: isPending ? const Color(0xFFFFFDE7) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isPending
+                ? _typeColor.withValues(alpha: 0.3)
+                : Colors.grey.shade200,
+            width: 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            // Top color accent
+            Container(
+              height: 4,
+              decoration: BoxDecoration(
+                color: _typeColor,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header: icon + type + status badge
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: _typeColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(_typeIcon, color: _typeColor, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.typeLabel.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: _typeColor,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              item.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                              color: _statusColor.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(_statusIcon, size: 12, color: _statusColor),
+                            const SizedBox(width: 4),
+                            Text(
+                              item.statusLabel,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: _statusColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Description
+                  Text(
+                    item.subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                      height: 1.4,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Meta row: requester + date
+                  Row(
+                    children: [
+                      const Icon(Icons.person_outline,
+                          size: 13, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          '${item.requesterName} • ${item.department ?? "-"}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              const TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.access_time,
+                          size: 12, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        formatDate(item.createdAt),
+                        style:
+                            const TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+
+                  // Quick action buttons (only for pending)
+                  if (isPending) ...[
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: onReject,
+                            icon: const Icon(Icons.close, size: 16),
+                            label: const Text('Tolak',
+                                style: TextStyle(fontSize: 12)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFFF44336),
+                              side: const BorderSide(color: Color(0xFFF44336)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: onApprove,
+                            icon: const Icon(Icons.check, size: 16),
+                            label: const Text('Setujui',
+                                style: TextStyle(fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4CAF50),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
