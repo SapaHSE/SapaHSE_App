@@ -382,7 +382,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           right: 0,
           bottom: 0,
           child: Stack(
-            
+            clipBehavior: Clip.none,
             alignment: Alignment.bottomCenter,
             children: [
               Container(

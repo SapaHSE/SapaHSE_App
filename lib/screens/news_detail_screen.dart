@@ -116,219 +116,258 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     return Scaffold(
       extendBody: false,
       backgroundColor: Colors.white,
-      body: CustomScrollView(
-        slivers: [
-          // SliverAppBar with hero image
-          SliverAppBar(
-            expandedHeight: 280,
-            pinned: true,
-            backgroundColor: Colors.black87,
-            leading: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                margin: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(
-                  color: Colors.black45,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.arrow_back, color: Colors.white),
-              ),
-            ),
-            actions: const [], // Actions moved to FAB
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  CachedNetworkImage(
-                    imageUrl: article.imageUrl,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) =>
-                        Container(color: const Color(0xFF37474F)),
-                    errorWidget: (_, __, ___) => Container(
-                      color: const Color(0xFF37474F),
-                      child: const Icon(Icons.image,
-                          color: Colors.white38, size: 60),
-                    ),
-                  ),
-                  // Gradient overlay
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.7)
-                        ],
-                        stops: const [0.4, 1.0],
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomScrollView(
+              slivers: [
+                // SliverAppBar with hero image
+                SliverAppBar(
+                  expandedHeight: 280,
+                  pinned: true,
+                  backgroundColor: Colors.black87,
+                  leading: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      margin: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: Colors.black45,
+                        shape: BoxShape.circle,
                       ),
+                      child: const Icon(Icons.arrow_back, color: Colors.white),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-
-          // Content
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Category chip
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: catColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(20),
-                      border:
-                          Border.all(color: catColor.withOpacity(0.3)),
-                    ),
-                    child: Text(
-                      article.category,
-                      style: TextStyle(
-                          color: catColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Title
-                  Text(
-                    article.title,
-                    style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        height: 1.35),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Author & date row
-                  Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 14,
-                        backgroundColor: Color(0xFFE8F5E9),
-                        child: Icon(Icons.person,
-                            size: 16, color: Color(0xFF2E7D32)),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(article.author,
-                          style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w600)),
-                      const SizedBox(width: 8),
-                      Container(
-                          width: 4,
-                          height: 4,
-                          decoration: BoxDecoration(
-                              color: Colors.grey.shade400,
-                              shape: BoxShape.circle)),
-                      const SizedBox(width: 8),
-                      Text(article.date,
-                          style: TextStyle(
-                              fontSize: 13, color: Colors.grey.shade600)),
-                    ],
-                  ),
-
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Divider(),
-                  ),
-
-                  // Body content
-                  if (_isLoading)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 32),
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
-                  else if (_error != null)
-                    Column(
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Stack(
+                      fit: StackFit.expand,
                       children: [
-                        Text(
-                          article.excerpt,
-                          style: const TextStyle(
-                              fontSize: 15,
-                              height: 1.7,
-                              color: Color(0xFF2D2D2D)),
+                        CachedNetworkImage(
+                          imageUrl: article.imageUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) =>
+                              Container(color: const Color(0xFF37474F)),
+                          errorWidget: (_, __, ___) => Container(
+                            color: const Color(0xFF37474F),
+                            child: const Icon(Icons.image,
+                                color: Colors.white38, size: 60),
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        TextButton.icon(
-                          onPressed: _loadDetail,
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Muat ulang konten'),
+                        // Gradient overlay
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.7)
+                              ],
+                              stops: const [0.4, 1.0],
+                            ),
+                          ),
                         ),
                       ],
-                    )
-                  else
-                    _buildRichContent(article),
-
-                  const SizedBox(height: 32),
-
-                  // Tags
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      '#BatuBara',
-                      '#BBE',
-                      '#${article.category.replaceAll(' / ', '')}',
-                      '#Energi'
-                    ]
-                        .map((tag) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F5),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(tag,
-                                  style: const TextStyle(
-                                      fontSize: 12, color: Colors.grey)),
-                            ))
-                        .toList(),
+                    ),
                   ),
+                ),
 
-                  const SizedBox(height: 80),
-                ],
-              ),
+                // Content
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Category chip
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: catColor.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: catColor.withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            article.category,
+                            style: TextStyle(
+                                color: catColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Title
+                        Text(
+                          article.title,
+                          style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              height: 1.35),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Author & date row
+                        Row(
+                          children: [
+                            const CircleAvatar(
+                              radius: 14,
+                              backgroundColor: Color(0xFFE8F5E9),
+                              child: Icon(Icons.person,
+                                  size: 16, color: Color(0xFF2E7D32)),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(article.author,
+                                style: const TextStyle(
+                                    fontSize: 13, fontWeight: FontWeight.w600)),
+                            const SizedBox(width: 8),
+                            Container(
+                                width: 4,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                    color: Colors.grey.shade400,
+                                    shape: BoxShape.circle)),
+                            const SizedBox(width: 8),
+                            Text(article.date,
+                                style: TextStyle(
+                                    fontSize: 13, color: Colors.grey.shade600)),
+                          ],
+                        ),
+
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Divider(),
+                        ),
+
+                        // Body content
+                        if (_isLoading)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 32),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else if (_error != null)
+                          Column(
+                            children: [
+                              Text(
+                                article.excerpt,
+                                style: const TextStyle(
+                                    fontSize: 15,
+                                    height: 1.7,
+                                    color: Color(0xFF2D2D2D)),
+                              ),
+                              const SizedBox(height: 16),
+                              TextButton.icon(
+                                onPressed: _loadDetail,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Muat ulang konten'),
+                              ),
+                            ],
+                          )
+                        else
+                          _buildRichContent(article),
+
+                        const SizedBox(height: 32),
+
+                        // Tags
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            '#BatuBara',
+                            '#BBE',
+                            '#${article.category.replaceAll(' / ', '')}',
+                            '#Energi'
+                          ]
+                              .map((tag) => Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF5F5F5),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(tag,
+                                        style: const TextStyle(
+                                            fontSize: 12, color: Colors.grey)),
+                                  ))
+                              .toList(),
+                        ),
+
+                        const SizedBox(height: 80),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.bottomCenter,
+              children: [
+                Container(
+                  height: 65,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                        top: BorderSide(color: Colors.grey.shade200, width: 1)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _NewsNavItem(
+                          icon: Icons.home,
+                          label: 'Home',
+                          index: 0,
+                          currentIndex: 1,
+                          onTap: _onTabTapped),
+                      _NewsNavItem(
+                          icon: Icons.article,
+                          label: 'News',
+                          index: 1,
+                          currentIndex: 1,
+                          onTap: _onTabTapped),
+                      const SizedBox(width: 56), // Space for FAB
+                      _NewsNavItem(
+                          icon: Icons.inbox_outlined,
+                          label: 'Inbox',
+                          index: 3,
+                          currentIndex: 1,
+                          onTap: _onTabTapped),
+                      _NewsNavItem(
+                          icon: Icons.menu,
+                          label: 'Menu',
+                          index: 4,
+                          currentIndex: 1,
+                          onTap: _onTabTapped),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: -24,
+                  child: GestureDetector(
+                    onTap: _openFabMenu,
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF1A56C4),
+                        shape: BoxShape.circle,
+                      ),
+                      child:
+                          const Icon(Icons.add, color: Colors.white, size: 30),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
-      ),
-      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openFabMenu,
-        backgroundColor: const Color(0xFF1A56C4),
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        
-        tooltip: 'Buka menu berita',
-        child: const Icon(Icons.add, size: 26),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      bottomNavigationBar: Container(
-        
-        
-        color: Colors.white,
-        
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NewsNavItem(icon: Icons.home, label: 'Home', index: 0, currentIndex: 1, onTap: _onTabTapped),
-              _NewsNavItem(icon: Icons.article, label: 'News', index: 1, currentIndex: 1, onTap: _onTabTapped),
-              const SizedBox(width: 48),
-              _NewsNavItem(icon: Icons.inbox_outlined, label: 'Inbox', index: 3, currentIndex: 1, onTap: _onTabTapped),
-              _NewsNavItem(icon: Icons.menu, label: 'Menu', index: 4, currentIndex: 1, onTap: _onTabTapped),
-            ],
-          ),
-        ),
       ),
     );
   }
